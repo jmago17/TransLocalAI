@@ -4,4 +4,34 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "group:FileExportManager.swift">
+   </FileRef>
+   <FileRef
+      location = "group:FileExportView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:FileImportManager.swift">
+   </FileRef>
+   <FileRef
+      location = "group:FileImportView.swift">
+   </FileRef>
+   <FileRef
+      location = "group:TranscriptionDocument.swift">
+   </FileRef>
+   <FileRef
+      location = "group:SYSTEM_FILES_INTEGRATION.md">
+   </FileRef>
+   <FileRef
+      location = "group:QuickLookTranscription.swift">
+   </FileRef>
+   <FileRef
+      location = "group:IMPLEMENTATION_SUMMARY.md">
+   </FileRef>
+   <FileRef
+      location = "group:ARCHITECTURE_DIAGRAM.md">
+   </FileRef>
+   <FileRef
+      location = "group:CODE_EXAMPLES.md">
+   </FileRef>
 </Workspace>

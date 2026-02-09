@@ -1,0 +1,409 @@
+import Foundation
+import AVFoundation
+import Speech
+#if canImport(WhisperKit)
+import WhisperKit
+#endif
+
+protocol TranscriptionEngine {
+    func detectLanguage(audioURL: URL) async throws -> String
+    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult
+}
+
+protocol ModelPreparingTranscriptionEngine: TranscriptionEngine {
+    func prepareModel(for language: String, progress: (@Sendable (Double) -> Void)?) async throws
+}
+
+enum TranscriptionEngineError: Error, LocalizedError {
+    case unimplemented
+    case unsupportedLanguage(String)
+    case invalidAudio
+    case permissionDenied
+    case modelUnavailable
+    case modelDownloadFailed(String)
+    case transcriptionFailed(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .unimplemented: return "Feature not implemented"
+        case .unsupportedLanguage(let lang): return "Unsupported language: \(lang)"
+        case .invalidAudio: return "Invalid audio input"
+        case .permissionDenied: return "Permission denied"
+        case .modelUnavailable: return "Model unavailable"
+        case .modelDownloadFailed(let msg): return "Model download failed: \(msg)"
+        case .transcriptionFailed(let msg): return "Transcription failed: \(msg)"
+        }
+    }
+}
+
+struct TranscriptionResult {
+    let text: String
+    let language: String
+    let duration: TimeInterval
+    let engineUsed: EngineKind
+
+    enum EngineKind { case appleSpeech, whisper }
+}
+
+// MARK: - Apple Speech Engine (SpeechAnalyzer)
+
+final class ShareAppleSpeechEngine: TranscriptionEngine {
+
+    private static var _cachedLanguages: Set<String>?
+
+    func detectLanguage(audioURL: URL) async throws -> String {
+        let candidateLocales = [Locale(identifier: "en-US"), Locale(identifier: "es-ES")]
+        var bestLanguage = "en-US"
+        var bestScore: Int = 0
+
+        let trimmedURL = try await trimAudio(audioURL: audioURL, seconds: 10)
+        let shouldCleanup = (trimmedURL != audioURL)
+
+        defer {
+            if shouldCleanup {
+                try? FileManager.default.removeItem(at: trimmedURL)
+            }
+        }
+
+        for locale in candidateLocales {
+            let score = try await scoreLocale(locale, audioURL: trimmedURL)
+            if score > bestScore {
+                bestScore = score
+                bestLanguage = locale.identifier
+            }
+        }
+
+        return bestLanguage
+    }
+
+    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
+        let normalized = normalize(language)
+        let supported = await ShareAppleSpeechEngine.fetchSupportedLanguages()
+        guard supported.contains(normalized) else {
+            throw TranscriptionEngineError.unsupportedLanguage(normalized)
+        }
+        let text = try await transcribeWithSpeechAnalyzer(audioURL: audioURL, locale: Locale(identifier: normalized))
+        let audioFile = try? AVAudioFile(forReading: audioURL)
+        let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
+        return TranscriptionResult(text: text, language: normalized, duration: duration, engineUsed: .appleSpeech)
+    }
+
+    static var supportedLanguages: Set<String> {
+        _cachedLanguages ?? ["en-US", "es-ES", "en-GB", "fr-FR", "de-DE", "it-IT", "pt-BR", "ja-JP", "ko-KR", "zh-CN"]
+    }
+
+    static func fetchSupportedLanguages() async -> Set<String> {
+        if let cached = _cachedLanguages { return cached }
+        let locales = await SpeechTranscriber.supportedLocales
+        let set = Set(locales.map { $0.identifier })
+        _cachedLanguages = set
+        return set
+    }
+
+    // MARK: - SpeechAnalyzer transcription
+
+    private func transcribeWithSpeechAnalyzer(audioURL: URL, locale: Locale) async throws -> String {
+        let transcriber = SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults],
+            attributeOptions: [.audioTimeRange]
+        )
+
+        let installedLocales = await SpeechTranscriber.installedLocales
+        let isInstalled = installedLocales.contains { $0.identifier == locale.identifier }
+
+        if !isInstalled {
+            if let downloader = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+                try await downloader.downloadAndInstall()
+            }
+        }
+
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+
+        async let textFuture: String = {
+            var fullText = ""
+            for try await result in transcriber.results {
+                if result.isFinal {
+                    fullText += String(result.text.characters) + " "
+                }
+            }
+            return fullText.trimmingCharacters(in: .whitespaces)
+        }()
+
+        let audioFile = try AVAudioFile(forReading: audioURL)
+        if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
+            try await analyzer.finalizeAndFinish(through: lastSample)
+        }
+
+        return try await textFuture
+    }
+
+    // MARK: - Language scoring
+
+    private func scoreLocale(_ locale: Locale, audioURL: URL) async throws -> Int {
+        let transcriber = SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults],
+            attributeOptions: [.audioTimeRange]
+        )
+
+        let installedLocales = await SpeechTranscriber.installedLocales
+        guard installedLocales.contains(where: { $0.identifier == locale.identifier }) else {
+            return 0
+        }
+
+        let analyzer = SpeechAnalyzer(modules: [transcriber])
+
+        async let textFuture: String = {
+            var fullText = ""
+            for try await result in transcriber.results {
+                if result.isFinal {
+                    fullText += String(result.text.characters) + " "
+                }
+            }
+            return fullText.trimmingCharacters(in: .whitespaces)
+        }()
+
+        let audioFile = try AVAudioFile(forReading: audioURL)
+        if let lastSample = try await analyzer.analyzeSequence(from: audioFile) {
+            try await analyzer.finalizeAndFinish(through: lastSample)
+        }
+
+        let text = try await textFuture
+        let wordCount = text.split(separator: " ").count
+        return wordCount * 100
+    }
+
+    // MARK: - Helpers
+
+    private func trimAudio(audioURL: URL, seconds: TimeInterval) async throws -> URL {
+        let asset = AVURLAsset(url: audioURL)
+        let duration = try await asset.load(.duration).seconds
+
+        if duration <= seconds {
+            return audioURL
+        }
+
+        guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            return audioURL
+        }
+
+        let timeRange = CMTimeRange(
+            start: .zero,
+            end: CMTime(seconds: seconds, preferredTimescale: 600)
+        )
+        exportSession.timeRange = timeRange
+
+        let trimmedURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("trim-\(UUID().uuidString).m4a")
+        try? FileManager.default.removeItem(at: trimmedURL)
+
+        try await exportSession.export(to: trimmedURL, as: .m4a)
+        return trimmedURL
+    }
+
+    private func normalize(_ lang: String) -> String {
+        let normalized = lang.replacingOccurrences(of: "_", with: "-")
+        let lower = normalized.lowercased()
+        if lower == "eu" { return "eu-ES" }
+        if lower == "es" { return "es-ES" }
+        if lower == "en" { return "en-US" }
+        return normalized
+    }
+}
+
+// MARK: - WhisperKit Engine (fallback)
+
+final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
+    private let modelManager: WhisperModelManager
+
+#if canImport(WhisperKit)
+    private let sessionCache = WhisperKitSessionCache()
+#endif
+
+    init(modelManager: WhisperModelManager = .shared) {
+        self.modelManager = modelManager
+    }
+
+    func prepareModel(for language: String, progress: (@Sendable (Double) -> Void)?) async throws {
+#if canImport(WhisperKit)
+        let normalized = normalize(language)
+        let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
+        _ = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: progress)
+#else
+        throw TranscriptionEngineError.unimplemented
+#endif
+    }
+
+    func detectLanguage(audioURL: URL) async throws -> String {
+#if canImport(WhisperKit)
+        let defaultLanguage = "eu-ES"
+        let modelIdentifier = await modelManager.modelIdentifier(for: defaultLanguage)
+        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
+        let session = try await sessionCache.session(modelId: modelId, language: nil)
+        return try await session.detectLanguage(audioURL: audioURL) ?? defaultLanguage
+#else
+        throw TranscriptionEngineError.unimplemented
+#endif
+    }
+
+    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
+#if canImport(WhisperKit)
+        let normalized = normalize(language)
+        let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
+        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
+        let session = try await sessionCache.session(modelId: modelId, language: normalized)
+        let text = try await session.transcribe(audioURL: audioURL)
+        let audioFile = try? AVAudioFile(forReading: audioURL)
+        let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
+        return TranscriptionResult(text: text, language: normalized, duration: duration, engineUsed: .whisper)
+#else
+        throw TranscriptionEngineError.unimplemented
+#endif
+    }
+
+    private func normalize(_ lang: String) -> String {
+        let normalized = lang.replacingOccurrences(of: "_", with: "-")
+        let lower = normalized.lowercased()
+        if lower == "eu" { return "eu-ES" }
+        if lower == "es" { return "es-ES" }
+        if lower == "en" { return "en-US" }
+        return normalized
+    }
+}
+
+#if canImport(WhisperKit)
+private actor WhisperKitSessionCache {
+    private var cache: [String: WhisperKitSession] = [:]
+
+    func session(modelId: String, language: String?) async throws -> WhisperKitSession {
+        let key = "\(modelId)|\(language ?? "auto")"
+        if let existing = cache[key] {
+            return existing
+        }
+        let session = try await WhisperKitSession(modelId: modelId, language: language)
+        cache[key] = session
+        return session
+    }
+}
+
+private final class WhisperKitSession {
+    private let whisper: WhisperKit
+    private let language: String?
+
+    init(modelId: String, language: String?) async throws {
+        let config = WhisperKitConfig(model: modelId)
+        self.language = language
+        self.whisper = try await WhisperKit(config)
+    }
+
+    func transcribe(audioURL: URL) async throws -> String {
+        var options = DecodingOptions()
+        options.task = .transcribe
+        options.language = language
+        let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
+        return results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func detectLanguage(audioURL: URL) async throws -> String? {
+        let result = try await whisper.detectLanguage(audioPath: audioURL.path)
+        return result.language
+    }
+}
+#endif
+
+// MARK: - Engine Preference
+
+enum EnginePreference: String, CaseIterable, Identifiable {
+    case auto = "Auto"
+    case apple = "Apple"
+    case whisper = "WhisperKit"
+
+    var id: String { rawValue }
+}
+
+// MARK: - Hybrid Service
+
+final class HybridTranscriptionService {
+    private let appleEngine: TranscriptionEngine
+    private let whisperEngine: TranscriptionEngine
+
+    init(
+        appleEngine: TranscriptionEngine = ShareAppleSpeechEngine(),
+        whisperEngine: TranscriptionEngine = WhisperKitEngine()
+    ) {
+        self.appleEngine = appleEngine
+        self.whisperEngine = whisperEngine
+    }
+
+    func detectLanguage(audioURL: URL, preferApple: Bool = true) async throws -> String {
+        if preferApple, let appleLang = try? await appleEngine.detectLanguage(audioURL: audioURL) {
+            return normalize(appleLang)
+        }
+        if let whisperLang = try? await whisperEngine.detectLanguage(audioURL: audioURL) {
+            return normalize(whisperLang)
+        }
+        return "eu-ES"
+    }
+
+    func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, progress: (@Sendable (Double) -> Void)?) async throws {
+        let normalized = normalize(language)
+        guard engine == .whisper || (engine == .auto && shouldUseWhisper(for: normalized)) else { return }
+        if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
+            try await preparer.prepareModel(for: normalized, progress: progress)
+        }
+    }
+
+    func engineKind(for language: String, engine: EnginePreference = .auto) -> TranscriptionResult.EngineKind {
+        switch engine {
+        case .apple: return .appleSpeech
+        case .whisper: return .whisper
+        case .auto:
+            let normalized = normalize(language)
+            return shouldUseWhisper(for: normalized) ? .whisper : .appleSpeech
+        }
+    }
+
+    func transcribe(audioURL: URL, language: String, engine: EnginePreference = .auto) async throws -> TranscriptionResult {
+        let normalized = normalize(language)
+        switch engine {
+        case .apple:
+            return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
+        case .whisper:
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+        case .auto:
+            if shouldUseWhisper(for: normalized) {
+                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+            }
+            if shouldUseApple(for: normalized) {
+                return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
+            }
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+        }
+    }
+
+    private func shouldUseApple(for language: String) -> Bool {
+        if isBasque(language) { return false }
+        return ShareAppleSpeechEngine.supportedLanguages.contains(language)
+    }
+
+    private func shouldUseWhisper(for language: String) -> Bool {
+        if isBasque(language) { return true }
+        return !ShareAppleSpeechEngine.supportedLanguages.contains(language)
+    }
+
+    private func isBasque(_ language: String) -> Bool {
+        return normalize(language).hasPrefix("eu")
+    }
+
+    private func normalize(_ lang: String) -> String {
+        let normalized = lang.replacingOccurrences(of: "_", with: "-")
+        let lower = normalized.lowercased()
+        if lower == "eu" { return "eu-ES" }
+        if lower == "es" { return "es-ES" }
+        if lower == "en" { return "en-US" }
+        return normalized
+    }
+}
