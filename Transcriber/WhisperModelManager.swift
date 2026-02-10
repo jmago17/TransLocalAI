@@ -62,7 +62,7 @@ enum WhisperModelCatalog: Sendable {
         WhisperModelManager.ModelDescriptor(
             identifier: "whisper-small",
             displayName: "Whisper Small",
-            modelId: "openai/whisper-small",
+            modelId: "openai_whisper-small",
             supportedLanguages: [],
             estimatedSizeMB: 466
         )

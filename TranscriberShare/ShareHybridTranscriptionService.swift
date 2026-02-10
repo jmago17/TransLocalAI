@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Speech
+import CoreMedia
 #if canImport(WhisperKit)
 import WhisperKit
 #endif
@@ -95,7 +96,8 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
     static func fetchSupportedLanguages() async -> Set<String> {
         if let cached = _cachedLanguages { return cached }
         let locales = await SpeechTranscriber.supportedLocales
-        let set = Set(locales.map { $0.identifier })
+        // Locale.identifier uses underscores (en_US) — normalize to BCP-47 hyphens (en-US)
+        let set = Set(locales.map { $0.identifier.replacingOccurrences(of: "_", with: "-") })
         _cachedLanguages = set
         return set
     }
@@ -122,13 +124,21 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
 
         async let textFuture: String = {
-            var fullText = ""
+            var segments: [String] = []
             for try await result in transcriber.results {
                 if result.isFinal {
-                    fullText += String(result.text.characters) + " "
+                    let plainText = String(result.text.characters).trimmingCharacters(in: .whitespaces)
+                    guard !plainText.isEmpty else { continue }
+
+                    if let timeRange = result.text.audioTimeRange {
+                        let stamp = Self.formatTimestamp(timeRange.start.seconds)
+                        segments.append("[\(stamp)] \(plainText)")
+                    } else {
+                        segments.append(plainText)
+                    }
                 }
             }
-            return fullText.trimmingCharacters(in: .whitespaces)
+            return segments.joined(separator: "\n")
         }()
 
         let audioFile = try AVAudioFile(forReading: audioURL)
@@ -137,6 +147,17 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
         }
 
         return try await textFuture
+    }
+
+    static func formatTimestamp(_ seconds: Double) -> String {
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let secs = totalSeconds % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, secs)
+        }
+        return String(format: "%02d:%02d", minutes, secs)
     }
 
     // MARK: - Language scoring

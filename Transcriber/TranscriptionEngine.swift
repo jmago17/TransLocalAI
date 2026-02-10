@@ -88,7 +88,8 @@ final class AppleSpeechEngine: TranscriptionEngine {
     static func fetchSupportedLanguages() async -> Set<String> {
         if let cached = _cachedLanguages { return cached }
         let locales = await SpeechTranscriber.supportedLocales
-        let set = Set(locales.map { $0.identifier })
+        // Locale.identifier uses underscores (en_US) — normalize to BCP-47 hyphens (en-US)
+        let set = Set(locales.map { $0.identifier.replacingOccurrences(of: "_", with: "-") })
         _cachedLanguages = set
         return set
     }

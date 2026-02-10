@@ -8,6 +8,7 @@
 import Foundation
 import Speech
 import AVFoundation
+import CoreMedia
 
 enum TranscriptionMode {
     case standard
@@ -67,17 +68,25 @@ class SpeechTranscriptionManager {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
 
         async let transcriptionFuture: String = {
-            var fullText = ""
+            var segments: [String] = []
             for try await result in transcriber.results {
                 if result.isFinal {
-                    let plainText = String(result.text.characters)
-                    fullText += plainText + " "
+                    let plainText = String(result.text.characters).trimmingCharacters(in: .whitespaces)
+                    guard !plainText.isEmpty else { continue }
+
+                    // Extract timestamp from the attributed string
+                    if let timeRange = result.text.audioTimeRange {
+                        let stamp = Self.formatTimestamp(timeRange.start.seconds)
+                        segments.append("[\(stamp)] \(plainText)")
+                    } else {
+                        segments.append(plainText)
+                    }
                 }
                 await MainActor.run {
                     self.transcriptionProgress = min(0.95, self.transcriptionProgress + 0.01)
                 }
             }
-            return fullText.trimmingCharacters(in: .whitespaces)
+            return segments.joined(separator: "\n")
         }()
 
         let audioFile = try AVAudioFile(forReading: audioURL)
@@ -92,6 +101,17 @@ class SpeechTranscriptionManager {
         }
 
         return result
+    }
+
+    nonisolated static func formatTimestamp(_ seconds: Double) -> String {
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let secs = totalSeconds % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, secs)
+        }
+        return String(format: "%02d:%02d", minutes, secs)
     }
 
     // MARK: - Language Detection

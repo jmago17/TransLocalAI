@@ -57,6 +57,9 @@
     "Available Shortcuts" : {
 
     },
+    "Basque (Euskara)" : {
+
+    },
     "Cancel" : {
       "localizations" : {
         "es" : {
@@ -148,6 +151,9 @@
         }
       }
     },
+    "Downloading Whisper model..." : {
+
+    },
     "Duration" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -168,6 +174,9 @@
           }
         }
       }
+    },
+    "Engine" : {
+
     },
     "English (US)" : {
       "localizations" : {
@@ -204,6 +213,7 @@
       }
     },
     "Fast, private transcription using Apple's on-device speech recognition. No internet required." : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -400,6 +410,7 @@
       }
     },
     "On-Device Transcription" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -616,6 +627,9 @@
           }
         }
       }
+    },
+    "This is a one-time download and will be reused offline" : {
+
     },
     "This may take a few moments" : {
       "localizations" : {
