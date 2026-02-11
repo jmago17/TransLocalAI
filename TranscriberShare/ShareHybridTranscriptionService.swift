@@ -326,7 +326,27 @@ private final class WhisperKitSession {
         options.task = .transcribe
         options.language = language
         let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
-        return results.map { $0.text }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        var lines: [String] = []
+        for result in results {
+            for segment in result.segments {
+                let text = segment.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !text.isEmpty else { continue }
+                let stamp = Self.formatTimestamp(Double(segment.start))
+                lines.append("[\(stamp)] \(text)")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private static func formatTimestamp(_ seconds: Double) -> String {
+        let total = Int(seconds)
+        let h = total / 3600
+        let m = (total % 3600) / 60
+        let s = total % 60
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        }
+        return String(format: "%02d:%02d", m, s)
     }
 
     func detectLanguage(audioURL: URL) async throws -> String? {
