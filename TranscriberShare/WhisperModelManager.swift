@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(WhisperKit)
+import WhisperKit
+#endif
 
 actor WhisperModelManager {
     static let shared = WhisperModelManager()
@@ -38,8 +41,21 @@ actor WhisperModelManager {
             throw TranscriptionEngineError.modelUnavailable
         }
         progress?(0)
+        #if canImport(WhisperKit)
+        let modelFolderURL = try await WhisperKit.download(
+            variant: descriptor.modelId,
+            progressCallback: { downloadProgress in
+                Task { @MainActor in
+                    progress?(downloadProgress.fractionCompleted)
+                }
+            }
+        )
+        progress?(1)
+        return modelFolderURL.path
+        #else
         progress?(1)
         return descriptor.modelId
+        #endif
     }
 
     private func normalize(_ lang: String) -> String {
@@ -59,7 +75,7 @@ enum WhisperModelCatalog {
         WhisperModelManager.ModelDescriptor(
             identifier: "whisper-small",
             displayName: "Whisper Small",
-            modelId: "openai/whisper-small",
+            modelId: "openai_whisper-small",
             supportedLanguages: [],
             estimatedSizeMB: 466
         )

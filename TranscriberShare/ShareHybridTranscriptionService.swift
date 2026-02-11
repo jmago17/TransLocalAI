@@ -315,7 +315,8 @@ private final class WhisperKitSession {
     private let language: String?
 
     init(modelId: String, language: String?) async throws {
-        let config = WhisperKitConfig(model: modelId)
+        // modelId is now a local folder path returned by WhisperKit.download()
+        let config = WhisperKitConfig(modelFolder: modelId)
         self.language = language
         self.whisper = try await WhisperKit(config)
     }

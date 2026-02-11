@@ -11,6 +11,8 @@ import UniformTypeIdentifiers
 import AVFoundation
 import Foundation
 import Speech
+import ActivityKit
+import BackgroundTasks
 
 struct ImportAudioView: View {
     @Environment(\.modelContext) private var modelContext
@@ -30,6 +32,9 @@ struct ImportAudioView: View {
     private let hybridService = HybridTranscriptionService()
     @State private var hasPermission = false
     @State private var transcriptionTask: Task<Void, Never>?  // Track the transcription task
+    @State private var liveActivity: Activity<TranscriptionActivityAttributes>?
+    @State private var transcriptionStartDate: Date?
+    @State private var elapsedTimer: Timer?
     
     var body: some View {
         NavigationStack {
@@ -59,6 +64,7 @@ struct ImportAudioView: View {
                             transcriptionTask?.cancel()
                             isTranscribing = false
                             isDetectingLanguage = false
+                            endLiveActivity()
                         }
                         dismiss()
                     }
@@ -312,16 +318,29 @@ struct ImportAudioView: View {
     
     private func transcribeAudio() {
         guard let audioURL = selectedFileURL else { return }
-        
+
         isTranscribing = true
-        
+
+        // Start Live Activity
+        startLiveActivity(fileName: audioURL.lastPathComponent)
+
+        // Request background processing time
+        let bgTaskRequest = BGContinuedProcessingTaskRequest(
+            identifier: TranscriberApp.bgTaskIdentifier,
+            title: "Transcribing audio",
+            subtitle: audioURL.lastPathComponent
+        )
+        bgTaskRequest.earliestBeginDate = nil
+        try? BGTaskScheduler.shared.submit(bgTaskRequest)
+
         transcriptionTask = Task {
             do {
                 var languageToUse = selectedLanguage
-                
+
                 if useAutoDetect {
                     try Task.checkCancellation()
                     isDetectingLanguage = true
+                    updateLiveActivity(phase: "Detecting language...", progress: 0)
                     do {
                         languageToUse = try await hybridService.detectLanguage(audioURL: audioURL, preferApple: true)
                     } catch {
@@ -330,29 +349,35 @@ struct ImportAudioView: View {
                     print("Detected language: \(languageToUse)")
                     isDetectingLanguage = false
                 }
-                
+
                 try Task.checkCancellation()
 
                 if hybridService.engineKind(for: languageToUse, engine: selectedEngine) == .whisper {
                     isPreparingWhisperModel = true
                     whisperDownloadProgress = 0
+                    updateLiveActivity(phase: "Downloading model...", progress: 0)
                     defer { isPreparingWhisperModel = false }
                     try await hybridService.prepareModelIfNeeded(language: languageToUse, engine: selectedEngine) { progress in
                         Task { @MainActor in
                             self.whisperDownloadProgress = progress
+                            self.updateLiveActivity(phase: "Downloading model... \(Int(progress * 100))%", progress: progress * 0.3)
                         }
                     }
                 }
 
+                updateLiveActivity(phase: "Transcribing...", progress: 0.3)
+
                 let result = try await hybridService.transcribe(audioURL: audioURL, language: languageToUse, engine: selectedEngine)
                 let transcriptionText = result.text
                 let duration = result.duration
-                
+
+                updateLiveActivity(phase: "Saving...", progress: 0.95)
+
                 // Save to SwiftData
                 // Extract clean title from filename (remove timestamp and file extension)
                 let filename = audioURL.deletingPathExtension().lastPathComponent
                 let cleanTitle: String
-                
+
                 // Remove timestamp pattern (e.g., "-1702677600") from the end
                 if let lastDashIndex = filename.lastIndex(of: "-"),
                    let timestampPart = filename[filename.index(after: lastDashIndex)...].first,
@@ -361,7 +386,7 @@ struct ImportAudioView: View {
                 } else {
                     cleanTitle = filename.replacingOccurrences(of: "-", with: " ")
                 }
-                
+
                 let transcription = Transcription(
                     title: cleanTitle.capitalized,
                     transcriptionText: transcriptionText,
@@ -370,25 +395,100 @@ struct ImportAudioView: View {
                     audioFileURL: audioURL.lastPathComponent,
                     engineUsed: (result.engineUsed == .appleSpeech ? "apple" : "whisper")
                 )
-                
+
                 modelContext.insert(transcription)
                 try modelContext.save()
-                
+
+                updateLiveActivity(phase: "Complete", progress: 1.0)
+                endLiveActivity()
+
                 isTranscribing = false
                 dismiss()
             } catch is CancellationError {
                 // Task was cancelled - just clean up and dismiss
                 isTranscribing = false
                 isDetectingLanguage = false
+                endLiveActivity()
                 print("Transcription cancelled by user")
                 dismiss()
             } catch {
                 isTranscribing = false
                 isDetectingLanguage = false
+                endLiveActivity()
                 errorMessage = "Transcription failed: \(error.localizedDescription)"
                 showError = true
             }
         }
+    }
+
+    // MARK: - Live Activity
+
+    private func startLiveActivity(fileName: String) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let attributes = TranscriptionActivityAttributes(
+            fileName: fileName,
+            engine: selectedEngine.rawValue
+        )
+        let initialState = TranscriptionActivityAttributes.ContentState(
+            progress: 0,
+            phase: "Starting...",
+            elapsedSeconds: 0
+        )
+
+        do {
+            liveActivity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: initialState, staleDate: nil)
+            )
+        } catch {
+            print("Failed to start Live Activity: \(error)")
+        }
+
+        // Start elapsed time timer
+        transcriptionStartDate = Date()
+        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            guard let start = transcriptionStartDate else { return }
+            let elapsed = Int(Date().timeIntervalSince(start))
+            guard let activity = liveActivity else { return }
+            let updated = TranscriptionActivityAttributes.ContentState(
+                progress: activity.content.state.progress,
+                phase: activity.content.state.phase,
+                elapsedSeconds: elapsed
+            )
+            Task {
+                await activity.update(.init(state: updated, staleDate: nil))
+            }
+        }
+    }
+
+    private func updateLiveActivity(phase: String, progress: Double) {
+        guard let activity = liveActivity else { return }
+        let elapsed = transcriptionStartDate.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        let state = TranscriptionActivityAttributes.ContentState(
+            progress: progress,
+            phase: phase,
+            elapsedSeconds: elapsed
+        )
+        Task {
+            await activity.update(.init(state: state, staleDate: nil))
+        }
+    }
+
+    private func endLiveActivity() {
+        elapsedTimer?.invalidate()
+        elapsedTimer = nil
+        transcriptionStartDate = nil
+        guard let activity = liveActivity else { return }
+        let finalState = TranscriptionActivityAttributes.ContentState(
+            progress: 1.0,
+            phase: "Complete",
+            elapsedSeconds: 0
+        )
+        Task {
+            await activity.end(.init(state: finalState, staleDate: nil), dismissalPolicy: .immediate)
+        }
+        liveActivity = nil
     }
 }
 

@@ -7,9 +7,12 @@
 
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct TranscriberApp: App {
+    static let bgTaskIdentifier = "com.josumartinez.transcriber.transcription"
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
@@ -28,9 +31,28 @@ struct TranscriberApp: App {
             ContentView()
                 .onAppear {
                     importPendingTranscriptions()
+                    registerBackgroundTask()
                 }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    private func registerBackgroundTask() {
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: Self.bgTaskIdentifier,
+            using: nil
+        ) { task in
+            guard let bgTask = task as? BGContinuedProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            // The actual transcription work is driven by ImportAudioView.
+            // This handler keeps the process alive; cancellation is handled via
+            // the task's expirationHandler set at submission time.
+            bgTask.expirationHandler = {
+                bgTask.setTaskCompleted(success: false)
+            }
+        }
     }
 
     /// Import transcriptions created by the Share Extension

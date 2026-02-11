@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(WhisperKit)
+import WhisperKit
+#endif
 
 // MARK: - Gestión de modelo Whisper (descarga/caché)
 actor WhisperModelManager {
@@ -39,9 +42,23 @@ actor WhisperModelManager {
             throw TranscriptionEngineError.modelUnavailable
         }
         progress?(0)
-        // WhisperKit manages download + cache by model ID (e.g., Hugging Face ID).
+        // Let WhisperKit download the model from the default Hugging Face repo.
+        // This returns the local folder path once downloaded/cached.
+        #if canImport(WhisperKit)
+        let modelFolderURL = try await WhisperKit.download(
+            variant: descriptor.modelId,
+            progressCallback: { downloadProgress in
+                Task { @MainActor in
+                    progress?(downloadProgress.fractionCompleted)
+                }
+            }
+        )
+        progress?(1)
+        return modelFolderURL.path
+        #else
         progress?(1)
         return descriptor.modelId
+        #endif
     }
 
     private func normalize(_ lang: String) -> String {

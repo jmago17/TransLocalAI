@@ -13,6 +13,7 @@
 		A97B592B2EF041BA00216DE0 /* SampleAudioHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */; };
 		A9A1C0033B00000100000003 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
 		A9A1C0073B00000300000007 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
+		A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +38,13 @@
 			remoteGlobalIDString = A950DED12EF038E100CF2226;
 			remoteInfo = Transcriber;
 		};
+		A9B0E0022F0B000100000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A950DECA2EF038E100CF2226 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A9B0E0102F0B000100000010;
+			remoteInfo = TranscriberWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,6 +55,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				A928265A2EF5455C001B6365 /* TranscriberShare.appex in Embed Foundation Extensions */,
+				A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -61,6 +70,7 @@
 		A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAudioHelper.swift; sourceTree = "<group>"; };
+		A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -78,6 +88,13 @@
 			);
 			target = A950DED12EF038E100CF2226 /* Transcriber */;
 		};
+		A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				TranscriptionActivityAttributes.swift,
+			);
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -93,6 +110,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				A97B592D2EF0824C00216DE0 /* Exceptions for "Transcriber" folder in "Transcriber" target */,
+				A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */,
 			);
 			path = Transcriber;
 			sourceTree = "<group>";
@@ -105,6 +123,11 @@
 		A950DEEE2EF038E200CF2226 /* TranscriberUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = TranscriberUITests;
+			sourceTree = "<group>";
+		};
+		A9B0E0042F0B000100000004 /* TranscriberWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TranscriberWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -142,6 +165,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A9B0E0052F0B000100000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -161,6 +191,7 @@
 				A950DEE42EF038E200CF2226 /* TranscriberTests */,
 				A950DEEE2EF038E200CF2226 /* TranscriberUITests */,
 				A92826512EF5455C001B6365 /* TranscriberShare */,
+				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
 				A950DED32EF038E100CF2226 /* Products */,
 				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
 				A92826652EF74C58001B6365 /* Frameworks */,
@@ -174,6 +205,7 @@
 				A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */,
 				A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */,
 				A92826502EF5455C001B6365 /* TranscriberShare.appex */,
+				A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -217,6 +249,7 @@
 			);
 			dependencies = (
 				A92826592EF5455C001B6365 /* PBXTargetDependency */,
+				A9B0E00F2F0B000100000009 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A950DED42EF038E100CF2226 /* Transcriber */,
@@ -275,6 +308,28 @@
 			productReference = A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A9B0E0102F0B000100000010 /* TranscriberWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A9B0E00A2F0B00010000000A /* Build configuration list for PBXNativeTarget "TranscriberWidgets" */;
+			buildPhases = (
+				A9B0E0062F0B000100000006 /* Sources */,
+				A9B0E0052F0B000100000005 /* Frameworks */,
+				A9B0E0072F0B000100000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
+			);
+			name = TranscriberWidgets;
+			packageProductDependencies = (
+			);
+			productName = TranscriberWidgets;
+			productReference = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -298,6 +353,9 @@
 					A950DEEA2EF038E200CF2226 = {
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = A950DED12EF038E100CF2226;
+					};
+					A9B0E0102F0B000100000010 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -323,6 +381,7 @@
 				A950DEE02EF038E200CF2226 /* TranscriberTests */,
 				A950DEEA2EF038E200CF2226 /* TranscriberUITests */,
 				A928264F2EF5455C001B6365 /* TranscriberShare */,
+				A9B0E0102F0B000100000010 /* TranscriberWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -350,6 +409,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A950DEE92EF038E200CF2226 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9B0E0072F0B000100000007 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -388,6 +454,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A9B0E0062F0B000100000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -405,6 +478,11 @@
 			isa = PBXTargetDependency;
 			target = A950DED12EF038E100CF2226 /* Transcriber */;
 			targetProxy = A950DEEC2EF038E200CF2226 /* PBXContainerItemProxy */;
+		};
+		A9B0E00F2F0B000100000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+			targetProxy = A9B0E0022F0B000100000002 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -796,6 +874,65 @@
 			};
 			name = Release;
 		};
+		A9B0E00B2F0B00010000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A9B0E00C2F0B00010000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.1;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -840,6 +977,15 @@
 			buildConfigurations = (
 				A950DEFC2EF038E200CF2226 /* Debug */,
 				A950DEFD2EF038E200CF2226 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A9B0E00A2F0B00010000000A /* Build configuration list for PBXNativeTarget "TranscriberWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A9B0E00B2F0B00010000000B /* Debug */,
+				A9B0E00C2F0B00010000000C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

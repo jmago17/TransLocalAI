@@ -10,5 +10,11 @@
 	<array>
 		<dict/>
 	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.josumartinez.transcriber.transcription</string>
+	</array>
 </dict>
 </plist>
