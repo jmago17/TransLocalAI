@@ -95,6 +95,13 @@
 			);
 			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
 		};
+		A9B0E00D2F0B00010000000D /* Exceptions for "TranscriberWidgets" folder in "TranscriberWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -127,6 +134,9 @@
 		};
 		A9B0E0042F0B000100000004 /* TranscriberWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A9B0E00D2F0B00010000000D /* Exceptions for "TranscriberWidgets" folder in "TranscriberWidgets" target */,
+			);
 			path = TranscriberWidgets;
 			sourceTree = "<group>";
 		};
@@ -881,6 +891,7 @@
 				CURRENT_PROJECT_VERSION = 1.1;
 				DEVELOPMENT_TEAM = ES2766ARHJ;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -910,6 +921,7 @@
 				CURRENT_PROJECT_VERSION = 1.1;
 				DEVELOPMENT_TEAM = ES2766ARHJ;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
