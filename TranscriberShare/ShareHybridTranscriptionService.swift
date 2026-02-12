@@ -315,8 +315,15 @@ private final class WhisperKitSession {
     private let language: String?
 
     init(modelId: String, language: String?) async throws {
-        // modelId is now a local folder path returned by WhisperKit.download()
-        let config = WhisperKitConfig(modelFolder: modelId)
+        // modelId is a local folder path returned by WhisperKit.download()
+        // e.g. ".../argmaxinc/whisperkit-coreml/openai_whisper-small"
+        // modelFolder = parent directory, model = last path component
+        let modelURL = URL(fileURLWithPath: modelId)
+        let config = WhisperKitConfig(
+            model: modelURL.lastPathComponent,
+            modelFolder: modelURL.deletingLastPathComponent().path,
+            download: false
+        )
         self.language = language
         self.whisper = try await WhisperKit(config)
     }
@@ -329,13 +336,18 @@ private final class WhisperKitSession {
         var lines: [String] = []
         for result in results {
             for segment in result.segments {
-                let text = segment.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                let text = Self.stripSpecialTokens(segment.text)
                 guard !text.isEmpty else { continue }
                 let stamp = Self.formatTimestamp(Double(segment.start))
                 lines.append("[\(stamp)] \(text)")
             }
         }
         return lines.joined(separator: "\n")
+    }
+
+    private static func stripSpecialTokens(_ text: String) -> String {
+        text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func formatTimestamp(_ seconds: Double) -> String {
