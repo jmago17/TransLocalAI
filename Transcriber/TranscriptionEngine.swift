@@ -180,6 +180,7 @@ private actor WhisperKitSessionCache {
 
 private final class WhisperKitSession {
     private let whisper: WhisperKit
+    /// ISO 639-1 code (e.g. "en", "es", "eu") — WhisperKit does not accept BCP-47 region tags.
     private let language: String?
 
     init(modelId: String, language: String?) async throws {
@@ -190,8 +191,17 @@ private final class WhisperKitSession {
             modelFolder: modelId,
             download: false
         )
-        self.language = language
+        // WhisperKit expects ISO 639-1 codes ("en", "es"), not BCP-47 ("en-US", "es-ES")
+        self.language = language.map { Self.toISO639($0) }
         self.whisper = try await WhisperKit(config)
+    }
+
+    /// Converts a BCP-47 tag (e.g. "en-US") to its ISO 639-1 base ("en").
+    private static func toISO639(_ code: String) -> String {
+        if let hyphen = code.firstIndex(of: "-") {
+            return String(code[..<hyphen])
+        }
+        return code
     }
 
     func transcribe(audioURL: URL) async throws -> String {
