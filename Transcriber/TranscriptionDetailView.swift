@@ -110,7 +110,10 @@ struct TranscriptionDetailView: View {
                 // Metadata section
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Label(transcription.language, systemImage: "globe")
+                        Label(
+                            transcription.language == "multilingual" ? "Multilingual" : transcription.language,
+                            systemImage: "globe"
+                        )
                         Spacer()
                         Label(formatDuration(transcription.duration), systemImage: "clock")
                     }

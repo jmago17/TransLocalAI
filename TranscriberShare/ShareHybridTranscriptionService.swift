@@ -272,14 +272,16 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
 
     func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
 #if canImport(WhisperKit)
-        let normalized = normalize(language)
+        let isMultilingual = language == "multilingual"
+        let normalized = isMultilingual ? "eu-ES" : normalize(language)
+        let sessionLanguage: String? = isMultilingual ? nil : normalized
         let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
         let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
-        let session = try await sessionCache.session(modelId: modelId, language: normalized)
+        let session = try await sessionCache.session(modelId: modelId, language: sessionLanguage)
         let text = try await session.transcribe(audioURL: audioURL)
         let audioFile = try? AVAudioFile(forReading: audioURL)
         let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
-        return TranscriptionResult(text: text, language: normalized, duration: duration, engineUsed: .whisper)
+        return TranscriptionResult(text: text, language: language, duration: duration, engineUsed: .whisper)
 #else
         throw TranscriptionEngineError.unimplemented
 #endif
@@ -411,6 +413,12 @@ final class HybridTranscriptionService {
     }
 
     func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, progress: (@Sendable (Double) -> Void)?) async throws {
+        if language == "multilingual" {
+            if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
+                try await preparer.prepareModel(for: "eu-ES", progress: progress)
+            }
+            return
+        }
         let normalized = normalize(language)
         guard engine == .whisper || (engine == .auto && shouldUseWhisper(for: normalized)) else { return }
         if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
@@ -419,6 +427,7 @@ final class HybridTranscriptionService {
     }
 
     func engineKind(for language: String, engine: EnginePreference = .auto) -> TranscriptionResult.EngineKind {
+        if language == "multilingual" { return .whisper }
         switch engine {
         case .apple: return .appleSpeech
         case .whisper: return .whisper
@@ -429,6 +438,9 @@ final class HybridTranscriptionService {
     }
 
     func transcribe(audioURL: URL, language: String, engine: EnginePreference = .auto) async throws -> TranscriptionResult {
+        if language == "multilingual" {
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: "multilingual")
+        }
         let normalized = normalize(language)
         switch engine {
         case .apple:

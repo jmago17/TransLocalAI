@@ -198,8 +198,8 @@ struct TranscriptionRowView: View {
 
     // TODO: Mostrar motor usado (Apple/Whisper) en la fila si está disponible en el modelo
     private var languageIcon: String {
-        if transcription.language.hasPrefix("es") {
-            return "flag.fill"
+        if transcription.language == "multilingual" {
+            return "globe"
         } else {
             return "flag.fill"
         }

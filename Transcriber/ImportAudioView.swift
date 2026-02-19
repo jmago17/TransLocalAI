@@ -144,8 +144,14 @@ struct ImportAudioView: View {
                             Text("English (US)").tag("en-US")
                             Text("Spanish (Spain)").tag("es-ES")
                             Text("Basque (Euskara)").tag("eu-ES")
+                            Text("Multilingual").tag("multilingual")
                         }
                         .pickerStyle(.segmented)
+                        .onChange(of: selectedLanguage) {
+                            if selectedLanguage == "multilingual" {
+                                selectedEngine = .whisper
+                            }
+                        }
                     } else {
                         Text("Language will be automatically detected")
                             .font(.caption)
@@ -166,6 +172,7 @@ struct ImportAudioView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .disabled(selectedLanguage == "multilingual")
 
                     Text(engineDescription)
                         .font(.caption)
@@ -257,6 +264,9 @@ struct ImportAudioView: View {
     }
     
     private var engineDescription: String {
+        if selectedLanguage == "multilingual" {
+            return "Multilingual mode requires WhisperKit for per-segment language detection."
+        }
         switch selectedEngine {
         case .auto:
             return "Automatically selects the best engine for the language."
@@ -336,8 +346,9 @@ struct ImportAudioView: View {
         transcriptionTask = Task {
             do {
                 var languageToUse = selectedLanguage
+                let isMultilingual = selectedLanguage == "multilingual"
 
-                if useAutoDetect {
+                if useAutoDetect && !isMultilingual {
                     try Task.checkCancellation()
                     isDetectingLanguage = true
                     updateLiveActivity(phase: "Detecting language...", progress: 0)
