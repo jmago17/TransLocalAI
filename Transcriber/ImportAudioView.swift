@@ -269,7 +269,7 @@ struct ImportAudioView: View {
         }
         switch selectedEngine {
         case .auto:
-            return "Automatically selects the best engine for the language."
+            return "Uses WhisperKit by default for all languages."
         case .apple:
             return "Apple SpeechAnalyzer: fast, on-device transcription."
         case .whisper:
@@ -353,7 +353,7 @@ struct ImportAudioView: View {
                     isDetectingLanguage = true
                     updateLiveActivity(phase: "Detecting language...", progress: 0)
                     do {
-                        languageToUse = try await hybridService.detectLanguage(audioURL: audioURL, preferApple: true)
+                        languageToUse = try await hybridService.detectLanguage(audioURL: audioURL)
                     } catch {
                         languageToUse = selectedLanguage
                     }

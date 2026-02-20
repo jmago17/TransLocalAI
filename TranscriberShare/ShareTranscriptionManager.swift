@@ -20,7 +20,7 @@ class ShareTranscriptionManager {
     }
 
     func detectLanguage(audioURL: URL) async throws -> String {
-        return try await hybridService.detectLanguage(audioURL: audioURL, preferApple: true)
+        return try await hybridService.detectLanguage(audioURL: audioURL)
     }
 
     func transcribe(audioURL: URL, language: String) async throws -> String {

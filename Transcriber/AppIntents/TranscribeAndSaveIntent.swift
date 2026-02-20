@@ -88,7 +88,7 @@ struct TranscribeAndSaveIntent: AppIntent {
             
             if autoDetect {
                 do {
-                    languageToUse = try await hybridService.detectLanguage(audioURL: temporaryFileURL, preferApple: true)
+                    languageToUse = try await hybridService.detectLanguage(audioURL: temporaryFileURL)
                 } catch {
                     languageToUse = language
                 }

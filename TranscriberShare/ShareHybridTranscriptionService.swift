@@ -235,7 +235,7 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
     }
 }
 
-// MARK: - WhisperKit Engine (fallback)
+// MARK: - WhisperKit Engine (default)
 
 final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
     private let modelManager: WhisperModelManager
@@ -402,12 +402,16 @@ final class HybridTranscriptionService {
         self.whisperEngine = whisperEngine
     }
 
-    func detectLanguage(audioURL: URL, preferApple: Bool = true) async throws -> String {
+    func detectLanguage(audioURL: URL, preferApple: Bool = false) async throws -> String {
         if preferApple, let appleLang = try? await appleEngine.detectLanguage(audioURL: audioURL) {
             return normalize(appleLang)
         }
         if let whisperLang = try? await whisperEngine.detectLanguage(audioURL: audioURL) {
             return normalize(whisperLang)
+        }
+        // Fallback to Apple if WhisperKit detection failed
+        if let appleLang = try? await appleEngine.detectLanguage(audioURL: audioURL) {
+            return normalize(appleLang)
         }
         return "eu-ES"
     }
@@ -420,7 +424,8 @@ final class HybridTranscriptionService {
             return
         }
         let normalized = normalize(language)
-        guard engine == .whisper || (engine == .auto && shouldUseWhisper(for: normalized)) else { return }
+        // Prepare WhisperKit model for both .auto and .whisper (WhisperKit is the default)
+        guard engine == .whisper || engine == .auto else { return }
         if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
             try await preparer.prepareModel(for: normalized, progress: progress)
         }
@@ -430,10 +435,7 @@ final class HybridTranscriptionService {
         if language == "multilingual" { return .whisper }
         switch engine {
         case .apple: return .appleSpeech
-        case .whisper: return .whisper
-        case .auto:
-            let normalized = normalize(language)
-            return shouldUseWhisper(for: normalized) ? .whisper : .appleSpeech
+        case .whisper, .auto: return .whisper
         }
     }
 
@@ -445,31 +447,9 @@ final class HybridTranscriptionService {
         switch engine {
         case .apple:
             return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
-        case .whisper:
-            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
-        case .auto:
-            if shouldUseWhisper(for: normalized) {
-                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
-            }
-            if shouldUseApple(for: normalized) {
-                return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
-            }
+        case .whisper, .auto:
             return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
         }
-    }
-
-    private func shouldUseApple(for language: String) -> Bool {
-        if isBasque(language) { return false }
-        return ShareAppleSpeechEngine.supportedLanguages.contains(language)
-    }
-
-    private func shouldUseWhisper(for language: String) -> Bool {
-        if isBasque(language) { return true }
-        return !ShareAppleSpeechEngine.supportedLanguages.contains(language)
-    }
-
-    private func isBasque(_ language: String) -> Bool {
-        return normalize(language).hasPrefix("eu")
     }
 
     private func normalize(_ lang: String) -> String {
