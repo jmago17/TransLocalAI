@@ -334,7 +334,7 @@ struct ImportAudioView: View {
         // Start Live Activity
         startLiveActivity(fileName: audioURL.lastPathComponent)
 
-        // Request background processing time
+        // Request background processing time (BGContinuedProcessingTask for longer runs)
         let bgTaskRequest = BGContinuedProcessingTaskRequest(
             identifier: TranscriberApp.bgTaskIdentifier,
             title: "Transcribing audio",
@@ -342,6 +342,24 @@ struct ImportAudioView: View {
         )
         bgTaskRequest.earliestBeginDate = nil
         try? BGTaskScheduler.shared.submit(bgTaskRequest)
+
+        // Additional safety net: UIKit background task gives ~30s immediately when app backgrounds
+        var uiBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+        uiBackgroundTaskID = UIApplication.shared.beginBackgroundTask {
+            // Expiration: cancel transcription and end live activity gracefully
+            self.transcriptionTask?.cancel()
+            self.endLiveActivity()
+            if uiBackgroundTaskID != .invalid {
+                UIApplication.shared.endBackgroundTask(uiBackgroundTaskID)
+                uiBackgroundTaskID = .invalid
+            }
+        }
+
+        // Wire BG task expiration to cancel the transcription
+        TranscriberApp.onBGTaskExpiration = {
+            self.transcriptionTask?.cancel()
+            self.endLiveActivity()
+        }
 
         transcriptionTask = Task {
             do {
@@ -413,6 +431,15 @@ struct ImportAudioView: View {
                 updateLiveActivity(phase: "Complete", progress: 1.0)
                 endLiveActivity()
 
+                // Signal BG tasks completed successfully
+                TranscriberApp.currentBGTask?.setTaskCompleted(success: true)
+                TranscriberApp.currentBGTask = nil
+                TranscriberApp.onBGTaskExpiration = nil
+                if uiBackgroundTaskID != .invalid {
+                    UIApplication.shared.endBackgroundTask(uiBackgroundTaskID)
+                    uiBackgroundTaskID = .invalid
+                }
+
                 isTranscribing = false
                 dismiss()
             } catch is CancellationError {
@@ -420,12 +447,26 @@ struct ImportAudioView: View {
                 isTranscribing = false
                 isDetectingLanguage = false
                 endLiveActivity()
+                TranscriberApp.currentBGTask?.setTaskCompleted(success: false)
+                TranscriberApp.currentBGTask = nil
+                TranscriberApp.onBGTaskExpiration = nil
+                if uiBackgroundTaskID != .invalid {
+                    UIApplication.shared.endBackgroundTask(uiBackgroundTaskID)
+                    uiBackgroundTaskID = .invalid
+                }
                 print("Transcription cancelled by user")
                 dismiss()
             } catch {
                 isTranscribing = false
                 isDetectingLanguage = false
                 endLiveActivity()
+                TranscriberApp.currentBGTask?.setTaskCompleted(success: false)
+                TranscriberApp.currentBGTask = nil
+                TranscriberApp.onBGTaskExpiration = nil
+                if uiBackgroundTaskID != .invalid {
+                    UIApplication.shared.endBackgroundTask(uiBackgroundTaskID)
+                    uiBackgroundTaskID = .invalid
+                }
                 errorMessage = "Transcription failed: \(error.localizedDescription)"
                 showError = true
             }

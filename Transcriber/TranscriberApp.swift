@@ -13,6 +13,11 @@ import BackgroundTasks
 struct TranscriberApp: App {
     static let bgTaskIdentifier = "com.josumartinez.transcriber.transcription"
 
+    /// Holds the current BGContinuedProcessingTask so ImportAudioView can mark it complete.
+    @MainActor static var currentBGTask: BGContinuedProcessingTask?
+    /// Called when the BG task expires — ImportAudioView sets this to cancel the transcription.
+    @MainActor static var onBGTaskExpiration: (() -> Void)?
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
@@ -46,10 +51,19 @@ struct TranscriberApp: App {
                 task.setTaskCompleted(success: false)
                 return
             }
-            // The actual transcription work is driven by ImportAudioView.
-            // This handler keeps the process alive; cancellation is handled via
-            // the task's expirationHandler set at submission time.
+
+            // Store the task so ImportAudioView can call setTaskCompleted
+            Task { @MainActor in
+                TranscriberApp.currentBGTask = bgTask
+            }
+
             bgTask.expirationHandler = {
+                // System is reclaiming background time — cancel the transcription gracefully
+                Task { @MainActor in
+                    TranscriberApp.onBGTaskExpiration?()
+                    TranscriberApp.currentBGTask = nil
+                    TranscriberApp.onBGTaskExpiration = nil
+                }
                 bgTask.setTaskCompleted(success: false)
             }
         }

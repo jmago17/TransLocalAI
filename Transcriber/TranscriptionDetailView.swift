@@ -27,6 +27,7 @@ struct TranscriptionDetailView: View {
     @State private var canMergeNotes = false  // True when notes are in parts and can be merged
     @State private var rawChunkSummaries: [String] = []  // Store raw summaries for merging
     @State private var isMerging = false
+    @State private var showCorrectionReview = false
 
     private let defaultPrompt = """
     provide detailed notes for the following meeting:
@@ -67,6 +68,16 @@ struct TranscriptionDetailView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button {
+                            showCorrectionReview = true
+                        } label: {
+                            Label("AI Review", systemImage: "text.badge.checkmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                         .controlSize(.large)
                         .disabled(transcription.transcriptionText.isEmpty)
 
@@ -270,8 +281,13 @@ struct TranscriptionDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showCorrectionReview) {
+            if #available(iOS 26, macOS 26, *) {
+                CorrectionReviewView(transcription: transcription)
+            }
+        }
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
         let seconds = Int(duration) % 60
