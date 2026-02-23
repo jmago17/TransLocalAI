@@ -187,7 +187,7 @@ private final class WhisperKitSession {
 
     init(modelId: String, language: String?) async throws {
         // modelId is a local folder path returned by WhisperKit.download()
-        // e.g. ".../argmaxinc/whisperkit-coreml/openai_whisper-small"
+        // e.g. ".../argmaxinc/whisperkit-coreml/openai_whisper-medium"
         // modelFolder must be the full path to the directory containing .mlmodelc files
         let config = WhisperKitConfig(
             modelFolder: modelId,
