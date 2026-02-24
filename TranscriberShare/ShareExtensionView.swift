@@ -100,7 +100,9 @@ struct ShareExtensionView: View {
             .frame(maxHeight: 300)
 
             HStack(spacing: 16) {
-                ShareLink(item: transcribedText) {
+                Button {
+                    shareText(transcribedText)
+                } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
@@ -137,6 +139,20 @@ struct ShareExtensionView: View {
             }
             .buttonStyle(.borderedProminent)
         }
+    }
+
+    private func shareText(_ text: String) {
+        let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        // In an app extension, walk the view hierarchy to find the presenting view controller
+        guard let scene = UIApplication.value(forKeyPath: "sharedApplication.connectedScenes") as? Set<UIScene>,
+              let windowScene = scene.first as? UIWindowScene,
+              let rootVC = windowScene.keyWindow?.rootViewController else { return }
+        var presenter = rootVC
+        while let presented = presenter.presentedViewController {
+            presenter = presented
+        }
+        activityVC.popoverPresentationController?.sourceView = presenter.view
+        presenter.present(activityVC, animated: true)
     }
 
     private func handleSharedContent() async {
