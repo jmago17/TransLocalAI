@@ -34,8 +34,11 @@ struct ContentView: View {
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     
     @State private var showImportView = false
+    @State private var showRecordView = false
     @State private var showShortcutsGuide = false
     @State private var searchText = ""
+
+    private var recorder: AudioRecorderManager { AudioRecorderManager.shared }
 
     var body: some View {
         NavigationSplitView {
@@ -50,8 +53,15 @@ struct ContentView: View {
             .searchable(text: $searchText, prompt: "Search transcriptions")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showImportView = true }) {
-                        Label("Import Audio", systemImage: "plus.circle.fill")
+                    HStack(spacing: 12) {
+                        Button(action: { showRecordView = true }) {
+                            Label("Record", systemImage: "mic.fill")
+                        }
+                        .tint(.red)
+
+                        Button(action: { showImportView = true }) {
+                            Label("Import Audio", systemImage: "plus.circle.fill")
+                        }
                     }
                 }
 
@@ -79,8 +89,18 @@ struct ContentView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showRecordView) {
+                RecordingView()
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+            }
             .sheet(isPresented: $showShortcutsGuide) {
                 ShortcutsGuideView()
+            }
+            .safeAreaInset(edge: .bottom) {
+                if recorder.isRecording {
+                    recordingIndicatorBar
+                }
             }
         } detail: {
             ContentUnavailableView(
@@ -117,6 +137,35 @@ struct ContentView: View {
         }
     }
     
+    private var recordingIndicatorBar: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(.red)
+                .frame(width: 10, height: 10)
+
+            Text("Recording")
+                .font(.subheadline.weight(.medium))
+
+            Text(recorder.formattedElapsedTime)
+                .font(.subheadline.weight(.medium).monospacedDigit())
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button {
+                showRecordView = true
+            } label: {
+                Text("Open")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
+
     private var filteredTranscriptions: [Transcription] {
         if searchText.isEmpty {
             return transcriptions

@@ -53,5 +53,27 @@ struct TranscriberShortcuts: AppShortcutsProvider {
             shortTitle: "Search Transcriptions",
             systemImageName: "magnifyingglass"
         )
+
+        AppShortcut(
+            intent: StartRecordingIntent(),
+            phrases: [
+                "Start recording with \(.applicationName)",
+                "Record audio with \(.applicationName)",
+                "Start a recording in \(.applicationName)"
+            ],
+            shortTitle: "Start Recording",
+            systemImageName: "mic.fill"
+        )
+
+        AppShortcut(
+            intent: StopRecordingIntent(),
+            phrases: [
+                "Stop recording with \(.applicationName)",
+                "Finish recording in \(.applicationName)",
+                "End recording with \(.applicationName)"
+            ],
+            shortTitle: "Stop Recording",
+            systemImageName: "stop.circle"
+        )
     }
 }
