@@ -57,6 +57,16 @@ struct RecordingView: View {
                 if hasPermission == nil {
                     hasPermission = await recorder.requestPermission()
                 }
+                // Sync with a recording already started externally (e.g. via Shortcut)
+                if recorder.isRecording && !hasStarted {
+                    hasStarted = true
+                }
+            }
+            .onChange(of: recorder.isRecording) { _, isRecording in
+                // Recording stopped externally (Live Activity button or Shortcut intent)
+                if !isRecording && hasStarted && !hasStopped {
+                    dismiss()
+                }
             }
         }
     }

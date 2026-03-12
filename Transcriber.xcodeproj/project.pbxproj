@@ -91,6 +91,10 @@
 		A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				AudioRecorderManager.swift,
+				"AppIntents/StopRecordingLiveActivityIntent.swift",
+				Item.swift,
+				RecordingActivityAttributes.swift,
 				TranscriptionActivityAttributes.swift,
 			);
 			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;

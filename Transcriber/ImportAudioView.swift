@@ -367,24 +367,20 @@ struct ImportAudioView: View {
                 let isMultilingual = selectedLanguage == "multilingual"
 
                 if useAutoDetect && !isMultilingual {
-                    // When using WhisperKit, skip single-language detection and let
-                    // WhisperKit do per-segment detection (multilingual mode).
-                    // This handles mixed-language audio (e.g. Basque + Spanish) correctly.
-                    let engineKind = hybridService.engineKind(for: selectedLanguage, engine: selectedEngine)
-                    if engineKind == .whisper {
+                    try Task.checkCancellation()
+                    isDetectingLanguage = true
+                    updateLiveActivity(phase: "Detecting language...", progress: 0)
+                    do {
+                        languageToUse = try await hybridService.detectLanguage(audioURL: audioURL)
+                    } catch {
+                        languageToUse = selectedLanguage
+                    }
+                    print("Detected language: \(languageToUse)")
+                    isDetectingLanguage = false
+                    // Use multilingual mode only for Basque, which commonly mixes with Spanish
+                    if languageToUse == "eu-ES" {
                         languageToUse = "multilingual"
-                        print("Auto-detect with WhisperKit: using per-segment language detection")
-                    } else {
-                        try Task.checkCancellation()
-                        isDetectingLanguage = true
-                        updateLiveActivity(phase: "Detecting language...", progress: 0)
-                        do {
-                            languageToUse = try await hybridService.detectLanguage(audioURL: audioURL)
-                        } catch {
-                            languageToUse = selectedLanguage
-                        }
-                        print("Detected language: \(languageToUse)")
-                        isDetectingLanguage = false
+                        print("Basque detected: switching to multilingual mode for per-segment detection")
                     }
                 }
 

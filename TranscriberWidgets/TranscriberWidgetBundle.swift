@@ -5,5 +5,6 @@ import WidgetKit
 struct TranscriberWidgetBundle: WidgetBundle {
     var body: some Widget {
         TranscriptionLiveActivity()
+        RecordingLiveActivity()
     }
 }

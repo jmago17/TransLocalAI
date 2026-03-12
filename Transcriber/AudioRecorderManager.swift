@@ -1,4 +1,5 @@
 import AVFoundation
+import ActivityKit
 import Observation
 
 @Observable
@@ -7,6 +8,7 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
 
     var isRecording = false
     var currentRecordingURL: URL?
+    var lastStoppedURL: URL?
     var recordingTitle = ""
     var elapsedTime: TimeInterval = 0
     var audioLevel: Float = 0
@@ -15,6 +17,7 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
     private var elapsedTimer: Timer?
     private var levelTimer: Timer?
     private var recordingStartDate: Date?
+    private var recordingActivity: Activity<RecordingActivityAttributes>?
 
     private override init() {
         super.init()
@@ -65,10 +68,14 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
 
         audioRecorder = recorder
         currentRecordingURL = fileURL
+        lastStoppedURL = nil
         recordingTitle = title
         isRecording = true
         elapsedTime = 0
-        recordingStartDate = Date()
+        let startDate = Date()
+        recordingStartDate = startDate
+
+        startLiveActivity(title: title, startDate: startDate)
 
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self, let start = self.recordingStartDate else { return }
@@ -96,8 +103,11 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         audioRecorder = nil
 
         let url = currentRecordingURL
+        lastStoppedURL = url
         isRecording = false
         audioLevel = 0
+
+        endLiveActivity()
 
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
@@ -119,11 +129,34 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         }
 
         currentRecordingURL = nil
+        lastStoppedURL = nil
         isRecording = false
         elapsedTime = 0
         audioLevel = 0
 
+        endLiveActivity()
+
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // MARK: - Live Activity
+
+    private func startLiveActivity(title: String, startDate: Date) {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let attributes = RecordingActivityAttributes(recordingTitle: title, startDate: startDate)
+        let content = ActivityContent(state: RecordingActivityAttributes.ContentState(), staleDate: nil)
+        recordingActivity = try? Activity<RecordingActivityAttributes>.request(
+            attributes: attributes,
+            content: content
+        )
+    }
+
+    private func endLiveActivity() {
+        guard let activity = recordingActivity else { return }
+        recordingActivity = nil
+        Task {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
     }
 
     // MARK: - AVAudioRecorderDelegate
