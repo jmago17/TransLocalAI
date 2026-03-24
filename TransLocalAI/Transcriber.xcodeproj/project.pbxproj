@@ -1,0 +1,1031 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A928265A2EF5455C001B6365 /* TranscriberShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A92826502EF5455C001B6365 /* TranscriberShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A92826672EF74C58001B6365 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826662EF74C58001B6365 /* FoundationModels.framework */; };
+		A92826692EF74C61001B6365 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826682EF74C61001B6365 /* Foundation.framework */; };
+		A97B592B2EF041BA00216DE0 /* SampleAudioHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */; };
+		A9A1C0033B00000100000003 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
+		A9A1C0073B00000300000007 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
+		A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A92826582EF5455C001B6365 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A950DECA2EF038E100CF2226 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A928264F2EF5455C001B6365;
+			remoteInfo = TranscriberShare;
+		};
+		A950DEE22EF038E200CF2226 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A950DECA2EF038E100CF2226 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A950DED12EF038E100CF2226;
+			remoteInfo = Transcriber;
+		};
+		A950DEEC2EF038E200CF2226 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A950DECA2EF038E100CF2226 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A950DED12EF038E100CF2226;
+			remoteInfo = Transcriber;
+		};
+		A9B0E0022F0B000100000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A950DECA2EF038E100CF2226 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A9B0E0102F0B000100000010;
+			remoteInfo = TranscriberWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A928265F2EF5455C001B6365 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A928265A2EF5455C001B6365 /* TranscriberShare.appex in Embed Foundation Extensions */,
+				A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A92826502EF5455C001B6365 /* TranscriberShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A92826662EF74C58001B6365 /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/FoundationModels.framework; sourceTree = DEVELOPER_DIR; };
+		A92826682EF74C61001B6365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		A950DED22EF038E100CF2226 /* Transcriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Transcriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAudioHelper.swift; sourceTree = "<group>"; };
+		A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A928265E2EF5455C001B6365 /* Exceptions for "TranscriberShare" folder in "TranscriberShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A928264F2EF5455C001B6365 /* TranscriberShare */;
+		};
+		A97B592D2EF0824C00216DE0 /* Exceptions for "Transcriber" folder in "Transcriber" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A950DED12EF038E100CF2226 /* Transcriber */;
+		};
+		A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AudioRecorderManager.swift,
+				"AppIntents/StopRecordingLiveActivityIntent.swift",
+				Item.swift,
+				RecordingActivityAttributes.swift,
+				TranscriptionActivityAttributes.swift,
+			);
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+		};
+		A9B0E00D2F0B00010000000D /* Exceptions for "TranscriberWidgets" folder in "TranscriberWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A92826512EF5455C001B6365 /* TranscriberShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A928265E2EF5455C001B6365 /* Exceptions for "TranscriberShare" folder in "TranscriberShare" target */,
+			);
+			path = TranscriberShare;
+			sourceTree = "<group>";
+		};
+		A950DED42EF038E100CF2226 /* Transcriber */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A97B592D2EF0824C00216DE0 /* Exceptions for "Transcriber" folder in "Transcriber" target */,
+				A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */,
+			);
+			path = Transcriber;
+			sourceTree = "<group>";
+		};
+		A950DEE42EF038E200CF2226 /* TranscriberTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TranscriberTests;
+			sourceTree = "<group>";
+		};
+		A950DEEE2EF038E200CF2226 /* TranscriberUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TranscriberUITests;
+			sourceTree = "<group>";
+		};
+		A9B0E0042F0B000100000004 /* TranscriberWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A9B0E00D2F0B00010000000D /* Exceptions for "TranscriberWidgets" folder in "TranscriberWidgets" target */,
+			);
+			path = TranscriberWidgets;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A928264D2EF5455C001B6365 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A9A1C0073B00000300000007 /* WhisperKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DECF2EF038E100CF2226 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A92826672EF74C58001B6365 /* FoundationModels.framework in Frameworks */,
+				A92826692EF74C61001B6365 /* Foundation.framework in Frameworks */,
+				A9A1C0033B00000100000003 /* WhisperKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEDE2EF038E200CF2226 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEE82EF038E200CF2226 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9B0E0052F0B000100000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A92826652EF74C58001B6365 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A92826682EF74C61001B6365 /* Foundation.framework */,
+				A92826662EF74C58001B6365 /* FoundationModels.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A950DEC92EF038E100CF2226 = {
+			isa = PBXGroup;
+			children = (
+				A950DED42EF038E100CF2226 /* Transcriber */,
+				A950DEE42EF038E200CF2226 /* TranscriberTests */,
+				A950DEEE2EF038E200CF2226 /* TranscriberUITests */,
+				A92826512EF5455C001B6365 /* TranscriberShare */,
+				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
+				A950DED32EF038E100CF2226 /* Products */,
+				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
+				A92826652EF74C58001B6365 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A950DED32EF038E100CF2226 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A950DED22EF038E100CF2226 /* Transcriber.app */,
+				A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */,
+				A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */,
+				A92826502EF5455C001B6365 /* TranscriberShare.appex */,
+				A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A928264F2EF5455C001B6365 /* TranscriberShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A928265B2EF5455C001B6365 /* Build configuration list for PBXNativeTarget "TranscriberShare" */;
+			buildPhases = (
+				A928264C2EF5455C001B6365 /* Sources */,
+				A928264D2EF5455C001B6365 /* Frameworks */,
+				A928264E2EF5455C001B6365 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A92826512EF5455C001B6365 /* TranscriberShare */,
+			);
+			name = TranscriberShare;
+			packageProductDependencies = (
+				A9A1C0023B00000100000002 /* WhisperKit */,
+			);
+			productName = TranscriberShare;
+			productReference = A92826502EF5455C001B6365 /* TranscriberShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		A950DED12EF038E100CF2226 /* Transcriber */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A950DEF52EF038E200CF2226 /* Build configuration list for PBXNativeTarget "Transcriber" */;
+			buildPhases = (
+				A950DECE2EF038E100CF2226 /* Sources */,
+				A950DECF2EF038E100CF2226 /* Frameworks */,
+				A950DED02EF038E100CF2226 /* Resources */,
+				A928265F2EF5455C001B6365 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A92826592EF5455C001B6365 /* PBXTargetDependency */,
+				A9B0E00F2F0B000100000009 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A950DED42EF038E100CF2226 /* Transcriber */,
+			);
+			name = Transcriber;
+			packageProductDependencies = (
+				A9A1C0023B00000100000002 /* WhisperKit */,
+			);
+			productName = Transcriber;
+			productReference = A950DED22EF038E100CF2226 /* Transcriber.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A950DEE02EF038E200CF2226 /* TranscriberTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A950DEF82EF038E200CF2226 /* Build configuration list for PBXNativeTarget "TranscriberTests" */;
+			buildPhases = (
+				A950DEDD2EF038E200CF2226 /* Sources */,
+				A950DEDE2EF038E200CF2226 /* Frameworks */,
+				A950DEDF2EF038E200CF2226 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A950DEE32EF038E200CF2226 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A950DEE42EF038E200CF2226 /* TranscriberTests */,
+			);
+			name = TranscriberTests;
+			packageProductDependencies = (
+			);
+			productName = TranscriberTests;
+			productReference = A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A950DEEA2EF038E200CF2226 /* TranscriberUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A950DEFB2EF038E200CF2226 /* Build configuration list for PBXNativeTarget "TranscriberUITests" */;
+			buildPhases = (
+				A950DEE72EF038E200CF2226 /* Sources */,
+				A950DEE82EF038E200CF2226 /* Frameworks */,
+				A950DEE92EF038E200CF2226 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A950DEED2EF038E200CF2226 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A950DEEE2EF038E200CF2226 /* TranscriberUITests */,
+			);
+			name = TranscriberUITests;
+			packageProductDependencies = (
+			);
+			productName = TranscriberUITests;
+			productReference = A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		A9B0E0102F0B000100000010 /* TranscriberWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A9B0E00A2F0B00010000000A /* Build configuration list for PBXNativeTarget "TranscriberWidgets" */;
+			buildPhases = (
+				A9B0E0062F0B000100000006 /* Sources */,
+				A9B0E0052F0B000100000005 /* Frameworks */,
+				A9B0E0072F0B000100000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
+			);
+			name = TranscriberWidgets;
+			packageProductDependencies = (
+			);
+			productName = TranscriberWidgets;
+			productReference = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A950DECA2EF038E100CF2226 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2620;
+				TargetAttributes = {
+					A928264F2EF5455C001B6365 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					A950DED12EF038E100CF2226 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					A950DEE02EF038E200CF2226 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = A950DED12EF038E100CF2226;
+					};
+					A950DEEA2EF038E200CF2226 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = A950DED12EF038E100CF2226;
+					};
+					A9B0E0102F0B000100000010 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+				};
+			};
+			buildConfigurationList = A950DECD2EF038E100CF2226 /* Build configuration list for PBXProject "Transcriber" */;
+			developmentRegion = es;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				es,
+			);
+			mainGroup = A950DEC92EF038E100CF2226;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A950DED32EF038E100CF2226 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A950DED12EF038E100CF2226 /* Transcriber */,
+				A950DEE02EF038E200CF2226 /* TranscriberTests */,
+				A950DEEA2EF038E200CF2226 /* TranscriberUITests */,
+				A928264F2EF5455C001B6365 /* TranscriberShare */,
+				A9B0E0102F0B000100000010 /* TranscriberWidgets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A928264E2EF5455C001B6365 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DED02EF038E100CF2226 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEDF2EF038E200CF2226 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEE92EF038E200CF2226 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9B0E0072F0B000100000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A928264C2EF5455C001B6365 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DECE2EF038E100CF2226 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A97B592B2EF041BA00216DE0 /* SampleAudioHelper.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEDD2EF038E200CF2226 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A950DEE72EF038E200CF2226 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A9B0E0062F0B000100000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A92826592EF5455C001B6365 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A928264F2EF5455C001B6365 /* TranscriberShare */;
+			targetProxy = A92826582EF5455C001B6365 /* PBXContainerItemProxy */;
+		};
+		A950DEE32EF038E200CF2226 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A950DED12EF038E100CF2226 /* Transcriber */;
+			targetProxy = A950DEE22EF038E200CF2226 /* PBXContainerItemProxy */;
+		};
+		A950DEED2EF038E200CF2226 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A950DED12EF038E100CF2226 /* Transcriber */;
+			targetProxy = A950DEEC2EF038E200CF2226 /* PBXContainerItemProxy */;
+		};
+		A9B0E00F2F0B000100000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
+			targetProxy = A9B0E0022F0B000100000002 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A928265C2EF5455C001B6365 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This extension needs speech recognition to transcribe shared audio files.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A928265D2EF5455C001B6365 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberShare;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This extension needs speech recognition to transcribe shared audio files.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A950DEF32EF038E200CF2226 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A950DEF42EF038E200CF2226 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		A950DEF62EF038E200CF2226 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Transcriber/Transcriber.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Transcriber/Info.plist;
+				INFOPLIST_KEY_NSSiriUsageDescription = "Transcribe audio files in shortcuts";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs speech recognition to transcribe your audio recordings into text.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		A950DEF72EF038E200CF2226 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Transcriber/Transcriber.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Transcriber/Info.plist;
+				INFOPLIST_KEY_NSSiriUsageDescription = "Transcribe audio files in shortcuts";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app needs speech recognition to transcribe your audio recordings into text.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		A950DEF92EF038E200CF2226 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "-23456.TranscriberTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Transcriber.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Transcriber";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		A950DEFA2EF038E200CF2226 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "-23456.TranscriberTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Transcriber.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Transcriber";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		A950DEFC2EF038E200CF2226 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "-23456.TranscriberUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = Transcriber;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		A950DEFD2EF038E200CF2226 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = "-23456.TranscriberUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = Transcriber;
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		A9B0E00B2F0B00010000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A9B0E00C2F0B00010000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1.2;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TranscriberWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A928265B2EF5455C001B6365 /* Build configuration list for PBXNativeTarget "TranscriberShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A928265C2EF5455C001B6365 /* Debug */,
+				A928265D2EF5455C001B6365 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A950DECD2EF038E100CF2226 /* Build configuration list for PBXProject "Transcriber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A950DEF32EF038E200CF2226 /* Debug */,
+				A950DEF42EF038E200CF2226 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A950DEF52EF038E200CF2226 /* Build configuration list for PBXNativeTarget "Transcriber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A950DEF62EF038E200CF2226 /* Debug */,
+				A950DEF72EF038E200CF2226 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A950DEF82EF038E200CF2226 /* Build configuration list for PBXNativeTarget "TranscriberTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A950DEF92EF038E200CF2226 /* Debug */,
+				A950DEFA2EF038E200CF2226 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A950DEFB2EF038E200CF2226 /* Build configuration list for PBXNativeTarget "TranscriberUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A950DEFC2EF038E200CF2226 /* Debug */,
+				A950DEFD2EF038E200CF2226 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A9B0E00A2F0B00010000000A /* Build configuration list for PBXNativeTarget "TranscriberWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A9B0E00B2F0B00010000000B /* Debug */,
+				A9B0E00C2F0B00010000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A9A1C0023B00000100000002 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A950DECA2EF038E100CF2226 /* Project object */;
+}
