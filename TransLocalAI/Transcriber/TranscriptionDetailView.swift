@@ -181,7 +181,7 @@ struct TranscriptionDetailView: View {
                             .controlSize(.large)
 
                             if let audioURL = resolvedAudioURL {
-                                ShareLink(item: audioURL) {
+                                ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
                                     Label("Share Audio", systemImage: "square.and.arrow.up")
                                         .frame(maxWidth: .infinity)
                                 }
@@ -229,7 +229,7 @@ struct TranscriptionDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 HStack {
                     if let audioURL = resolvedAudioURL {
-                        ShareLink(item: audioURL) {
+                        ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
                             Image(systemName: "waveform.circle")
                         }
                     }
