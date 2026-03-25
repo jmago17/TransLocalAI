@@ -294,16 +294,15 @@ struct ImportAudioView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             
-            // Copy file to app's documents directory
+            // Copy file to iCloud audio directory (or local fallback)
             do {
-                let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                
                 // Preserve original filename with timestamp to avoid conflicts
                 let originalName = url.deletingPathExtension().lastPathComponent
                 let fileExtension = url.pathExtension
                 let timestamp = Date().timeIntervalSince1970
                 let sanitizedName = originalName.replacingOccurrences(of: " ", with: "-")
-                let destinationURL = documentsDirectory.appendingPathComponent("\(sanitizedName)-\(Int(timestamp)).\(fileExtension)")
+                let filename = "\(sanitizedName)-\(Int(timestamp)).\(fileExtension)"
+                let destinationURL = AudioFileManager.shared.audioDirectory.appendingPathComponent(filename)
                 
                 // Start accessing security-scoped resource
                 let accessed = url.startAccessingSecurityScopedResource()

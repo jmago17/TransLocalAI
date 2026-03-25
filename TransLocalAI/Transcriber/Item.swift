@@ -10,14 +10,14 @@ import SwiftData
 
 @Model
 final class Transcription {
-    var id: UUID
-    var timestamp: Date
-    var title: String
-    var transcriptionText: String
-    var language: String // "es-ES" or "en-US"
-    var duration: TimeInterval
-    var audioFileURL: String? // Store relative path to audio file
-    var engineUsed: String // "apple" or "whisper"
+    var id: UUID = UUID()
+    var timestamp: Date = Date()
+    var title: String = ""
+    var transcriptionText: String = ""
+    var language: String = "en-US"
+    var duration: TimeInterval = 0
+    var audioFileURL: String? // Store filename of audio file (resolved via AudioFileManager)
+    var engineUsed: String = ""
     
     init(
         timestamp: Date = Date(),

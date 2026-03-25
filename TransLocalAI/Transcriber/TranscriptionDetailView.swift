@@ -341,9 +341,7 @@ struct TranscriptionDetailView: View {
 
     private var resolvedAudioURL: URL? {
         guard let audioFileName = transcription.audioFileURL else { return nil }
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let url = documentsDirectory.appendingPathComponent(audioFileName)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        return AudioFileManager.shared.audioURL(for: audioFileName)
     }
 
     private func transcribeAudio() {
