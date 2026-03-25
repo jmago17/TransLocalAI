@@ -20,6 +20,7 @@ struct TranscriptionDetailView: View {
     @State private var isEditing = false
     @State private var isTranscribing = false
     @State private var transcriptionError: String?
+    @State private var retranscribeLanguage = "multilingual"
 
     @State private var isGeneratingNotes = false
     @State private var generatedNotes: String?
@@ -155,8 +156,8 @@ struct TranscriptionDetailView: View {
 
                 Divider()
 
-                // Transcribe / Share Audio actions for audio-only items
-                if transcription.transcriptionText.isEmpty, transcription.audioFileURL != nil {
+                // Transcribe / Retranscribe actions when audio file exists
+                if transcription.audioFileURL != nil {
                     if isTranscribing {
                         VStack(spacing: 12) {
                             ProgressView()
@@ -173,8 +174,25 @@ struct TranscriptionDetailView: View {
                         .cornerRadius(12)
                     } else {
                         VStack(spacing: 12) {
+                            // Language picker
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Language")
+                                    .font(.headline)
+
+                                Picker("Language", selection: $retranscribeLanguage) {
+                                    Text("Multilingual").tag("multilingual")
+                                    Text("Euskara").tag("eu-ES")
+                                    Text("Español").tag("es-ES")
+                                    Text("English").tag("en-US")
+                                }
+                                .pickerStyle(.segmented)
+                            }
+
                             Button(action: transcribeAudio) {
-                                Label("Transcribe Now", systemImage: "text.bubble")
+                                Label(
+                                    transcription.transcriptionText.isEmpty ? "Transcribe Now" : "Retranscribe",
+                                    systemImage: transcription.transcriptionText.isEmpty ? "text.bubble" : "arrow.counterclockwise"
+                                )
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.borderedProminent)
@@ -352,11 +370,11 @@ struct TranscriptionDetailView: View {
         Task { @MainActor in
             let hybridService = HybridTranscriptionService()
             do {
-                try await hybridService.prepareModelIfNeeded(language: "multilingual") { _ in }
+                try await hybridService.prepareModelIfNeeded(language: retranscribeLanguage) { _ in }
 
                 let result = try await hybridService.transcribe(
                     audioURL: audioURL,
-                    language: "multilingual"
+                    language: retranscribeLanguage
                 )
 
                 transcription.transcriptionText = result.text
