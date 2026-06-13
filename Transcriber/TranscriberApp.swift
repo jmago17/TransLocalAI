@@ -21,6 +21,7 @@ struct TranscriberApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
+            PipelineJob.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,

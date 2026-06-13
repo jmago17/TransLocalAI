@@ -93,7 +93,7 @@
 			membershipExceptions = (
 				AudioFileManager.swift,
 				AudioRecorderManager.swift,
-				"AppIntents/StopRecordingLiveActivityIntent.swift",
+				AppIntents/StopRecordingLiveActivityIntent.swift,
 				Item.swift,
 				RecordingActivityAttributes.swift,
 				TranscriptionActivityAttributes.swift,
@@ -110,6 +110,13 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		9B3026965D73A675C7EFA85F /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		A92826512EF5455C001B6365 /* TranscriberShare */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -129,11 +136,15 @@
 		};
 		A950DEE42EF038E200CF2226 /* TranscriberTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = TranscriberTests;
 			sourceTree = "<group>";
 		};
 		A950DEEE2EF038E200CF2226 /* TranscriberUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = TranscriberUITests;
 			sourceTree = "<group>";
 		};
@@ -210,6 +221,7 @@
 				A950DED32EF038E100CF2226 /* Products */,
 				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
 				A92826652EF74C58001B6365 /* Frameworks */,
+				9B3026965D73A675C7EFA85F /* Shared */,
 			);
 			sourceTree = "<group>";
 		};
@@ -242,6 +254,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A92826512EF5455C001B6365 /* TranscriberShare */,
+				9B3026965D73A675C7EFA85F /* Shared */,
 			);
 			name = TranscriberShare;
 			packageProductDependencies = (
@@ -268,6 +281,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A950DED42EF038E100CF2226 /* Transcriber */,
+				9B3026965D73A675C7EFA85F /* Shared */,
 			);
 			name = Transcriber;
 			packageProductDependencies = (
@@ -294,8 +308,6 @@
 				A950DEE42EF038E200CF2226 /* TranscriberTests */,
 			);
 			name = TranscriberTests;
-			packageProductDependencies = (
-			);
 			productName = TranscriberTests;
 			productReference = A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -317,8 +329,6 @@
 				A950DEEE2EF038E200CF2226 /* TranscriberUITests */,
 			);
 			name = TranscriberUITests;
-			packageProductDependencies = (
-			);
 			productName = TranscriberUITests;
 			productReference = A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -339,8 +349,6 @@
 				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
 			);
 			name = TranscriberWidgets;
-			packageProductDependencies = (
-			);
 			productName = TranscriberWidgets;
 			productReference = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
