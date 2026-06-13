@@ -82,10 +82,17 @@ final class PipelineController {
         for job in jobs where job.stage != .done {
             let derived = Self.deriveStage(for: job.displayName, status: status)
             if derived != .unknown && derived != job.stage {
+                let previous = job.stage
                 job.stage = derived
                 job.lastSyncedAt = Date()
                 if derived == .error {
                     job.errorMessage = job.errorMessage ?? "El pipeline marcó este audio como error."
+                }
+                // Notify on terminal transitions (was active, now done/error).
+                if derived == .done, previous != .done {
+                    ActasNotifications.notifyDone(name: job.displayName)
+                } else if derived == .error, previous != .error {
+                    ActasNotifications.notifyError(name: job.displayName)
                 }
                 changed = true
             }

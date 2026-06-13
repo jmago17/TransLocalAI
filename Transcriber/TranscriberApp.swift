@@ -43,6 +43,7 @@ struct TranscriberApp: App {
                     importPendingTranscriptions()
                     registerBackgroundTask()
                     AudioFileManager.shared.migrateLocalFilesToCloud()
+                    ActasNotifications.requestAuthorizationIfNeeded()
                 }
         }
         .modelContainer(sharedModelContainer)
