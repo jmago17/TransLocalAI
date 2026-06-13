@@ -10,6 +10,7 @@
 import Foundation
 import SwiftData
 import Observation
+import AVFoundation
 
 @MainActor
 @Observable
@@ -123,20 +124,37 @@ final class PipelineController {
                 context: ModelContext,
                 onProgress: (@Sendable (Double) -> Void)? = nil) async -> PipelineJob {
         let job = PipelineJob(displayName: displayName, source: source, audioFileName: audioFileName)
+        // Persist a local copy so the job can be retried (or transcribed
+        // on-device) even after the picked temp file disappears.
+        if job.audioFileName == nil {
+            let ext = audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension
+            job.audioFileName = try? AudioFileManager.shared.saveAudio(
+                from: audioURL, filename: "\(job.id.uuidString).\(ext)")
+        }
         job.uploadState = .uploading
         context.insert(job)
         try? context.save()
 
+        await deliver(job: job, audioURL: audioURL, context: context, onProgress: onProgress)
+        return job
+    }
+
+    /// Core delivery: HTTP first, iCloud fallback. Updates `job` in place.
+    private func deliver(job: PipelineJob,
+                         audioURL: URL,
+                         context: ModelContext,
+                         onProgress: (@Sendable (Double) -> Void)? = nil) async {
         // 1) Try HTTP.
         if case .reachable = await client.reachability() {
             do {
-                _ = try await client.upload(fileURL: audioURL, displayName: displayName, progress: onProgress)
+                _ = try await client.upload(fileURL: audioURL, displayName: job.displayName, progress: onProgress)
                 job.transport = .http
                 job.uploadState = .uploaded
                 job.stage = .queued
+                job.errorMessage = nil
                 try? context.save()
                 await refresh(logs: false)
-                return job
+                return
             } catch {
                 job.errorMessage = "HTTP falló: \(error.localizedDescription)"
             }
@@ -145,13 +163,13 @@ final class PipelineController {
         // 2) Fallback to iCloud Inbox (if the user granted the folder).
         if ICloudInboxBridge.isConfigured {
             do {
-                _ = try ICloudInboxBridge.writeAudioToInbox(from: audioURL, displayName: displayName)
+                _ = try ICloudInboxBridge.writeAudioToInbox(from: audioURL, displayName: job.displayName)
                 job.transport = .icloud
                 job.uploadState = .uploaded
                 job.stage = .queued
                 job.errorMessage = nil
                 try? context.save()
-                return job
+                return
             } catch {
                 job.errorMessage = "iCloud también falló: \(error.localizedDescription)"
             }
@@ -159,7 +177,62 @@ final class PipelineController {
 
         job.uploadState = .failed
         try? context.save()
-        return job
+    }
+
+    /// Re-attempt delivery for a job whose audio we still have locally.
+    func resend(job: PipelineJob, context: ModelContext) async {
+        guard let name = job.audioFileName,
+              let url = AudioFileManager.shared.audioURL(for: name) else {
+            job.errorMessage = "No se conserva el audio para reenviar."
+            try? context.save()
+            return
+        }
+        job.uploadState = .uploading
+        try? context.save()
+        await deliver(job: job, audioURL: url, context: context)
+    }
+
+    /// When the Mac is back, push every job that never made it.
+    func resendPending(context: ModelContext, jobs: [PipelineJob]) async {
+        guard isReachable else { return }
+        for job in jobs where job.uploadState == .failed {
+            await resend(job: job, context: context)
+        }
+    }
+
+    /// Offline stopgap: transcribe a job's audio on-device (WhisperKit by
+    /// default) into the local library, keeping the audio queued to resend so
+    /// the Mac can still produce the official acta later.
+    func transcribeOnDevice(job: PipelineJob, context: ModelContext) async {
+        guard let name = job.audioFileName,
+              let url = AudioFileManager.shared.audioURL(for: name) else {
+            job.errorMessage = "No se conserva el audio para transcribir."
+            try? context.save()
+            return
+        }
+        let service = HybridTranscriptionService()
+        do {
+            let language = try await service.detectLanguage(audioURL: url)
+            try await service.prepareModelIfNeeded(language: language, progress: nil)
+            let result = try await service.transcribe(audioURL: url, language: language)
+            let duration = (try? AVAudioFile(forReading: url)).map {
+                Double($0.length) / $0.fileFormat.sampleRate
+            } ?? 0
+            let transcription = Transcription(
+                timestamp: Date(),
+                title: job.displayName,
+                transcriptionText: result.text,
+                language: language,
+                duration: duration,
+                audioFileURL: name,
+                engineUsed: "whisper-device")
+            context.insert(transcription)
+            job.errorMessage = "Transcrito en el dispositivo. Pendiente de enviar al Mac para el acta."
+            try? context.save()
+        } catch {
+            job.errorMessage = "Transcripción local falló: \(error.localizedDescription)"
+            try? context.save()
+        }
     }
 
     // MARK: - Commands & retries

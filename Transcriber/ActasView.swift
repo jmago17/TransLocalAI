@@ -48,6 +48,7 @@ struct ActasView: View {
             .task {
                 await controller.refresh()
                 controller.reconcile(jobs: jobs, context: context)
+                await controller.resendPending(context: context, jobs: jobs)
                 controller.startObservingEvents {
                     await controller.refresh(logs: false)
                     controller.reconcile(jobs: jobs, context: context)
@@ -158,6 +159,19 @@ struct ActasView: View {
                             Button("Borrar", role: .destructive) {
                                 context.delete(job)
                             }
+                        }
+                        .contextMenu {
+                            if job.uploadState == .failed {
+                                Button {
+                                    Task { await controller.resend(job: job, context: context) }
+                                } label: { Label("Reenviar al Mac", systemImage: "paperplane") }
+                                Button {
+                                    Task { await controller.transcribeOnDevice(job: job, context: context) }
+                                } label: { Label("Transcribir en el dispositivo", systemImage: "iphone") }
+                            }
+                            Button(role: .destructive) {
+                                context.delete(job)
+                            } label: { Label("Borrar", systemImage: "trash") }
                         }
                 }
             }

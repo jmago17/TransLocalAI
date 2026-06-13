@@ -255,6 +255,7 @@ struct TranscriptionRowView: View {
         switch transcription.engineUsed.lowercased() {
         case "apple": return "Apple"
         case "whisper": return "Whisper"
+        case "whisper-device": return "Whisper (local)"
         default: return nil
         }
     }
