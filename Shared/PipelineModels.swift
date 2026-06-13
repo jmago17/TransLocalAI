@@ -129,6 +129,7 @@ nonisolated struct ServerHealth: Codable, Sendable {
     let version: String
     let basePath: String
     let tokenConfigured: Bool
+    let fsAccessible: Bool?   // false => server can't read ~/Reuniones (FDA pending)
 }
 
 extension ISO8601DateFormatter {

@@ -13,6 +13,7 @@ import Foundation
 nonisolated enum ActasServerError: LocalizedError {
     case notConfigured
     case unreachable
+    case fsUnavailable          // server up but can't read ~/Reuniones (FDA pending)
     case http(Int, String)
     case decoding(String)
 
@@ -20,6 +21,7 @@ nonisolated enum ActasServerError: LocalizedError {
         switch self {
         case .notConfigured: return "El servidor no está configurado. Empareja la app con el Mac."
         case .unreachable:   return "No se puede contactar con el Mac (ni Tailscale ni LAN)."
+        case .fsUnavailable: return "El Mac no puede leer la carpeta Reuniones (falta Full Disk Access)."
         case .http(let code, let body): return "El servidor respondió \(code): \(body)"
         case .decoding(let what): return "Respuesta inesperada del servidor (\(what))."
         }
@@ -79,6 +81,17 @@ actor ActasServerClient {
         return .unreachable
     }
 
+    /// Fetch the unauthenticated health payload from the resolved endpoint.
+    /// Exposes `fsAccessible` so the app can flag Full Disk Access issues.
+    func health() async -> ServerHealth? {
+        guard let base = await resolveBaseURL() else { return nil }
+        var req = URLRequest(url: base.appendingPathComponent("api/health"))
+        req.timeoutInterval = probeTimeout
+        guard let (data, resp) = try? await session.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return try? JSONDecoder().decode(ServerHealth.self, from: data)
+    }
+
     /// Race /health across candidates, return the first that answers 200.
     private func raceHealth(_ candidates: [URL]) async -> URL? {
         await withTaskGroup(of: URL?.self) { group in
@@ -131,7 +144,9 @@ actor ActasServerClient {
         let (data, resp) = try await session.data(for: req)
         let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(code) else {
-            throw ActasServerError.http(code, String(data: data, encoding: .utf8) ?? "")
+            let body = String(data: data, encoding: .utf8) ?? ""
+            if code == 503, body.contains("fs_unavailable") { throw ActasServerError.fsUnavailable }
+            throw ActasServerError.http(code, body)
         }
         do { return try JSONDecoder().decode(T.self, from: data) }
         catch { throw ActasServerError.decoding(String(describing: T.self)) }

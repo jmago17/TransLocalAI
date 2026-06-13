@@ -20,6 +20,8 @@ final class PipelineController {
     var reachability: ServerReachability = .unreachable
     var isRefreshing = false
     var lastError: String?
+    /// false => server is reachable but can't read ~/Reuniones (Full Disk Access pending).
+    var fsAccessible = true
 
     private let client = ActasServerClient.shared
     private var eventsTask: Task<Void, Never>?
@@ -35,12 +37,31 @@ final class PipelineController {
         isRefreshing = true
         defer { isRefreshing = false }
         reachability = await client.reachability()
-        guard isReachable else { status = nil; transcriptions = nil; return }
+        guard isReachable else {
+            status = nil; transcriptions = nil; fsAccessible = true; return
+        }
+        // Distinguish "can't read Reuniones (FDA)" from a real outage before
+        // hitting the FS endpoints (which would 503).
+        if let health = await client.health() {
+            fsAccessible = health.fsAccessible ?? true
+        }
+        guard fsAccessible else {
+            status = nil; transcriptions = nil
+            lastError = nil
+            return
+        }
         do {
             async let s = client.status(logs: logs)
             async let t = client.transcriptions()
             self.status = try await s
             self.transcriptions = try await t
+            self.fsAccessible = true
+            self.lastError = nil
+        } catch ActasServerError.fsUnavailable {
+            // Reachable but Full Disk Access pending on the Mac.
+            self.fsAccessible = false
+            self.status = nil
+            self.transcriptions = nil
             self.lastError = nil
         } catch {
             self.lastError = error.localizedDescription
@@ -48,6 +69,12 @@ final class PipelineController {
     }
 
     /// Reconcile every job against the latest server status, persisting changes.
+    /// Force a fresh endpoint probe (used by the pairing screen's test button).
+    func testReachability() async -> ServerReachability {
+        reachability = await client.reachability(forceRefresh: true)
+        return reachability
+    }
+
     func reconcile(jobs: [PipelineJob], context: ModelContext) {
         guard let status else { return }
         var changed = false
