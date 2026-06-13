@@ -49,9 +49,10 @@ struct ActasView: View {
                 await controller.refresh()
                 controller.reconcile(jobs: jobs, context: context)
                 await controller.resendPending(context: context, jobs: jobs)
+                // SSE only refreshes; reconcile runs from onChange(of:status) with
+                // the always-fresh @Query `jobs`, not a stale captured snapshot.
                 controller.startObservingEvents {
                     await controller.refresh(logs: false)
-                    controller.reconcile(jobs: jobs, context: context)
                 }
             }
             .onChange(of: controller.status) { _, _ in
@@ -102,12 +103,12 @@ struct ActasView: View {
         return controller.isReachable ? .green : .orange
     }
     private var bannerTitle: String {
-        if fdaPending { return "El Mac no puede leer Reuniones" }
+        if fdaPending { return "El Mac no puede leer Reuniones ahora" }
         return controller.isReachable ? "Conectado al Mac" : "Sin conexión con el Mac"
     }
     private var bannerSubtitle: String? {
         if fdaPending {
-            return "Concede «Acceso completo al disco» al servidor de actas en el Mac (Ajustes → Privacidad)."
+            return "iCloud puede estar sincronizando. Si persiste, revisa el «Acceso completo al disco» del servicio en el Mac. Desliza para reintentar."
         }
         if let err = controller.lastError { return err }
         if !controller.isReachable { return "Se usará iCloud como respaldo al enviar." }
@@ -157,7 +158,7 @@ struct ActasView: View {
                     PipelineJobRow(job: job)
                         .swipeActions {
                             Button("Borrar", role: .destructive) {
-                                context.delete(job)
+                                controller.delete(job: job, context: context)
                             }
                         }
                         .contextMenu {
@@ -170,7 +171,7 @@ struct ActasView: View {
                                 } label: { Label("Transcribir en el dispositivo", systemImage: "iphone") }
                             }
                             Button(role: .destructive) {
-                                context.delete(job)
+                                controller.delete(job: job, context: context)
                             } label: { Label("Borrar", systemImage: "trash") }
                         }
                 }
@@ -207,9 +208,12 @@ struct ActasView: View {
             source: .imported,
             audioFileName: nil,
             context: context,
-            onProgress: { p in Task { @MainActor in submitProgress = p } }
+            onProgress: { p in Task { @MainActor in submitProgress = max(submitProgress, p) } }
         )
         controller.reconcile(jobs: jobs, context: context)
+        // Clean up the temp copy made by the file importer (submit persisted its
+        // own copy via AudioFileManager).
+        try? FileManager.default.removeItem(at: item.url)
         pendingImport = nil
     }
 }

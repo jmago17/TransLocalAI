@@ -201,7 +201,7 @@ struct ShareExtensionView: View {
         do {
             _ = try await ActasServerClient.shared.upload(
                 fileURL: audioURL, displayName: title,
-                progress: { p in Task { @MainActor in progress = p } })
+                progress: { p in Task { @MainActor in progress = max(progress, p) } })
             phase = .done("«\(title)» está en la cola del Mac. La transcripción arrancará en breve.")
             return
         } catch {

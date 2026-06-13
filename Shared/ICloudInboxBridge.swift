@@ -94,7 +94,8 @@ nonisolated enum ICloudInboxBridge {
         try FileManager.default.createDirectory(at: commands, withIntermediateDirectories: true)
         let payload = try JSONSerialization.data(withJSONObject: ["action": action, "source": "translocalai-icloud"])
         let dest = commands.appendingPathComponent("app-\(action)-\(UUID().uuidString.prefix(8)).json")
-        try payload.write(to: dest)
+        // Atomic so the Mac's WatchPaths agent never reads a half-written JSON.
+        try payload.write(to: dest, options: .atomic)
     }
 
     private static func uniqueDestination(in dir: URL, base: String, ext: String) -> URL {

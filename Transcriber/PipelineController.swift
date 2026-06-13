@@ -81,21 +81,24 @@ final class PipelineController {
         var changed = false
         for job in jobs where job.stage != .done {
             let derived = Self.deriveStage(for: job.displayName, status: status)
-            if derived != .unknown && derived != job.stage {
-                let previous = job.stage
-                job.stage = derived
-                job.lastSyncedAt = Date()
-                if derived == .error {
-                    job.errorMessage = job.errorMessage ?? "El pipeline marcó este audio como error."
-                }
-                // Notify on terminal transitions (was active, now done/error).
-                if derived == .done, previous != .done {
-                    ActasNotifications.notifyDone(name: job.displayName)
-                } else if derived == .error, previous != .error {
-                    ActasNotifications.notifyError(name: job.displayName)
-                }
-                changed = true
+            // Only move forward (or to error). Prevents a transient empty queue or
+            // a re-queued file from regressing the stage and re-notifying.
+            guard derived != .unknown,
+                  derived == .error || derived.order > job.stage.order else { continue }
+            let previous = job.stage
+            job.stage = derived
+            job.lastSyncedAt = Date()
+            if derived == .error {
+                job.errorMessage = job.errorMessage ?? "El pipeline marcó este audio como error."
             }
+            // Notify on terminal transitions. Identifier keyed on job.id so two
+            // submissions that share a title each notify.
+            if derived == .done {
+                ActasNotifications.notifyDone(name: job.displayName, jobID: job.id)
+            } else if derived == .error, previous != .error {
+                ActasNotifications.notifyError(name: job.displayName, jobID: job.id)
+            }
+            changed = true
         }
         if changed { try? context.save() }
     }
@@ -186,6 +189,16 @@ final class PipelineController {
         try? context.save()
     }
 
+    /// Delete a job and its persisted audio copy (the on-device transcription,
+    /// if any, keeps its own separate copy).
+    func delete(job: PipelineJob, context: ModelContext) {
+        if let name = job.audioFileName {
+            AudioFileManager.shared.deleteAudio(filename: name)
+        }
+        context.delete(job)
+        try? context.save()
+    }
+
     /// Re-attempt delivery for a job whose audio we still have locally.
     func resend(job: PipelineJob, context: ModelContext) async {
         guard let name = job.audioFileName,
@@ -225,13 +238,18 @@ final class PipelineController {
             let duration = (try? AVAudioFile(forReading: url)).map {
                 Double($0.length) / $0.fileFormat.sampleRate
             } ?? 0
+            // Give the library entry its OWN audio copy so deleting the job (and
+            // its audio) doesn't orphan the transcription's audio.
+            let ext = url.pathExtension.isEmpty ? "m4a" : url.pathExtension
+            let txAudio = try? AudioFileManager.shared.saveAudio(
+                from: url, filename: "\(UUID().uuidString).\(ext)")
             let transcription = Transcription(
                 timestamp: Date(),
                 title: job.displayName,
                 transcriptionText: result.text,
                 language: language,
                 duration: duration,
-                audioFileURL: name,
+                audioFileURL: txAudio,
                 engineUsed: "whisper-device")
             context.insert(transcription)
             job.errorMessage = "Transcrito en el dispositivo. Pendiente de enviar al Mac para el acta."
@@ -263,15 +281,21 @@ final class PipelineController {
         eventsTask?.cancel()
         eventsTask = Task { [weak self] in
             guard let self else { return }
+            var backoff: UInt64 = 5
             while !Task.isCancelled {
+                var receivedAny = false
                 do {
                     for try await _ in self.client.events() {
+                        receivedAny = true
                         await refreshHandler()
                     }
                 } catch {
-                    // connection dropped; wait then re-subscribe
+                    // connection dropped; fall through to backoff
                 }
-                try? await Task.sleep(for: .seconds(5))
+                // Reset backoff after a productive connection; otherwise grow it
+                // (capped) so an unreachable Mac or bad token doesn't busy-loop.
+                backoff = receivedAny ? 5 : min(backoff * 2, 60)
+                try? await Task.sleep(for: .seconds(Double(backoff)))
             }
         }
     }

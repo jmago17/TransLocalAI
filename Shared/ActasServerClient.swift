@@ -41,12 +41,14 @@ actor ActasServerClient {
     private let probeTimeout: TimeInterval = 2.5
     private let requestTimeout: TimeInterval = 20
 
-    private var session: URLSession {
+    /// One reused session for all short GET/POSTs (keep-alive, no per-call leak).
+    /// The multipart upload uses its own delegate session, which it invalidates.
+    private let session: URLSession = {
         let cfg = URLSessionConfiguration.ephemeral
-        cfg.timeoutIntervalForRequest = requestTimeout
+        cfg.timeoutIntervalForRequest = 20
         cfg.waitsForConnectivity = false
         return URLSession(configuration: cfg)
-    }
+    }()
 
     // MARK: - Discovery
 

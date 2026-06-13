@@ -23,14 +23,14 @@ enum ActasNotifications {
         }
     }
 
-    static func notifyDone(name: String) {
-        post(id: "actas-done-\(name)",
+    static func notifyDone(name: String, jobID: UUID) {
+        post(id: "actas-done-\(jobID.uuidString)",
              title: "Acta lista",
              body: "«\(name)» ya está en Apple Notes.")
     }
 
-    static func notifyError(name: String) {
-        post(id: "actas-error-\(name)",
+    static func notifyError(name: String, jobID: UUID) {
+        post(id: "actas-error-\(jobID.uuidString)",
              title: "Error en el acta",
              body: "El pipeline marcó «\(name)» como error. Revisa la app.")
     }
