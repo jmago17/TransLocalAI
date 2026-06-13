@@ -15,6 +15,7 @@ struct RecordingView: View {
     @State private var stoppedFileURL: URL?
     @State private var isTranscribing = false
     @State private var hasPermission: Bool?
+    @State private var selectedLanguage = "multilingual"
 
     private let hybridService = HybridTranscriptionService()
 
@@ -162,6 +163,24 @@ struct RecordingView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
+            // Language selector
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Language")
+                    .font(.headline)
+
+                Picker("Language", selection: $selectedLanguage) {
+                    Text("Multilingual").tag("multilingual")
+                    Text("Euskara").tag("eu-ES")
+                    Text("Español").tag("es-ES")
+                    Text("English").tag("en-US")
+                }
+                .pickerStyle(.segmented)
+
+                Text(languageHint)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Spacer()
 
             Button(action: { transcribeRecording(url: url) }) {
@@ -224,7 +243,7 @@ struct RecordingView: View {
         let transcription = Transcription(
             title: title,
             transcriptionText: "",
-            language: "en-US",
+            language: selectedLanguage,
             duration: duration,
             audioFileURL: url.lastPathComponent,
             engineUsed: ""
@@ -235,16 +254,31 @@ struct RecordingView: View {
         dismiss()
     }
 
+    private var languageHint: String {
+        switch selectedLanguage {
+        case "multilingual":
+            return "Auto-detects language (may misidentify mixed-language audio)"
+        case "eu-ES":
+            return "Force Basque — best for Basque-dominant recordings"
+        case "es-ES":
+            return "Force Spanish — best for Spanish-dominant recordings"
+        case "en-US":
+            return "Force English — best for English-dominant recordings"
+        default:
+            return ""
+        }
+    }
+
     private func transcribeRecording(url: URL) {
         isTranscribing = true
 
         Task {
             do {
-                try await hybridService.prepareModelIfNeeded(language: "multilingual") { _ in }
+                try await hybridService.prepareModelIfNeeded(language: selectedLanguage) { _ in }
 
                 let result = try await hybridService.transcribe(
                     audioURL: url,
-                    language: "multilingual"
+                    language: selectedLanguage
                 )
 
                 let transcription = Transcription(

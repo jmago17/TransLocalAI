@@ -182,12 +182,9 @@ struct ContentView: View {
             for index in offsets {
                 let transcription = filteredTranscriptions[index]
                 
-                // TODO: Si en el futuro guardamos artefactos de Whisper por transcripción, limpiarlos aquí si aplica
                 // Delete associated audio file if it exists
                 if let audioFileName = transcription.audioFileURL {
-                    let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    let audioURL = documentsDirectory.appendingPathComponent(audioFileName)
-                    try? FileManager.default.removeItem(at: audioURL)
+                    AudioFileManager.shared.deleteAudio(filename: audioFileName)
                 }
                 
                 modelContext.delete(transcription)
@@ -258,6 +255,7 @@ struct TranscriptionRowView: View {
         switch transcription.engineUsed.lowercased() {
         case "apple": return "Apple"
         case "whisper": return "Whisper"
+        case "whisper-device": return "Whisper (local)"
         default: return nil
         }
     }

@@ -2,7 +2,10 @@
 //  ShareExtensionView.swift
 //  TranscriberShare
 //
-//  Created by Josu Martinez Gonzalez on 19/12/25.
+//  Receives a shared audio file and, by default, sends it to the Mac pipeline
+//  (HTTP to actas-server, iCloud Inbox fallback) so it becomes an acta. The
+//  user confirms the name (== Apple Notes title) first. On-device transcription
+//  is kept as an explicit secondary option.
 //
 
 import SwiftUI
@@ -13,301 +16,257 @@ struct ShareExtensionView: View {
     let extensionContext: NSExtensionContext?
     let dismiss: () -> Void
 
-    @State private var isProcessing = false
-    @State private var isTranscribing = false
-    @State private var progress: String = "Preparing..."
-    @State private var errorMessage: String?
-    @State private var transcriptionComplete = false
+    private enum Phase: Equatable {
+        case loading
+        case ready
+        case sending
+        case transcribing
+        case done(String)
+        case failed(String)
+    }
+
+    @State private var phase: Phase = .loading
+    @State private var audioURL: URL?
+    @State private var name = ""
+    @State private var progress: Double = 0
     @State private var transcribedText = ""
-    @State private var fileName = ""
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                if let error = errorMessage {
-                    errorView(message: error)
-                } else if transcriptionComplete {
-                    successView
-                } else {
-                    processingView
+            Group {
+                switch phase {
+                case .loading:    loadingView
+                case .ready:      readyView
+                case .sending:    sendingView
+                case .transcribing: transcribingView
+                case .done(let msg):   doneView(msg)
+                case .failed(let msg): failedView(msg)
                 }
             }
             .padding()
-            .navigationTitle("Transcriber")
+            .navigationTitle("Enviar acta")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .disabled(isTranscribing)
-                }
-
-                if transcriptionComplete {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            dismiss()
-                        }
-                    }
+                    Button("Cancelar") { dismiss() }
+                        .disabled(phase == .sending || phase == .transcribing)
                 }
             }
         }
-        .task {
-            await handleSharedContent()
+        .task { await load() }
+    }
+
+    // MARK: - Phases
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView().scaleEffect(1.4)
+            Text("Cargando audio…").foregroundStyle(.secondary)
         }
     }
 
-    private var processingView: some View {
+    private var readyView: some View {
         VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.5)
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 56))
+                .foregroundStyle(.blue.gradient)
 
-            Text(progress)
-                .font(.headline)
-
-            if !fileName.isEmpty {
-                Text(fileName)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Título del acta").font(.caption).foregroundStyle(.secondary)
+                TextField("Nombre", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+                Text("Debe coincidir con la nota en Apple Notes (carpeta «Actas»).")
+                    .font(.caption2).foregroundStyle(.tertiary)
             }
 
-            Text("This may take a moment")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-    }
-
-    private var successView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.green)
-
-            Text("Transcription Complete!")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            ScrollView {
-                Text(transcribedText)
-                    .font(.body)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(12)
-            }
-            .frame(maxHeight: 300)
-
-            HStack(spacing: 16) {
-                Button {
-                    shareText(transcribedText)
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-
-                Button {
-                    UIPasteboard.general.string = transcribedText
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-            }
-        }
-    }
-
-    private func errorView(message: String) -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.orange)
-
-            Text("Transcription Failed")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text(message)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button("Close") {
-                dismiss()
+            Button {
+                Task { await sendToMac() }
+            } label: {
+                Label("Enviar al Mac", systemImage: "paperplane.fill")
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-        }
-    }
+            .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
 
-    private func shareText(_ text: String) {
-        let activityVC = UIActivityViewController(activityItems: [text], applicationActivities: nil)
-        // In an app extension, walk the view hierarchy to find the presenting view controller
-        guard let scene = UIApplication.value(forKeyPath: "sharedApplication.connectedScenes") as? Set<UIScene>,
-              let windowScene = scene.first as? UIWindowScene,
-              let rootVC = windowScene.keyWindow?.rootViewController else { return }
-        var presenter = rootVC
-        while let presented = presenter.presentedViewController {
-            presenter = presented
-        }
-        activityVC.popoverPresentationController?.sourceView = presenter.view
-        presenter.present(activityVC, animated: true)
-    }
-
-    private func handleSharedContent() async {
-        guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
-              let attachments = extensionItem.attachments else {
-            errorMessage = "No audio file found"
-            return
-        }
-
-        // Find audio attachment
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(UTType.audio.identifier) {
-                await processAudioProvider(provider, typeIdentifier: UTType.audio.identifier)
-                return
+            Button {
+                Task { await transcribeOnDevice() }
+            } label: {
+                Label("Transcribir en el dispositivo", systemImage: "iphone")
+                    .frame(maxWidth: .infinity)
             }
-            // Also check for specific audio types
-            for audioType in [UTType.mpeg4Audio, UTType.mp3, UTType.wav, UTType.aiff] {
-                if provider.hasItemConformingToTypeIdentifier(audioType.identifier) {
-                    await processAudioProvider(provider, typeIdentifier: audioType.identifier)
+            .buttonStyle(.bordered)
+
+            Spacer()
+        }
+    }
+
+    private var sendingView: some View {
+        VStack(spacing: 18) {
+            ProgressView(value: progress) {
+                Text("Enviando al Mac…").font(.headline)
+            }
+            Text(name).font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+
+    private var transcribingView: some View {
+        VStack(spacing: 16) {
+            ProgressView().scaleEffect(1.4)
+            Text("Transcribiendo en el dispositivo…").font(.headline)
+            Text("Esto puede tardar un poco.").font(.caption).foregroundStyle(.secondary)
+        }
+    }
+
+    private func doneView(_ message: String) -> some View {
+        VStack(spacing: 18) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 60)).foregroundStyle(.green)
+            Text("Listo").font(.title2.bold())
+            Text(message).font(.body).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            if !transcribedText.isEmpty {
+                ScrollView {
+                    Text(transcribedText).font(.callout)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }.frame(maxHeight: 200)
+            }
+            Button("Hecho") { dismiss() }.buttonStyle(.borderedProminent)
+            Spacer()
+        }
+    }
+
+    private func failedView(_ message: String) -> some View {
+        VStack(spacing: 18) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 56)).foregroundStyle(.orange)
+            Text("No se pudo enviar").font(.title2.bold())
+            Text(message).font(.body).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Reintentar") { phase = .ready }.buttonStyle(.borderedProminent)
+            Button("Cerrar") { dismiss() }.buttonStyle(.bordered)
+            Spacer()
+        }
+    }
+
+    // MARK: - Load shared file
+
+    private func load() async {
+        guard let item = extensionContext?.inputItems.first as? NSExtensionItem,
+              let attachments = item.attachments else {
+            phase = .failed("No se encontró ningún audio."); return
+        }
+        let types = [UTType.audio, .mpeg4Audio, .mp3, .wav, .aiff, .movie]
+        for provider in attachments {
+            for type in types where provider.hasItemConformingToTypeIdentifier(type.identifier) {
+                do {
+                    let url = try await loadFile(from: provider, typeIdentifier: type.identifier)
+                    audioURL = url
+                    name = url.deletingPathExtension().lastPathComponent
+                    phase = .ready
                     return
+                } catch {
+                    phase = .failed(error.localizedDescription); return
                 }
             }
-            // Check for movie (video files often contain audio)
-            if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
-                await processAudioProvider(provider, typeIdentifier: UTType.movie.identifier)
-                return
-            }
         }
-
-        errorMessage = "No supported audio file found"
-    }
-
-    private func processAudioProvider(_ provider: NSItemProvider, typeIdentifier: String) async {
-        isProcessing = true
-        progress = "Loading audio file..."
-
-        do {
-            let url = try await loadFile(from: provider, typeIdentifier: typeIdentifier)
-            fileName = url.lastPathComponent
-
-            // Copy to temporary location for processing
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("share-\(UUID().uuidString).\(url.pathExtension)")
-
-            try FileManager.default.copyItem(at: url, to: tempURL)
-
-            // Transcribe the audio
-            progress = "Transcribing..."
-            isTranscribing = true
-
-            let transcription = try await transcribeAudio(url: tempURL)
-
-            // Save to app's shared container
-            try await saveTranscription(
-                text: transcription,
-                audioURL: tempURL,
-                fileName: url.deletingPathExtension().lastPathComponent
-            )
-
-            transcribedText = transcription
-            transcriptionComplete = true
-            isTranscribing = false
-
-            // Clean up temp file
-            try? FileManager.default.removeItem(at: tempURL)
-
-        } catch {
-            errorMessage = error.localizedDescription
-            isTranscribing = false
-        }
-
-        isProcessing = false
+        phase = .failed("El archivo compartido no es un audio compatible.")
     }
 
     private func loadFile(from provider: NSItemProvider, typeIdentifier: String) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             provider.loadFileRepresentation(forTypeIdentifier: typeIdentifier) { url, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else if let url = url {
-                    // Copy to temp location since the provided URL is temporary
-                    let tempURL = FileManager.default.temporaryDirectory
-                        .appendingPathComponent(url.lastPathComponent)
-                    do {
-                        try? FileManager.default.removeItem(at: tempURL)
-                        try FileManager.default.copyItem(at: url, to: tempURL)
-                        continuation.resume(returning: tempURL)
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                } else {
-                    continuation.resume(throwing: ShareError.fileNotFound)
-                }
+                if let error { continuation.resume(throwing: error); return }
+                guard let url else { continuation.resume(throwing: ShareError.fileNotFound); return }
+                let tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("share-\(UUID().uuidString)-\(url.lastPathComponent)")
+                do {
+                    try? FileManager.default.removeItem(at: tempURL)
+                    try FileManager.default.copyItem(at: url, to: tempURL)
+                    continuation.resume(returning: tempURL)
+                } catch { continuation.resume(throwing: error) }
             }
         }
     }
 
-    private func transcribeAudio(url: URL) async throws -> String {
-        // Use the shared transcription manager
-        let manager = ShareTranscriptionManager()
+    // MARK: - Send to Mac (HTTP primary, iCloud fallback)
 
-        // Request permission first
-        let hasPermission = await manager.requestPermission()
-        guard hasPermission else {
-            throw ShareError.permissionDenied
+    private func sendToMac() async {
+        guard let audioURL else { return }
+        let title = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        phase = .sending
+        progress = 0
+
+        // 1) HTTP
+        do {
+            _ = try await ActasServerClient.shared.upload(
+                fileURL: audioURL, displayName: title,
+                progress: { p in Task { @MainActor in progress = max(progress, p) } })
+            phase = .done("«\(title)» está en la cola del Mac. La transcripción arrancará en breve.")
+            return
+        } catch {
+            // fall through to iCloud
         }
 
-        progress = "Detecting language..."
-        let language = try await manager.detectLanguage(audioURL: url)
+        // 2) iCloud fallback
+        if ICloudInboxBridge.isConfigured {
+            do {
+                _ = try ICloudInboxBridge.writeAudioToInbox(from: audioURL, displayName: title)
+                phase = .done("El Mac no respondía; «\(title)» se guardó en iCloud y se procesará al sincronizar.")
+                return
+            } catch {
+                phase = .failed("HTTP e iCloud fallaron: \(error.localizedDescription)")
+                return
+            }
+        }
 
-        progress = "Transcribing audio..."
-        return try await manager.transcribe(audioURL: url, language: language)
+        phase = .failed("El Mac no responde y no hay carpeta iCloud configurada. Abre la app → Ajustes para emparejar o elegir la carpeta Reuniones.")
+    }
+
+    // MARK: - On-device transcription (explicit secondary path)
+
+    private func transcribeOnDevice() async {
+        guard let audioURL else { return }
+        phase = .transcribing
+        let manager = ShareTranscriptionManager()
+        do {
+            guard await manager.requestPermission() else { throw ShareError.permissionDenied }
+            let language = try await manager.detectLanguage(audioURL: audioURL)
+            let text = try await manager.transcribe(audioURL: audioURL, language: language)
+            transcribedText = text
+            try? await saveTranscription(text: text, audioURL: audioURL,
+                                         fileName: name.trimmingCharacters(in: .whitespaces))
+            phase = .done("Transcrito en el dispositivo. Aparecerá en la Biblioteca de la app.")
+        } catch {
+            phase = .failed(error.localizedDescription)
+        }
     }
 
     private func saveTranscription(text: String, audioURL: URL, fileName: String) async throws {
-        // Get shared app group container
         guard let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.josumartinez.transcriber"
-        ) else {
-            // Fallback: just complete without saving to main app
-            return
-        }
+            forSecurityApplicationGroupIdentifier: "group.com.josumartinez.transcriber") else { return }
 
-        // Copy audio to shared container
-        let audioDirectory = containerURL.appendingPathComponent("SharedAudio", isDirectory: true)
-        try? FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
+        let audioDir = containerURL.appendingPathComponent("SharedAudio", isDirectory: true)
+        try? FileManager.default.createDirectory(at: audioDir, withIntermediateDirectories: true)
+        let savedAudio = audioDir.appendingPathComponent("\(UUID().uuidString).\(audioURL.pathExtension)")
+        try? FileManager.default.copyItem(at: audioURL, to: savedAudio)
 
-        let savedAudioURL = audioDirectory.appendingPathComponent("\(fileName)-\(Int(Date().timeIntervalSince1970)).\(audioURL.pathExtension)")
-        try? FileManager.default.copyItem(at: audioURL, to: savedAudioURL)
+        let pendingDir = containerURL.appendingPathComponent("PendingTranscriptions", isDirectory: true)
+        try? FileManager.default.createDirectory(at: pendingDir, withIntermediateDirectories: true)
 
-        // Create a pending transcription file that main app can pick up
-        let pendingDirectory = containerURL.appendingPathComponent("PendingTranscriptions", isDirectory: true)
-        try? FileManager.default.createDirectory(at: pendingDirectory, withIntermediateDirectories: true)
-
-        let pendingFile = pendingDirectory.appendingPathComponent("\(UUID().uuidString).json")
-
-        // Get duration
         let duration: TimeInterval
-        if let audioFile = try? AVAudioFile(forReading: audioURL) {
-            duration = Double(audioFile.length) / audioFile.fileFormat.sampleRate
-        } else {
-            duration = 0
-        }
+        if let f = try? AVAudioFile(forReading: audioURL) {
+            duration = Double(f.length) / f.fileFormat.sampleRate
+        } else { duration = 0 }
 
-        let pendingData: [String: Any] = [
-            "title": fileName.replacingOccurrences(of: "-", with: " ").capitalized,
-            "text": text,
-            "language": "auto",
-            "duration": duration,
-            "audioFile": savedAudioURL.lastPathComponent,
-            "timestamp": Date().timeIntervalSince1970
+        let payload: [String: Any] = [
+            "title": fileName.isEmpty ? "Acta compartida" : fileName,
+            "text": text, "language": "auto", "duration": duration,
+            "audioFile": savedAudio.lastPathComponent,
+            "timestamp": Date().timeIntervalSince1970,
         ]
-
-        let jsonData = try JSONSerialization.data(withJSONObject: pendingData)
-        try jsonData.write(to: pendingFile)
+        try JSONSerialization.data(withJSONObject: payload)
+            .write(to: pendingDir.appendingPathComponent("\(UUID().uuidString).json"))
     }
 }
 
@@ -318,12 +277,9 @@ enum ShareError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .fileNotFound:
-            return "Could not load the audio file"
-        case .permissionDenied:
-            return "Speech recognition permission is required"
-        case .transcriptionFailed:
-            return "Failed to transcribe the audio"
+        case .fileNotFound: return "No se pudo cargar el audio."
+        case .permissionDenied: return "Hace falta permiso de reconocimiento de voz."
+        case .transcriptionFailed: return "No se pudo transcribir el audio."
         }
     }
 }

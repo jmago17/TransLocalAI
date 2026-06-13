@@ -21,8 +21,13 @@ struct TranscriberApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
+            PipelineJob.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -33,10 +38,12 @@ struct TranscriberApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootTabView()
                 .onAppear {
                     importPendingTranscriptions()
                     registerBackgroundTask()
+                    AudioFileManager.shared.migrateLocalFilesToCloud()
+                    ActasNotifications.requestAuthorizationIfNeeded()
                 }
         }
         .modelContainer(sharedModelContainer)
@@ -106,14 +113,12 @@ struct TranscriberApp: App {
                     let audioFileName = json["audioFile"] as? String
                     let timestamp = json["timestamp"] as? TimeInterval ?? Date().timeIntervalSince1970
 
-                    // Copy audio to app's documents directory if exists
+                    // Copy audio to iCloud container (or local fallback)
                     var savedAudioFileName: String? = nil
                     if let audioFileName = audioFileName {
                         let sourceAudioURL = audioDirectory.appendingPathComponent(audioFileName)
                         if FileManager.default.fileExists(atPath: sourceAudioURL.path) {
-                            let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                            let destAudioURL = documentsDirectory.appendingPathComponent(audioFileName)
-                            try? FileManager.default.copyItem(at: sourceAudioURL, to: destAudioURL)
+                            try? AudioFileManager.shared.saveAudio(from: sourceAudioURL, filename: audioFileName)
                             savedAudioFileName = audioFileName
                             // Clean up shared audio
                             try? FileManager.default.removeItem(at: sourceAudioURL)
