@@ -60,15 +60,13 @@ struct TranscribeAndSaveIntent: AppIntent {
             throw TranscribeError.permissionDenied
         }
         
-        // Get documents directory for saving audio file
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        
-        // Use original filename if available, otherwise use title
+        // Save audio file to iCloud container (or local fallback)
         let originalFilename = audioFile.filename
         let cleanFilename = originalFilename.replacingOccurrences(of: " ", with: "-")
         let timestamp = Date().timeIntervalSince1970
-        let savedAudioURL = documentsDirectory.appendingPathComponent("\(cleanFilename)-\(Int(timestamp)).m4a")
-        
+        let audioFileName = "\(cleanFilename)-\(Int(timestamp)).m4a"
+        let savedAudioURL = AudioFileManager.shared.audioDirectory.appendingPathComponent(audioFileName)
+
         // Save the audio file permanently
         try audioFile.data.write(to: savedAudioURL)
         
@@ -102,7 +100,7 @@ struct TranscribeAndSaveIntent: AppIntent {
             
             // Save to SwiftData
             let schema = Schema([Transcription.self])
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
             let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
             let modelContext = modelContainer.mainContext
             

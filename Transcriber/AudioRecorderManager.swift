@@ -51,8 +51,7 @@ final class AudioRecorderManager: NSObject, AVAudioRecorderDelegate {
         let timestamp = Int(Date().timeIntervalSince1970)
         let fileName = "\(sanitizedTitle)-\(timestamp).m4a"
 
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let fileURL = documentsDirectory.appendingPathComponent(fileName)
+        let fileURL = AudioFileManager.shared.audioDirectory.appendingPathComponent(fileName)
 
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),

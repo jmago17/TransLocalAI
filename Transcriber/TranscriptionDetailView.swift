@@ -18,6 +18,9 @@ import FoundationModels
 struct TranscriptionDetailView: View {
     @Bindable var transcription: Transcription
     @State private var isEditing = false
+    @State private var isTranscribing = false
+    @State private var transcriptionError: String?
+    @State private var retranscribeLanguage = "multilingual"
 
     @State private var isGeneratingNotes = false
     @State private var generatedNotes: String?
@@ -153,6 +156,67 @@ struct TranscriptionDetailView: View {
 
                 Divider()
 
+                // Transcribe / Retranscribe actions when audio file exists
+                if transcription.audioFileURL != nil {
+                    if isTranscribing {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.2)
+                            Text("Transcribing...")
+                                .font(.headline)
+                            Text("This may take a few moments")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(12)
+                    } else {
+                        VStack(spacing: 12) {
+                            // Language picker
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Language")
+                                    .font(.headline)
+
+                                Picker("Language", selection: $retranscribeLanguage) {
+                                    Text("Multilingual").tag("multilingual")
+                                    Text("Euskara").tag("eu-ES")
+                                    Text("Español").tag("es-ES")
+                                    Text("English").tag("en-US")
+                                }
+                                .pickerStyle(.segmented)
+                            }
+
+                            Button(action: transcribeAudio) {
+                                Label(
+                                    transcription.transcriptionText.isEmpty ? "Transcribe Now" : "Retranscribe",
+                                    systemImage: transcription.transcriptionText.isEmpty ? "text.bubble" : "arrow.counterclockwise"
+                                )
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+
+                            if let audioURL = resolvedAudioURL {
+                                ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
+                                    Label("Share Audio", systemImage: "square.and.arrow.up")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.large)
+                            }
+
+                            if let error = transcriptionError {
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                    }
+                }
+
                 // Transcription text
                 if isEditing {
                     TextEditor(text: $transcription.transcriptionText)
@@ -160,8 +224,8 @@ struct TranscriptionDetailView: View {
                         .padding(8)
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(12)
-                } else {
-                    Text(transcription.transcriptionText.isEmpty ? "No transcription available" : transcription.transcriptionText)
+                } else if !transcription.transcriptionText.isEmpty {
+                    Text(transcription.transcriptionText)
                         .textSelection(.enabled)
                         .font(.body)
                 }
@@ -182,6 +246,11 @@ struct TranscriptionDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack {
+                    if let audioURL = resolvedAudioURL {
+                        ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
+                            Image(systemName: "waveform.circle")
+                        }
+                    }
                     if !transcription.transcriptionText.isEmpty {
                         ShareLink(item: transcription.transcriptionText) {
                             Image(systemName: "square.and.arrow.up")
@@ -284,6 +353,38 @@ struct TranscriptionDetailView: View {
         .sheet(isPresented: $showCorrectionReview) {
             if #available(iOS 26, macOS 26, *) {
                 CorrectionReviewView(transcription: transcription)
+            }
+        }
+    }
+
+    private var resolvedAudioURL: URL? {
+        guard let audioFileName = transcription.audioFileURL else { return nil }
+        return AudioFileManager.shared.audioURL(for: audioFileName)
+    }
+
+    private func transcribeAudio() {
+        guard let audioURL = resolvedAudioURL else { return }
+        isTranscribing = true
+        transcriptionError = nil
+
+        Task { @MainActor in
+            let hybridService = HybridTranscriptionService()
+            do {
+                try await hybridService.prepareModelIfNeeded(language: retranscribeLanguage) { _ in }
+
+                let result = try await hybridService.transcribe(
+                    audioURL: audioURL,
+                    language: retranscribeLanguage
+                )
+
+                transcription.transcriptionText = result.text
+                transcription.language = result.language
+                transcription.duration = result.duration
+                transcription.engineUsed = result.engineUsed == .appleSpeech ? "apple" : "whisper"
+                isTranscribing = false
+            } catch {
+                isTranscribing = false
+                transcriptionError = "Transcription failed: \(error.localizedDescription)"
             }
         }
     }
