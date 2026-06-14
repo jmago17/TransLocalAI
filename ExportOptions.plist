@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Opciones de exportación para App Store Connect. Con esto, `xcodebuild
+  -exportArchive` no pregunta nada (ni firma, ni método): firma automática
+  gestionada por Apple (cloud signing) con la API key, sube directamente a ASC.
+  No requiere certificado de distribución local.
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>upload</string>
+	<key>teamID</key>
+	<string>ES2766ARHJ</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>uploadSymbols</key>
+	<true/>
+	<!-- No dejes que Xcode toque el build number: lo gestionamos en el pbxproj. -->
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
+</dict>
+</plist>
