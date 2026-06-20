@@ -104,7 +104,50 @@ ya en `main` y pusheados:
 
 ---
 
-## TAREA PRINCIPAL PENDIENTE: app de Mac nativa (sustituir los agentes)
+## ✅ HECHO: app de Mac nativa (target TranscriberMac)
+
+Construida 2026-06-20. Target macOS `TranscriberMac` en el mismo `.xcodeproj`,
+bundle `com.josumartinez.transcriber.mac`, app de barra de menú (LSUIElement),
+**no sandboxed** (Developer ID — necesario para ejecutar whisper.cpp y Apple
+Events a Notas). Compila y arranca estable. Ficheros en `TranscriberMac/`:
+- `TranscriberMacApp.swift` — MenuBarExtra (popover) + Window + Settings;
+  ModelContainer SwiftData+CloudKit compartido con iOS; arranca el processor.
+- `PipelineProcessor.swift` — observa PipelineJob sincronizados por CloudKit,
+  reclama los `transport == .cloudkit && stage == .queued`, procesa
+  transcripción → redacción → Notas, actualiza el stage (visible en iOS).
+  Poll 20s + reclaim de colgados; descarga el audio del contenedor iCloud.
+- `MacTranscriber.swift` — motor elegible: Apple Speech / WhisperKit (engines de
+  Core/) / whisper.cpp CLI (ffmpeg + whisper-cli).
+- `ActaRedactor.swift` — Apple Foundation Models (default) / OpenAI API / CLI
+  OpenAI / CLI Claude. Mismo prompt de acta; preserva notas manuales; salida HTML.
+- `NotesWriter.swift` — lee/crea/actualiza/muestra la nota en carpeta Actas vía
+  AppleScript (Apple Events nativos).
+- `MacSettings.swift` — motores en App Group defaults; claves en Keychain.
+- `LaunchAtLogin.swift` — SMAppService.
+- `MenuBarContentView`/`MacMainView`/`MacSettingsView` — UI según mockups.
+- Grupo sincronizado `Core/` (nuevo): los 8 ficheros cross-platform movidos de
+  `Transcriber/` (engines, AudioFileManager, modelos). Sincronizado por iOS+Mac.
+
+Integración end-to-end: `ProcessingRoute` (Shared/, App Group) = server | macApp.
+iOS `submit()` con ruta macApp crea job `.cloudkit`/`.queued` y lo deja a CloudKit;
+la app de Mac lo recoge. Selector en Ajustes iOS (default = server hasta validar).
+
+### Pendiente de la app de Mac (no bloqueante)
+- **Validar end-to-end de verdad**: enviar un audio desde iOS con ruta "App de
+  Mac", confirmar que el job sincroniza por CloudKit, la app de Mac lo procesa y
+  el acta aparece en Notas. No se ha probado el flujo CloudKit real (solo builds
+  + arranque). Requiere firmar la app de Mac con el perfil real (no ad-hoc) para
+  que CloudKit tenga el entitlement, y conceder permisos TCC (Automation→Notas,
+  Speech). La primera vez pedirá permiso de Apple Events.
+- **Firma/distribución**: Developer ID + notarización (no Mac App Store). Falta
+  un flujo de export para la app de Mac (el `scripts/build-upload.sh` actual es
+  para la app iOS / App Store).
+- **Retirar la infra vieja** cuando esto se valide: actas-server + token + los
+  agentes launchd transcribir/redactor/control. (El usuario pidió mantenerlos
+  hasta validar.)
+- Iconos de la app de Mac (asset catalog) — ahora usa el símbolo de sistema.
+
+## TAREA HISTÓRICA (ya resuelta arriba): app de Mac nativa
 
 El usuario quiere **migrar la parte del Mac de agentes launchd a una app de Mac
 propia**, integrada en el mismo `Transcriber.xcodeproj` como target macOS.
