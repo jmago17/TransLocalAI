@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		70B5913D47178698C7018FF4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 504204433C0B5CC4530B4846 /* Cocoa.framework */; };
+		7C9E6FF3D63DD890545999A9 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 73E25B997776152071AB30BA /* WhisperKit */; };
 		A928265A2EF5455C001B6365 /* TranscriberShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A92826502EF5455C001B6365 /* TranscriberShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A92826672EF74C58001B6365 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826662EF74C58001B6365 /* FoundationModels.framework */; };
 		A92826692EF74C61001B6365 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826682EF74C61001B6365 /* Foundation.framework */; };
@@ -63,6 +65,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		504204433C0B5CC4530B4846 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		6D93FE8DC307683FB9A17D67 /* TranscriberMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranscriberMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A92826502EF5455C001B6365 /* TranscriberShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A92826662EF74C58001B6365 /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/FoundationModels.framework; sourceTree = DEVELOPER_DIR; };
 		A92826682EF74C61001B6365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -74,6 +78,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9B7A114FDC319FF849C2B92C /* Exceptions for "TranscriberMac" folder in "TranscriberMac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E342A04460A87BE719F8E1F5 /* TranscriberMac */;
+		};
 		A928265E2EF5455C001B6365 /* Exceptions for "TranscriberShare" folder in "TranscriberShare" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -110,6 +121,21 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		60524AF6438A9097708DF7EC /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		800176E8BA072CFFA8D09F77 /* TranscriberMac */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9B7A114FDC319FF849C2B92C /* Exceptions for "TranscriberMac" folder in "TranscriberMac" target */,
+			);
+			path = TranscriberMac;
+			sourceTree = "<group>";
+		};
 		9B3026965D73A675C7EFA85F /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -159,6 +185,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		A0CE7A3C6E0C716DDF032570 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70B5913D47178698C7018FF4 /* Cocoa.framework in Frameworks */,
+				7C9E6FF3D63DD890545999A9 /* WhisperKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A928264D2EF5455C001B6365 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -201,11 +236,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		74E4414BB0CD22933E981CBE /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				504204433C0B5CC4530B4846 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
 		A92826652EF74C58001B6365 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				A92826682EF74C61001B6365 /* Foundation.framework */,
 				A92826662EF74C58001B6365 /* FoundationModels.framework */,
+				74E4414BB0CD22933E981CBE /* OS X */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -222,6 +266,8 @@
 				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
 				A92826652EF74C58001B6365 /* Frameworks */,
 				9B3026965D73A675C7EFA85F /* Shared */,
+				60524AF6438A9097708DF7EC /* Core */,
+				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
 			);
 			sourceTree = "<group>";
 		};
@@ -233,6 +279,7 @@
 				A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */,
 				A92826502EF5455C001B6365 /* TranscriberShare.appex */,
 				A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */,
+				6D93FE8DC307683FB9A17D67 /* TranscriberMac.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -282,6 +329,7 @@
 			fileSystemSynchronizedGroups = (
 				A950DED42EF038E100CF2226 /* Transcriber */,
 				9B3026965D73A675C7EFA85F /* Shared */,
+				60524AF6438A9097708DF7EC /* Core */,
 			);
 			name = Transcriber;
 			packageProductDependencies = (
@@ -353,6 +401,31 @@
 			productReference = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		E342A04460A87BE719F8E1F5 /* TranscriberMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CB344FE7AF81792C49BE77DB /* Build configuration list for PBXNativeTarget "TranscriberMac" */;
+			buildPhases = (
+				E3AE835723689B4BAFD6833D /* Sources */,
+				A0CE7A3C6E0C716DDF032570 /* Frameworks */,
+				925F8532C958C6B4A11F36E6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
+				60524AF6438A9097708DF7EC /* Core */,
+				9B3026965D73A675C7EFA85F /* Shared */,
+			);
+			name = TranscriberMac;
+			packageProductDependencies = (
+				73E25B997776152071AB30BA /* WhisperKit */,
+			);
+			productName = TranscriberMac;
+			productReference = 6D93FE8DC307683FB9A17D67 /* TranscriberMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -405,11 +478,19 @@
 				A950DEEA2EF038E200CF2226 /* TranscriberUITests */,
 				A928264F2EF5455C001B6365 /* TranscriberShare */,
 				A9B0E0102F0B000100000010 /* TranscriberWidgets */,
+				E342A04460A87BE719F8E1F5 /* TranscriberMac */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		925F8532C958C6B4A11F36E6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A928264E2EF5455C001B6365 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -484,6 +565,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E3AE835723689B4BAFD6833D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -510,6 +598,70 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		63FBCB80550A47042E0EEEB4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TranscriberMac/TranscriberMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 25;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberMac/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.mac;
+				PRODUCT_NAME = TransLocalAI;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		65BB4159A54A0BC218FF2D86 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TranscriberMac/TranscriberMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 25;
+				DEVELOPMENT_TEAM = ES2766ARHJ;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TranscriberMac/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josumartinez.transcriber.mac;
+				PRODUCT_NAME = TransLocalAI;
+				SDKROOT = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 		A928265C2EF5455C001B6365 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1015,6 +1167,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		CB344FE7AF81792C49BE77DB /* Build configuration list for PBXNativeTarget "TranscriberMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63FBCB80550A47042E0EEEB4 /* Release */,
+				65BB4159A54A0BC218FF2D86 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1029,6 +1190,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		73E25B997776152071AB30BA /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
 		A9A1C0023B00000100000002 /* WhisperKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;

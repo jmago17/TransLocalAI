@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Menu bar agent: no Dock icon, no main window on launch. -->
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TransLocalAI usa el micrófono solo si grabas un audio desde el Mac.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>TransLocalAI usa reconocimiento de voz para transcribir los audios de las reuniones.</string>
+</dict>
+</plist>
