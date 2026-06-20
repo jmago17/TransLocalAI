@@ -58,6 +58,21 @@ enum NotesWriter {
         _ = try run(script)
     }
 
+    /// Bring Notes to the front showing the note titled `title` (best-effort).
+    static func show(title: String) {
+        let script = """
+        tell application "Notes"
+            activate
+            set acc to default account
+            if (exists folder "\(esc(folder))" of acc) then
+                set theNotes to notes of folder "\(esc(folder))" of acc whose name is "\(esc(title))"
+                if (count of theNotes) > 0 then show item 1 of theNotes
+            end if
+        end tell
+        """
+        _ = try? run(script)
+    }
+
     // MARK: - AppleScript plumbing
 
     private static func run(_ source: String) throws -> String {
