@@ -1,0 +1,68 @@
+<!-- @dsCard group="iOS" -->
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>iOS · Grabar</title>
+<style>
+  :root{--bg:#f2f2f7;--card:#fff;--sep:rgba(60,60,67,.13);--label:#1c1c1e;--label2:#6c6c70;--label3:#aeaeb2;
+    --accent:#0a84ff;--red:#ff3b30;--green:#34c759;--r:18px;
+    font-family:-apple-system,"SF Pro Text","Helvetica Neue",system-ui,sans-serif}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}svg{display:block}
+  body{background:#c7c7cc;display:flex;justify-content:center;padding:28px}
+  .phone{width:393px;height:852px;background:var(--bg);border-radius:52px;box-shadow:0 22px 70px rgba(0,0,0,.32);
+    overflow:hidden;position:relative;border:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:126px;height:36px;background:#000;border-radius:20px;z-index:5}
+  .status{height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 9px;font-weight:600;font-size:15px;color:var(--label)}
+  .nav{padding:2px 20px 8px}.nav h1{font-size:34px;font-weight:800;letter-spacing:-.6px}
+  .body{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 24px 120px}
+  /* timer */
+  .timer{font-size:62px;font-weight:300;letter-spacing:1px;font-variant-numeric:tabular-nums;color:var(--label);margin-top:30px}
+  .recdot{display:inline-flex;align-items:center;gap:8px;color:var(--red);font-size:15px;font-weight:600;margin-top:4px}
+  .recdot i{width:9px;height:9px;border-radius:50%;background:var(--red);display:inline-block}
+  /* waveform meter */
+  .meter{display:flex;align-items:center;gap:3px;height:90px;margin:34px 0 8px}
+  .meter b{width:4px;border-radius:2px;background:var(--accent);display:block}
+  .name-field{width:100%;background:var(--card);border-radius:14px;padding:14px 16px;margin-top:14px;
+    font-size:16px;color:var(--label);box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px}
+  .name-field span{color:var(--label3)}
+  /* stop button */
+  .controls{margin-top:auto;display:flex;align-items:center;justify-content:center;width:100%;position:relative}
+  .stop{width:78px;height:78px;border-radius:50%;border:4px solid rgba(255,59,48,.3);display:grid;place-items:center}
+  .stop b{width:30px;height:30px;border-radius:7px;background:var(--red);display:block}
+  /* post-recording sheet preview (overlaid hint) */
+  .hint{position:absolute;left:24px;right:24px;bottom:120px;background:var(--card);border-radius:var(--r);
+    padding:6px;box-shadow:0 8px 30px rgba(0,0,0,.12);display:flex;flex-direction:column;gap:2px;opacity:.0}
+  .tabs{height:84px;background:rgba(249,249,252,.86);backdrop-filter:blur(24px);border-top:1px solid var(--sep);
+    display:flex;padding:9px 0 22px;position:absolute;left:0;right:0;bottom:0}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:500;color:var(--label3)}
+  .tab.on{color:var(--accent)}
+</style></head>
+<body><div class="phone">
+  <div class="notch"></div>
+  <div class="status"><span>9:41</span><span>100%</span></div>
+  <div class="nav"><h1>Grabar</h1></div>
+  <div class="body">
+    <div class="timer">04:17</div>
+    <div class="recdot"><i></i> Grabando</div>
+    <div class="meter" id="m"></div>
+    <div class="name-field">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#aeaeb2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M4 20l1-4 10-10 3 3-10 10z"/></svg>
+      Reunión semanal MTPL
+    </div>
+    <div class="controls">
+      <div class="stop"><b></b></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"/><path d="M14 2v6h6"/></svg>Actas</div>
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><path d="M16.5 4l3.5 1-3 16-3.5-1"/></svg>Biblioteca</div>
+    <div class="tab on"><svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor"><rect x="9" y="2" width="6" height="12" rx="3"/></svg><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" style="margin-top:-25px"><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>Grabar</div>
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" stroke-linecap="round"/></svg>Ajustes</div>
+  </div>
+</div>
+<script>
+  // static "meter" bars (varied heights) — inline so it renders without JS deps too
+  var heights=[18,30,52,40,68,84,60,46,72,38,26,58,80,54,34,22,44,66,48,30,20,40,62,78,56,36,24,50,70,42,28,16];
+  var m=document.getElementById('m');
+  heights.forEach(function(h,i){var b=document.createElement('b');b.style.height=h+'px';
+    b.style.opacity=(i>22?0.3:1);m.appendChild(b);});
+</script>
+</body></html>

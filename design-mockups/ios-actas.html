@@ -1,0 +1,140 @@
+<!-- @dsCard group="iOS" -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS · Actas</title>
+<style>
+  :root{
+    --bg:#f2f2f7; --card:#fff; --sep:rgba(60,60,67,.13);
+    --label:#1c1c1e; --label2:#6c6c70; --label3:#aeaeb2;
+    --accent:#0a84ff; --green:#34c759; --amber:#ff9f0a; --red:#ff3b30;
+    --r:18px;
+    font-family:-apple-system,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+  body{background:#c7c7cc;display:flex;justify-content:center;padding:28px}
+  svg{display:block}
+  .phone{width:393px;height:852px;background:var(--bg);border-radius:52px;
+    box-shadow:0 22px 70px rgba(0,0,0,.32);overflow:hidden;position:relative;
+    border:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);
+    width:126px;height:36px;background:#000;border-radius:20px;z-index:5}
+  .status{height:54px;display:flex;align-items:flex-end;justify-content:space-between;
+    padding:0 30px 9px;font-weight:600;font-size:15px;color:var(--label)}
+  .status .r{display:flex;gap:6px;align-items:center}
+  .nav{padding:2px 20px 8px;display:flex;align-items:center;justify-content:space-between}
+  .nav h1{font-size:34px;font-weight:800;letter-spacing:-.6px}
+  .share{width:38px;height:38px;border-radius:50%;background:var(--card);
+    display:grid;place-items:center;box-shadow:0 1px 3px rgba(0,0,0,.08);color:var(--accent)}
+  .scroll{flex:1;overflow-y:auto;padding:0 16px 120px}
+  .banner{background:var(--card);border-radius:var(--r);padding:14px 16px;
+    display:flex;align-items:center;gap:13px;margin-bottom:22px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .banner .ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(52,199,89,.16);color:var(--green)}
+  .banner h3{font-size:16px;font-weight:600}
+  .banner p{font-size:13px;color:var(--label2);margin-top:1px}
+  .spin{margin-left:auto;width:18px;height:18px;border-radius:50%;
+    border:2px solid var(--sep);border-top-color:var(--label3)}
+  .sec{font-size:13px;font-weight:600;color:var(--label2);text-transform:uppercase;
+    letter-spacing:.4px;margin:0 6px 9px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:24px}
+  .tile{background:var(--card);border-radius:var(--r);padding:13px 15px 14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .tile .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .tile .n{font-size:30px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .tile .lbl{font-size:13px;color:var(--label2);margin-top:1px}
+  .tile.err .n{color:var(--label3)}
+  .list{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:24px}
+  .row{display:flex;align-items:center;gap:12px;padding:13px 16px}
+  .row+.row{border-top:1px solid var(--sep)}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .g{background:var(--green)} .a{background:var(--amber)} .r2{background:var(--red)}
+  .row .name{font-size:16px;font-weight:500} .row .st{margin-left:auto;font-size:13px;color:var(--label2)}
+  .job{display:flex;align-items:center;gap:12px;padding:13px 16px}
+  .job+.job{border-top:1px solid var(--sep)}
+  .job .jic{width:28px;height:28px;display:grid;place-items:center;flex:none}
+  .job .t{font-size:16px;font-weight:500;line-height:1.2;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .job .s{font-size:13px;color:var(--label2);margin-top:2px}
+  .pill{margin-left:auto;font-size:14px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .chev{margin-left:auto;color:var(--label3)}
+  .mp{width:54px;height:5px;border-radius:3px;background:var(--sep);overflow:hidden;margin-left:auto;flex:none}
+  .mp span{display:block;height:100%;background:var(--accent);width:62%}
+  .send{position:absolute;left:16px;right:16px;bottom:100px;height:52px;border-radius:16px;
+    background:var(--accent);color:#fff;font-size:17px;font-weight:600;border:none;
+    display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 10px 26px rgba(10,132,255,.42)}
+  .tabs{height:84px;background:rgba(249,249,252,.86);backdrop-filter:blur(24px);
+    border-top:1px solid var(--sep);display:flex;padding:9px 0 22px;position:absolute;left:0;right:0;bottom:0}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:500;color:var(--label3)}
+  .tab.on{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+  <div class="status"><span>9:41</span>
+    <span class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#1c1c1e"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="#1c1c1e" stroke-width="1.3"><path d="M1 4.5C4.8 1 12.2 1 16 4.5"/><path d="M3.5 7C6 4.8 11 4.8 13.5 7"/><path d="M6 9.4C7.3 8.3 9.7 8.3 11 9.4"/><circle cx="8.5" cy="11" r=".8" fill="#1c1c1e" stroke="none"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x=".5" y=".5" width="21" height="11" rx="3" fill="none" stroke="#1c1c1e" stroke-opacity=".4"/><rect x="2" y="2" width="18" height="8" rx="1.6" fill="#1c1c1e"/><rect x="23" y="4" width="1.6" height="4" rx=".8" fill="#1c1c1e" fill-opacity=".4"/></svg>
+    </span></div>
+
+  <div class="nav"><h1>Actas</h1>
+    <div class="share"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M5 13v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg></div>
+  </div>
+
+  <div class="scroll">
+    <div class="banner">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5C9 8.5 15 8.5 19 12.5" opacity=".5"/><path d="M2 8C8 2.5 16 2.5 22 8"/><path d="M8 16.5c2.2-2 5.8-2 8 0"/><circle cx="12" cy="20" r="1.3" fill="currentColor" stroke="none"/></svg></div>
+      <div><h3>Conectado al Mac</h3><p>Sincronizado hace un momento</p></div>
+      <div class="spin"></div>
+    </div>
+
+    <div class="sec">Cola</div>
+    <div class="grid">
+      <div class="tile"><div class="top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M12 3v12m0 0l-4-4m4 4l4-4"/></svg>
+        </div><div class="n">2</div><div class="lbl">En cola</div></div>
+      <div class="tile"><div class="top">
+        <svg width="22" height="20" viewBox="0 0 28 24" fill="none" stroke="#0a84ff" stroke-width="1.9" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 4v16M15 7v10M19 9v6M23 11h2M25 12h0"/></svg>
+        </div><div class="n">1</div><div class="lbl">Transcribiendo</div></div>
+      <div class="tile"><div class="top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        </div><div class="n">0</div><div class="lbl">Por redactar</div></div>
+      <div class="tile err"><div class="top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h0"/></svg>
+        </div><div class="n">0</div><div class="lbl">Errores</div></div>
+    </div>
+
+    <div class="sec">Pipeline</div>
+    <div class="list">
+      <div class="row"><span class="dot g"></span><span class="name">Transcriptor</span><span class="st">Activo</span></div>
+      <div class="row"><span class="dot g"></span><span class="name">Redactor</span><span class="st">Activo</span></div>
+      <div class="row"><span class="dot a"></span><span class="name">Sincronización</span><span class="st">iCloud al día</span></div>
+    </div>
+
+    <div class="sec">Mis envíos</div>
+    <div class="list">
+      <div class="job"><span class="jic"><svg width="24" height="24" viewBox="0 0 24 24" fill="#34c759"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1.2 14.2l-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg></span>
+        <div><div class="t">Seguimiento semanal MTPL</div><div class="s">Acta lista · en Notas</div></div>
+        <span class="pill">Abrir <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></span></div>
+      <div class="job"><span class="jic"><svg width="22" height="20" viewBox="0 0 28 24" fill="none" stroke="#0a84ff" stroke-width="2" stroke-linecap="round"><path d="M3 12h2M7 8v8M11 4v16M15 7v10M19 9v6M23 11h2"/></svg></span>
+        <div><div class="t">Touchpoint Dinalan SCADA</div><div class="s">Transcribiendo… 62%</div></div>
+        <span class="mp"><span></span></span></div>
+      <div class="job"><span class="jic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0a84ff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M12 3v12m0 0l-4-4m4 4l4-4"/></svg></span>
+        <div><div class="t">Revisión proyecto HTZ</div><div class="s">En cola</div></div>
+        <span class="chev"><svg width="9" height="15" viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L7 7.5l-5.5 6"/></svg></span></div>
+    </div>
+  </div>
+
+  <button class="send"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M5 13v5a2 2 0 002 2h10a2 2 0 002-2v-5"/></svg> Enviar audio</button>
+
+  <div class="tabs">
+    <div class="tab on"><svg width="25" height="25" viewBox="0 0 24 24" fill="currentColor"><path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5z" opacity=".25"/><path d="M14 2v6h6" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="7" y="12" width="10" height="1.6" rx=".8"/><rect x="7" y="15.5" width="7" height="1.6" rx=".8"/></svg>Actas</div>
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="4" height="18" rx="1"/><rect x="10" y="3" width="4" height="18" rx="1"/><path d="M16.5 4l3.5 1-3 16-3.5-1"/></svg>Biblioteca</div>
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>Grabar</div>
+    <div class="tab"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg>Ajustes</div>
+  </div>
+</div>
+</body>
+</html>
