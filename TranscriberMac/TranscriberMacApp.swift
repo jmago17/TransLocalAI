@@ -12,6 +12,8 @@ import SwiftData
 
 @main
 struct TranscriberMacApp: App {
+    @State private var processor = PipelineProcessor()
+
     var sharedModelContainer: ModelContainer = {
         // Same SwiftData + CloudKit schema as iOS, so PipelineJob records and
         // the Transcription library sync across devices through CloudKit.
@@ -32,14 +34,17 @@ struct TranscriberMacApp: App {
         MenuBarExtra {
             MenuBarContentView()
                 .modelContainer(sharedModelContainer)
+                .environment(processor)
+                .task { processor.start(context: sharedModelContainer.mainContext) }
         } label: {
-            Image(systemName: "doc.text.fill")
+            Image(systemName: processor.isRunning ? "doc.text.fill" : "doc.text")
         }
         .menuBarExtraStyle(.window)
 
         Window("TransLocalAI", id: "main") {
             MacMainView()
                 .modelContainer(sharedModelContainer)
+                .environment(processor)
         }
         .windowResizability(.contentSize)
 

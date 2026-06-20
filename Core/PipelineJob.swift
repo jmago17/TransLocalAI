@@ -18,6 +18,7 @@ enum PipelineSource: String, Codable, Sendable, CaseIterable {
 enum PipelineTransport: String, Codable, Sendable {
     case http       // uploaded over HTTP to actas-server
     case icloud     // dropped into Reuniones/Inbox via iCloud fallback
+    case cloudkit   // synced via CloudKit; processed by the Mac companion app
 }
 
 enum PipelineUploadState: String, Codable, Sendable {

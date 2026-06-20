@@ -9,5 +9,7 @@
 	<string>TransLocalAI usa el micrófono solo si grabas un audio desde el Mac.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>TransLocalAI usa reconocimiento de voz para transcribir los audios de las reuniones.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>TransLocalAI escribe el acta generada en la app Notas.</string>
 </dict>
 </plist>
