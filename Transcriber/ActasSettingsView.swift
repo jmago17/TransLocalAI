@@ -18,6 +18,7 @@ struct ActasSettingsView: View {
     @State private var testResult: TestResult?
     @State private var showingFolderPicker = false
     @State private var folderConfigured = ICloudInboxBridge.isConfigured
+    @State private var route = ActasServerStore.processingRoute
 
     enum TestResult: Equatable {
         case ok(String)      // base URL that answered
@@ -27,6 +28,7 @@ struct ActasSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                routeSection
                 tokenSection
                 hostsSection
                 testSection
@@ -46,6 +48,21 @@ struct ActasSettingsView: View {
     }
 
     // MARK: - Sections
+
+    private var routeSection: some View {
+        Section {
+            Picker("Procesar con", selection: $route) {
+                ForEach(ProcessingRoute.allCases) { Text($0.label).tag($0) }
+            }
+            .onChange(of: route) { _, v in ActasServerStore.processingRoute = v }
+        } header: {
+            Text("Procesamiento")
+        } footer: {
+            Text(route == .macApp
+                 ? "Los audios se sincronizan por iCloud y los procesa la app de Mac (sin servidor ni token)."
+                 : "Los audios se suben al servidor del Mac por HTTP (con respaldo iCloud).")
+        }
+    }
 
     private var tokenSection: some View {
         Section {

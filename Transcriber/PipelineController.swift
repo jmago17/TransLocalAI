@@ -145,6 +145,18 @@ final class PipelineController {
         context.insert(job)
         try? context.save()
 
+        if ActasServerStore.processingRoute == .macApp {
+            // CloudKit route: the audio is already in the iCloud container and the
+            // PipelineJob syncs via CloudKit; the Mac companion app picks it up.
+            // No network upload — just mark it queued for the Mac.
+            job.transport = .cloudkit
+            job.uploadState = .uploaded
+            job.stage = .queued
+            job.errorMessage = nil
+            try? context.save()
+            return job
+        }
+
         await deliver(job: job, audioURL: audioURL, context: context, onProgress: onProgress)
         return job
     }

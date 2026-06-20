@@ -46,6 +46,20 @@ nonisolated struct ActasServerConfig: Sendable, Equatable {
     }
 }
 
+/// Where submitted audios are processed.
+nonisolated enum ProcessingRoute: String, Sendable, CaseIterable, Identifiable {
+    case server     // HTTP to actas-server (+ iCloud Inbox fallback) — the launchd pipeline
+    case macApp     // CloudKit → the Mac companion app (TranscriberMac)
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .server: return "Servidor del Mac (HTTP)"
+        case .macApp: return "App de Mac (iCloud)"
+        }
+    }
+}
+
 /// Persistence + change notifications for `ActasServerConfig`.
 nonisolated enum ActasServerStore {
     private static var defaults: UserDefaults {
@@ -83,6 +97,13 @@ nonisolated enum ActasServerStore {
         d.set(config.customHost, forKey: Key.custom)
         d.set(config.port, forKey: Key.port)
         d.set(config.token, forKey: Key.token)
+    }
+
+    /// Where submitted audios are processed. Defaults to the existing server
+    /// pipeline; switch to .macApp once the CloudKit/Mac-app path is validated.
+    static var processingRoute: ProcessingRoute {
+        get { ProcessingRoute(rawValue: defaults.string(forKey: "actas.processingRoute") ?? "") ?? .server }
+        set { defaults.set(newValue.rawValue, forKey: "actas.processingRoute") }
     }
 
     /// Cache of the last base URL that answered /health, tried first next time.
