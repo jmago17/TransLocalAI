@@ -19,6 +19,7 @@ struct ActasSettingsView: View {
     @State private var showingFolderPicker = false
     @State private var folderConfigured = ICloudInboxBridge.isConfigured
     @State private var route = ActasServerStore.processingRoute
+    @AppStorage("liquidGlassTheme") private var liquidGlassTheme = false
 
     enum TestResult: Equatable {
         case ok(String)      // base URL that answered
@@ -28,6 +29,7 @@ struct ActasSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                appearanceSection
                 routeSection
                 tokenSection
                 hostsSection
@@ -48,6 +50,18 @@ struct ActasSettingsView: View {
     }
 
     // MARK: - Sections
+
+    private var appearanceSection: some View {
+        Section {
+            Toggle(isOn: $liquidGlassTheme) {
+                Label("Cristal líquido (iOS 27)", systemImage: "circle.hexagongrid.fill")
+            }
+        } header: {
+            Text("Tema")
+        } footer: {
+            Text("Aplica el estilo Liquid Glass de iOS 27 al fondo. Desactívalo para el tema clásico.")
+        }
+    }
 
     private var routeSection: some View {
         Section {

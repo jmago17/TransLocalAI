@@ -135,6 +135,8 @@ struct ContentView: View {
             }
             .onDelete(perform: deleteTranscriptions)
         }
+        .scrollContentBackground(.hidden)
+        .background(TranscriberGlassBackground())
     }
     
     private var recordingIndicatorBar: some View {
@@ -277,3 +279,31 @@ struct TranscriptionRowView: View {
         .modelContainer(for: Transcription.self, inMemory: true)
 }
 
+
+// MARK: - Optional "Cristal líquido (iOS 27)" theme background
+
+/// List background that swaps to a soft Liquid-Glass canvas when the optional
+/// theme is on (Ajustes → Tema). Off by default → the standard grouped
+/// background. Subtle per WWDC26's reduced-transparency guidance.
+private struct TranscriberGlassBackground: View {
+    @AppStorage("liquidGlassTheme") private var liquidGlassTheme = false
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        if liquidGlassTheme {
+            ZStack {
+                Color(.systemGroupedBackground)
+                LinearGradient(
+                    colors: colorScheme == .dark
+                        ? [Color.white.opacity(0.05), .clear, Color.accentColor.opacity(0.10)]
+                        : [Color.white.opacity(0.5), .clear, Color.accentColor.opacity(0.06)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .ignoresSafeArea()
+        } else {
+            Color(.systemGroupedBackground)
+        }
+    }
+}
