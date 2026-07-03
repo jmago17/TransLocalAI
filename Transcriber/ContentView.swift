@@ -295,10 +295,16 @@ private struct TranscriberGlassBackground: View {
                 Color(.systemGroupedBackground)
                 LinearGradient(
                     colors: colorScheme == .dark
-                        ? [Color.white.opacity(0.05), .clear, Color.accentColor.opacity(0.10)]
-                        : [Color.white.opacity(0.5), .clear, Color.accentColor.opacity(0.06)],
-                    startPoint: .top,
-                    endPoint: .bottom
+                        ? [Color.accentColor.opacity(0.30), .clear, Color.accentColor.opacity(0.16)]
+                        : [Color.accentColor.opacity(0.20), .clear, Color.accentColor.opacity(0.13)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                RadialGradient(
+                    colors: [Color.white.opacity(colorScheme == .dark ? 0.08 : 0.5), .clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 460
                 )
             }
             .ignoresSafeArea()
