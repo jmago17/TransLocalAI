@@ -38,6 +38,8 @@ struct TranscriptImportView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .liquidCrystalScreen()
             .navigationTitle("Import Transcript")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

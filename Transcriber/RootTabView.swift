@@ -11,16 +11,17 @@ import SwiftData
 struct RootTabView: View {
     var body: some View {
         TabView {
-            Tab("Biblioteca", systemImage: "books.vertical.fill") {
+            Tab("Library", systemImage: "books.vertical.fill") {
                 ContentView()
             }
-            Tab("Grabar", systemImage: "mic.fill") {
+            Tab("Record", systemImage: "mic.fill") {
                 RecordTabView()
             }
-            Tab("Ajustes", systemImage: "gearshape.fill") {
+            Tab("Settings", systemImage: "gearshape.fill") {
                 LocalSettingsView()
             }
         }
+        .liquidCrystalScreen()
     }
 }
 

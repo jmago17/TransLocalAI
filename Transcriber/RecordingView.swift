@@ -35,6 +35,7 @@ struct RecordingView: View {
                 }
             }
             .padding()
+            .liquidCrystalScreen()
             .navigationTitle("Record Audio")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

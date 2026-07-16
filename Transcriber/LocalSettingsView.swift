@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct LocalSettingsView: View {
-    @AppStorage("liquidGlassTheme") private var liquidGlassTheme = false
     @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
 
     var body: some View {
@@ -33,11 +32,9 @@ struct LocalSettingsView: View {
                 } footer: {
                     Text("One short name or phrase per line, up to 100. Apple Speech uses these words as recognition context.")
                 }
-
-                Section("Appearance") {
-                    Toggle("Liquid Glass", isOn: $liquidGlassTheme)
-                }
             }
+            .scrollContentBackground(.hidden)
+            .liquidCrystalScreen()
             .navigationTitle("Settings")
         }
     }

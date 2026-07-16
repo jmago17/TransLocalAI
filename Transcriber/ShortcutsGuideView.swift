@@ -98,6 +98,8 @@ struct ShortcutsGuideView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .liquidCrystalScreen()
             .navigationTitle("Shortcuts Guide")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

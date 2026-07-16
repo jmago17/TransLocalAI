@@ -2,9 +2,7 @@
 //  RecordTabView.swift
 //  Transcriber
 //
-//  Landing screen for the Grabar tab. Hosts the existing RecordingView as a
-//  sheet and surfaces the in-progress recording bar. The "send to Mac after
-//  recording" flow is wired in a later phase.
+//  Landing screen for the Record tab.
 //
 
 import SwiftUI
@@ -20,9 +18,9 @@ struct RecordTabView: View {
                 Image(systemName: "mic.circle.fill")
                     .font(.system(size: 96))
                     .foregroundStyle(.red.gradient)
-                Text("Graba una reunión")
+                Text("Record a meeting")
                     .font(.title2.bold())
-                Text("Graba aquí y luego transcribe en el dispositivo o envíala al Mac para generar el acta.")
+                Text("Capture the conversation, then transcribe it privately on this device.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -30,7 +28,7 @@ struct RecordTabView: View {
                 Button {
                     showingRecorder = true
                 } label: {
-                    Label(recorder.isRecording ? "Ver grabación" : "Empezar a grabar",
+                    Label(recorder.isRecording ? "Open Recording" : "Start Recording",
                           systemImage: "record.circle")
                         .font(.headline)
                         .padding(.horizontal, 8)
@@ -39,7 +37,8 @@ struct RecordTabView: View {
                 .tint(.red)
                 Spacer()
             }
-            .navigationTitle("Grabar")
+            .liquidCrystalScreen()
+            .navigationTitle("Record")
             .sheet(isPresented: $showingRecorder) {
                 RecordingView()
                     .presentationDetents([.large])

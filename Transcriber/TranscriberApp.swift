@@ -35,20 +35,23 @@ struct TranscriberApp: App {
         }
     }()
 
+    init() {
+        Self.registerBackgroundTask()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootTabView()
                 .onAppear {
                     importPendingTranscriptions()
-                    registerBackgroundTask()
                 }
         }
         .modelContainer(sharedModelContainer)
     }
 
-    private func registerBackgroundTask() {
+    private static func registerBackgroundTask() {
         BGTaskScheduler.shared.register(
-            forTaskWithIdentifier: Self.bgTaskIdentifier,
+            forTaskWithIdentifier: bgTaskIdentifier,
             using: nil
         ) { task in
             guard let bgTask = task as? BGContinuedProcessingTask else {
@@ -59,6 +62,8 @@ struct TranscriberApp: App {
             // Store the task so ImportAudioView can call setTaskCompleted
             Task { @MainActor in
                 TranscriberApp.currentBGTask = bgTask
+                bgTask.progress.totalUnitCount = 100
+                bgTask.progress.completedUnitCount = 0
             }
 
             bgTask.expirationHandler = {

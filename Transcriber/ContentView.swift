@@ -50,22 +50,20 @@ struct ContentView: View {
                     transcriptionsList
                 }
             }
+            .liquidCrystalScreen()
             .navigationTitle("Transcriptions")
             .searchable(text: $searchText, prompt: "Search transcriptions")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    HStack(spacing: 12) {
-                        Button(action: { showRecordView = true }) {
-                            Label("Record", systemImage: "mic.fill")
-                        }
-                        .tint(.red)
-
+                    Menu {
                         Button(action: { showImportView = true }) {
-                            Label("Import Audio", systemImage: "plus.circle.fill")
+                            Label("Import Audio", systemImage: "waveform.badge.plus")
                         }
                         Button(action: { showTranscriptImport = true }) {
-                            Label("Import Transcript", systemImage: "doc.text.fill")
+                            Label("Import Transcript", systemImage: "doc.text")
                         }
+                    } label: {
+                        Label("Import", systemImage: "plus")
                     }
                 }
 
@@ -115,6 +113,7 @@ struct ContentView: View {
                 systemImage: "text.bubble",
                 description: Text("Choose a transcription from the list to view its details")
             )
+            .liquidCrystalScreen()
         }
     }
     
@@ -143,7 +142,7 @@ struct ContentView: View {
             .onDelete(perform: deleteTranscriptions)
         }
         .scrollContentBackground(.hidden)
-        .background(TranscriberGlassBackground())
+        .liquidCrystalScreen()
     }
     
     private var recordingIndicatorBar: some View {
@@ -284,39 +283,4 @@ struct TranscriptionRowView: View {
 #Preview {
     ContentView()
         .modelContainer(for: Transcription.self, inMemory: true)
-}
-
-
-// MARK: - Optional "Cristal líquido (iOS 27)" theme background
-
-/// List background that swaps to a soft Liquid-Glass canvas when the optional
-/// theme is on (Ajustes → Tema). Off by default → the standard grouped
-/// background. Subtle per WWDC26's reduced-transparency guidance.
-private struct TranscriberGlassBackground: View {
-    @AppStorage("liquidGlassTheme") private var liquidGlassTheme = false
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        if liquidGlassTheme {
-            ZStack {
-                Color(.systemGroupedBackground)
-                LinearGradient(
-                    colors: colorScheme == .dark
-                        ? [Color.accentColor.opacity(0.30), .clear, Color.accentColor.opacity(0.16)]
-                        : [Color.accentColor.opacity(0.20), .clear, Color.accentColor.opacity(0.13)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                RadialGradient(
-                    colors: [Color.white.opacity(colorScheme == .dark ? 0.08 : 0.5), .clear],
-                    center: .top,
-                    startRadius: 0,
-                    endRadius: 460
-                )
-            }
-            .ignoresSafeArea()
-        } else {
-            Color(.systemGroupedBackground)
-        }
-    }
 }

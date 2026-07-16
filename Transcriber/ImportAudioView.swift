@@ -11,7 +11,6 @@ import UniformTypeIdentifiers
 import AVFoundation
 import Foundation
 import Speech
-import ActivityKit
 import BackgroundTasks
 
 struct ImportAudioView: View {
@@ -32,9 +31,6 @@ struct ImportAudioView: View {
     private let hybridService = HybridTranscriptionService()
     @State private var hasPermission = false
     @State private var transcriptionTask: Task<Void, Never>?  // Track the transcription task
-    @State private var liveActivity: Activity<TranscriptionActivityAttributes>?
-    @State private var transcriptionStartDate: Date?
-    @State private var elapsedTimer: Timer?
     
     var body: some View {
         NavigationStack {
@@ -52,6 +48,7 @@ struct ImportAudioView: View {
                 }
                 .padding()
             }
+            .liquidCrystalScreen()
             .navigationTitle("Import Audio")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -64,7 +61,6 @@ struct ImportAudioView: View {
                             transcriptionTask?.cancel()
                             isTranscribing = false
                             isDetectingLanguage = false
-                            endLiveActivity()
                         }
                         dismiss()
                     }
@@ -328,26 +324,29 @@ struct ImportAudioView: View {
     private func transcribeAudio() {
         guard let audioURL = selectedFileURL else { return }
 
-        isTranscribing = true
-
-        // Start Live Activity
-        startLiveActivity(fileName: audioURL.lastPathComponent)
-
-        // Request background processing time (BGContinuedProcessingTask for longer runs)
+        // A continued-processing task is what keeps CPU/Core ML work alive after
+        // the app moves to the background. Its system UI also acts as a Live Activity.
         let bgTaskRequest = BGContinuedProcessingTaskRequest(
             identifier: TranscriberApp.bgTaskIdentifier,
             title: "Transcribing audio",
             subtitle: audioURL.lastPathComponent
         )
-        bgTaskRequest.earliestBeginDate = nil
-        try? BGTaskScheduler.shared.submit(bgTaskRequest)
+        bgTaskRequest.strategy = .fail
+        do {
+            try BGTaskScheduler.shared.submit(bgTaskRequest)
+        } catch {
+            errorMessage = "The system could not start a background-protected transcription: \(error.localizedDescription)"
+            showError = true
+            return
+        }
+
+        isTranscribing = true
 
         // Additional safety net: UIKit background task gives ~30s immediately when app backgrounds
         var uiBackgroundTaskID: UIBackgroundTaskIdentifier = .invalid
         uiBackgroundTaskID = UIApplication.shared.beginBackgroundTask {
-            // Expiration: cancel transcription and end live activity gracefully
-            self.transcriptionTask?.cancel()
-            self.endLiveActivity()
+            // BGContinuedProcessingTask now owns the long-running work. Expiring
+            // this short transition allowance must not cancel the transcription.
             if uiBackgroundTaskID != .invalid {
                 UIApplication.shared.endBackgroundTask(uiBackgroundTaskID)
                 uiBackgroundTaskID = .invalid
@@ -357,7 +356,6 @@ struct ImportAudioView: View {
         // Wire BG task expiration to cancel the transcription
         TranscriberApp.onBGTaskExpiration = {
             self.transcriptionTask?.cancel()
-            self.endLiveActivity()
         }
 
         transcriptionTask = Task {
@@ -433,7 +431,6 @@ struct ImportAudioView: View {
                 try modelContext.save()
 
                 updateLiveActivity(phase: "Complete", progress: 1.0)
-                endLiveActivity()
 
                 // Signal BG tasks completed successfully
                 TranscriberApp.currentBGTask?.setTaskCompleted(success: true)
@@ -450,7 +447,6 @@ struct ImportAudioView: View {
                 // Task was cancelled - just clean up and dismiss
                 isTranscribing = false
                 isDetectingLanguage = false
-                endLiveActivity()
                 TranscriberApp.currentBGTask?.setTaskCompleted(success: false)
                 TranscriberApp.currentBGTask = nil
                 TranscriberApp.onBGTaskExpiration = nil
@@ -463,7 +459,6 @@ struct ImportAudioView: View {
             } catch {
                 isTranscribing = false
                 isDetectingLanguage = false
-                endLiveActivity()
                 TranscriberApp.currentBGTask?.setTaskCompleted(success: false)
                 TranscriberApp.currentBGTask = nil
                 TranscriberApp.onBGTaskExpiration = nil
@@ -477,74 +472,16 @@ struct ImportAudioView: View {
         }
     }
 
-    // MARK: - Live Activity
-
-    private func startLiveActivity(fileName: String) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-
-        let attributes = TranscriptionActivityAttributes(
-            fileName: fileName,
-            engine: selectedEngine.rawValue
-        )
-        let initialState = TranscriptionActivityAttributes.ContentState(
-            progress: 0,
-            phase: "Starting...",
-            elapsedSeconds: 0
-        )
-
-        do {
-            liveActivity = try Activity.request(
-                attributes: attributes,
-                content: .init(state: initialState, staleDate: nil)
-            )
-        } catch {
-            print("Failed to start Live Activity: \(error)")
-        }
-
-        // Start elapsed time timer
-        transcriptionStartDate = Date()
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            guard let start = transcriptionStartDate else { return }
-            let elapsed = Int(Date().timeIntervalSince(start))
-            guard let activity = liveActivity else { return }
-            let updated = TranscriptionActivityAttributes.ContentState(
-                progress: activity.content.state.progress,
-                phase: activity.content.state.phase,
-                elapsedSeconds: elapsed
-            )
-            Task {
-                await activity.update(.init(state: updated, staleDate: nil))
-            }
-        }
-    }
+    // MARK: - Continued-processing system activity
 
     private func updateLiveActivity(phase: String, progress: Double) {
-        guard let activity = liveActivity else { return }
-        let elapsed = transcriptionStartDate.map { Int(Date().timeIntervalSince($0)) } ?? 0
-        let state = TranscriptionActivityAttributes.ContentState(
-            progress: progress,
-            phase: phase,
-            elapsedSeconds: elapsed
+        let boundedProgress = min(max(progress, 0), 1)
+        TranscriberApp.currentBGTask?.progress.completedUnitCount = Int64(boundedProgress * 100)
+        TranscriberApp.currentBGTask?.updateTitle(
+            "Transcribing audio",
+            subtitle: "\(phase) \(Int(boundedProgress * 100))%"
         )
-        Task {
-            await activity.update(.init(state: state, staleDate: nil))
-        }
-    }
 
-    private func endLiveActivity() {
-        elapsedTimer?.invalidate()
-        elapsedTimer = nil
-        transcriptionStartDate = nil
-        guard let activity = liveActivity else { return }
-        let finalState = TranscriptionActivityAttributes.ContentState(
-            progress: 1.0,
-            phase: "Complete",
-            elapsedSeconds: 0
-        )
-        Task {
-            await activity.end(.init(state: finalState, staleDate: nil), dismissalPolicy: .immediate)
-        }
-        liveActivity = nil
     }
 }
 

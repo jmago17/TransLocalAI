@@ -53,6 +53,7 @@ struct CorrectionReviewView: View {
                     correctionListView
                 }
             }
+            .liquidCrystalScreen()
             .navigationTitle("AI Review")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)

@@ -4,12 +4,12 @@ import FoundationModels
 #endif
 
 enum MeetingNotesError: LocalizedError {
-    case unavailable
+    case unavailable(String)
     case emptyTranscript
 
     var errorDescription: String? {
         switch self {
-        case .unavailable: "The on-device language model is not available on this device."
+        case .unavailable(let reason): reason
         case .emptyTranscript: "The transcript is empty."
         }
     }
@@ -38,6 +38,20 @@ enum MeetingNotesService {
         let clean = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { throw MeetingNotesError.emptyTranscript }
         #if canImport(FoundationModels)
+        let model = SystemLanguageModel.default
+        switch model.availability {
+        case .available:
+            break
+        case .unavailable(.deviceNotEligible):
+            throw MeetingNotesError.unavailable("Meeting notes require a device that supports Apple Intelligence.")
+        case .unavailable(.appleIntelligenceNotEnabled):
+            throw MeetingNotesError.unavailable("Turn on Apple Intelligence in Settings to generate meeting notes on this device.")
+        case .unavailable(.modelNotReady):
+            throw MeetingNotesError.unavailable("The on-device language model is still downloading. Keep the device connected and try again later.")
+        case .unavailable:
+            throw MeetingNotesError.unavailable("The on-device language model is temporarily unavailable.")
+        }
+
         let chunks = split(clean, limit: 6_000)
         var extracts: [String] = []
         for (index, chunk) in chunks.enumerated() {
@@ -60,7 +74,7 @@ enum MeetingNotesService {
             \(extracts.joined(separator: "\n\n--- PART ---\n\n"))
             """).content
         #else
-        throw MeetingNotesError.unavailable
+        throw MeetingNotesError.unavailable("The on-device language model is not available on this device.")
         #endif
     }
 

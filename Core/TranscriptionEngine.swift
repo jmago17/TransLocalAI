@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Speech
+import CoreML
 #if canImport(WhisperKit)
 import WhisperKit
 #endif
@@ -191,6 +192,12 @@ private final class WhisperKitSession {
         // modelFolder must be the full path to the directory containing .mlmodelc files
         let config = WhisperKitConfig(
             modelFolder: modelId,
+            computeOptions: ModelComputeOptions(
+                melCompute: .cpuOnly,
+                audioEncoderCompute: .cpuAndNeuralEngine,
+                textDecoderCompute: .cpuAndNeuralEngine,
+                prefillCompute: .cpuOnly
+            ),
             download: false
         )
         // WhisperKit expects ISO 639-1 codes ("en", "es"), not BCP-47 ("en-US", "es-ES")

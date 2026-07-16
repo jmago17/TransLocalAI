@@ -17,6 +17,7 @@ import FoundationModels
 
 struct TranscriptionDetailView: View {
     @Bindable var transcription: Transcription
+    @Environment(\.modelContext) private var modelContext
     @State private var isEditing = false
     @State private var isTranscribing = false
     @State private var transcriptionError: String?
@@ -51,12 +52,12 @@ struct TranscriptionDetailView: View {
                                 await generateMeetingNotes()
                             }
                         } label: {
-                            Label("Generate Meeting Notes", systemImage: "sparkles")
+                            Label(isGeneratingNotes ? "Generating Notes…" : "Generate Meeting Notes", systemImage: "sparkles")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
-                        .disabled(transcription.transcriptionText.isEmpty)
+                        .disabled(transcription.transcriptionText.isEmpty || isGeneratingNotes)
 
                         if !transcription.meetingNotes.isEmpty {
                             Button {
@@ -112,8 +113,7 @@ struct TranscriptionDetailView: View {
                         }
                     }
                     .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
                 // Metadata section
@@ -134,8 +134,7 @@ struct TranscriptionDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(12)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 // Title
                 if isEditing {
@@ -229,6 +228,7 @@ struct TranscriptionDetailView: View {
             }
             .padding()
         }
+        .liquidCrystalScreen()
         .onAppear {
             if customPrompt.isEmpty {
                 customPrompt = defaultPrompt
@@ -334,6 +334,7 @@ struct TranscriptionDetailView: View {
                         .padding()
                     }
                 }
+                .liquidCrystalScreen()
                 .navigationTitle("Meeting Notes")
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -422,6 +423,7 @@ struct TranscriptionDetailView: View {
             )
             generatedNotes = notes
             transcription.meetingNotes = notes
+            try modelContext.save()
             canMergeNotes = false
         } catch {
             generatedNotes = "Failed to generate notes: \(error.localizedDescription)"
