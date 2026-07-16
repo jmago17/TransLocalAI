@@ -60,7 +60,7 @@ struct TranscribeAndSaveIntent: AppIntent {
             throw TranscribeError.permissionDenied
         }
         
-        // Save audio file to iCloud container (or local fallback)
+        // Save the audio file in this device's app storage.
         let originalFilename = audioFile.filename
         let cleanFilename = originalFilename.replacingOccurrences(of: " ", with: "-")
         let timestamp = Date().timeIntervalSince1970
@@ -100,7 +100,7 @@ struct TranscribeAndSaveIntent: AppIntent {
             
             // Save to SwiftData
             let schema = Schema([Transcription.self])
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
+            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
             let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
             let modelContext = modelContainer.mainContext
             

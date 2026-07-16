@@ -73,19 +73,19 @@ actor WhisperModelManager {
 
 // MARK: - Modelo catalog
 enum WhisperModelCatalog: Sendable {
-    nonisolated static let defaultModelIdentifier = "whisper-medium"
+    nonisolated static let defaultModelIdentifier = "whisper-large-v3-20240930-compressed"
 
     nonisolated static let defaultModels: [WhisperModelManager.ModelDescriptor] = [
         WhisperModelManager.ModelDescriptor(
-            identifier: "whisper-medium",
-            displayName: "Whisper Medium",
-            modelId: "openai_whisper-medium",
+            identifier: "whisper-large-v3-20240930-compressed",
+            displayName: "Whisper Large v3 (compressed)",
+            modelId: "openai_whisper-large-v3-v20240930_626MB",
             supportedLanguages: [],
-            estimatedSizeMB: 1500
+            estimatedSizeMB: 626
         )
     ]
 
     nonisolated static let defaultLanguageToModel: [String: String] = [
-        "eu-ES": "whisper-medium"
+        "eu-ES": "whisper-large-v3-20240930-compressed"
     ]
 }

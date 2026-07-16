@@ -1,29 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<!--
-  La app de Mac NO usa sandbox: necesita ejecutar binarios externos (whisper.cpp
-  CLI), leer el contenedor iCloud y enviar Apple Events a Notes. Distribución por
-  Developer ID (notarizada), no Mac App Store. CloudKit + App Group funcionan sin
-  sandbox con la entitlement de iCloud.
--->
 <dict>
-	<key>com.apple.security.application-groups</key>
-	<array>
-		<string>group.com.josumartinez.transcriber</string>
-	</array>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudDocuments</string>
-		<string>CloudKit</string>
-	</array>
-	<key>com.apple.developer.icloud-container-identifiers</key>
-	<array>
-		<string>iCloud.com.josumartinez.transcriber</string>
-	</array>
-	<key>com.apple.developer.ubiquity-container-identifiers</key>
-	<array>
-		<string>iCloud.com.josumartinez.transcriber</string>
-	</array>
 </dict>
 </plist>

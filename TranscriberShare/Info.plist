@@ -2,19 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>100.123.146.23</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
-		</dict>
-	</dict>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionAttributes</key>
@@ -40,8 +27,6 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
 	</dict>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>TransLocalAI se conecta con tu Mac (servidor de actas) en la red local o por Tailscale para subir audios y ver transcripciones.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This extension needs access to the microphone to record audio for transcription.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

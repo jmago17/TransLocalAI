@@ -55,14 +55,14 @@ struct TranscriberShortcuts: AppShortcutsProvider {
         )
 
         AppShortcut(
-            intent: SendToMacIntent(),
+            intent: CreateMeetingNotesIntent(),
             phrases: [
-                "Send meeting audio with \(.applicationName)",
-                "Enviar audio para el acta con \(.applicationName)",
-                "Crear acta desde audio con \(.applicationName)"
+                "Create meeting notes with \(.applicationName)",
+                "Summarize a transcript with \(.applicationName)",
+                "Crear acta con \(.applicationName)"
             ],
-            shortTitle: "Enviar para el acta",
-            systemImageName: "paperplane.fill"
+            shortTitle: "Create Meeting Notes",
+            systemImageName: "sparkles"
         )
 
         AppShortcut(

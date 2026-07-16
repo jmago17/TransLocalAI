@@ -18,6 +18,7 @@ final class Transcription {
     var duration: TimeInterval = 0
     var audioFileURL: String? // Store filename of audio file (resolved via AudioFileManager)
     var engineUsed: String = ""
+    var meetingNotes: String = ""
     
     init(
         timestamp: Date = Date(),
@@ -26,7 +27,8 @@ final class Transcription {
         language: String = "en-US",
         duration: TimeInterval = 0,
         audioFileURL: String? = nil,
-        engineUsed: String = "apple"
+        engineUsed: String = "apple",
+        meetingNotes: String = ""
     ) {
         self.id = UUID()
         self.timestamp = timestamp
@@ -36,6 +38,6 @@ final class Transcription {
         self.duration = duration
         self.audioFileURL = audioFileURL
         self.engineUsed = engineUsed
+        self.meetingNotes = meetingNotes
     }
 }
-

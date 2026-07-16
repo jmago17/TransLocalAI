@@ -1,118 +1,92 @@
-//
-//  MacMainView.swift
-//  TranscriberMac
-//
-//  Main window: what's processing now, the queue, and the actas finished today.
-//  Mirrors design-mockups/mac-window.html.
-//
-
 import SwiftUI
-import SwiftData
+import UniformTypeIdentifiers
 
 struct MacMainView: View {
-    @Environment(PipelineProcessor.self) private var processor
-    @Query(sort: \PipelineJob.createdAt, order: .reverse) private var jobs: [PipelineJob]
-
-    private var queued: [PipelineJob] { jobs.filter { $0.transport == .cloudkit && $0.stage == .queued } }
-    private var doneToday: [PipelineJob] {
-        jobs.filter { $0.stage == .done && Calendar.current.isDateInToday($0.lastSyncedAt ?? .distantPast) }
-    }
+    @State private var title = ""
+    @State private var transcript = ""
+    @State private var notes = ""
+    @State private var isWorking = false
+    @State private var showingAudioImporter = false
+    @State private var showingTranscriptImporter = false
+    @State private var errorMessage: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                if processor.isRunning { processingSection }
-                section("En cola", queued) { job in
-                    row(job, icon: "tray.and.arrow.down.fill", color: .accentColor,
-                        subtitle: "Esperando") { Text("En cola").badgeStyle() }
+        NavigationSplitView {
+            List {
+                Section("Import") {
+                    Button("Audio File", systemImage: "waveform") { showingAudioImporter = true }
+                    Button("Transcript File", systemImage: "doc.text") { showingTranscriptImporter = true }
                 }
-                section("Hechas hoy", doneToday) { job in
-                    row(job, icon: "checkmark.seal.fill", color: .green,
-                        subtitle: engineSubtitle) {
-                        Button("Abrir en Notas ↗") { NotesWriter.show(title: job.displayName) }
-                            .buttonStyle(.link)
+                Section("Privacy") {
+                    Label("Processed on this Mac", systemImage: "lock.shield.fill")
+                    Text("No companion device or remote service is used.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("TransLocalAI")
+        } detail: {
+            VStack(alignment: .leading) {
+                TextField("Meeting title", text: $title)
+                    .font(.title2.bold())
+                HSplitView {
+                    editor(title: "Transcript", text: $transcript)
+                    editor(title: "Meeting Notes", text: $notes)
+                }
+                if let errorMessage { Text(errorMessage).foregroundStyle(.red).font(.caption) }
+            }
+            .padding()
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        Task { await generateNotes() }
+                    } label: {
+                        if isWorking { ProgressView() } else { Label("Create Notes", systemImage: "sparkles") }
                     }
-                }
-                if processor.isRunning == false && queued.isEmpty && doneToday.isEmpty {
-                    ContentUnavailableView("Todo al día", systemImage: "checkmark.circle",
-                        description: Text("No hay audios pendientes. Los nuevos llegan por iCloud."))
-                        .padding(.top, 60)
+                    .disabled(isWorking || transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
-            .padding(20)
         }
-        .frame(minWidth: 560, minHeight: 460)
-        .navigationTitle("TransLocalAI")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button { processor.tick() } label: { Image(systemName: "arrow.clockwise") }
-            }
-        }
+        .fileImporter(isPresented: $showingAudioImporter, allowedContentTypes: [.audio], allowsMultipleSelection: false, onCompletion: importAudio)
+        .fileImporter(isPresented: $showingTranscriptImporter, allowedContentTypes: [.plainText, .text, .json, .sourceCode], allowsMultipleSelection: false, onCompletion: importTranscript)
     }
 
-    private var engineSubtitle: String {
-        MacSettings.shared.redact.label
-    }
-
-    @ViewBuilder
-    private var processingSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Procesando ahora").sectionHeader()
-            VStack(alignment: .leading, spacing: 11) {
-                HStack(spacing: 10) {
-                    Image(systemName: "waveform").foregroundStyle(.tint)
-                    Text(processor.currentJobName ?? "").font(.system(size: 14, weight: .semibold))
-                    Spacer()
-                }
-                ProgressView().progressViewStyle(.linear)
-                Text(processor.currentStageLabel ?? "Procesando…")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(15)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 11))
+    private func editor(title: String, text: Binding<String>) -> some View {
+        VStack(alignment: .leading) {
+            Text(title).font(.headline)
+            TextEditor(text: text).font(.body.monospaced()).padding(6)
         }
+        .frame(minWidth: 280)
     }
 
-    @ViewBuilder
-    private func section<RowContent: View>(_ title: String, _ items: [PipelineJob],
-                         @ViewBuilder row: @escaping (PipelineJob) -> RowContent) -> some View {
-        if !items.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(title).sectionHeader()
-                VStack(spacing: 0) {
-                    ForEach(items) { job in
-                        row(job)
-                        if job.id != items.last?.id { Divider() }
-                    }
-                }
-                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 11))
-            }
+    private func importTranscript(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result, let url = urls.first else { return }
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        do {
+            transcript = try TranscriptFileParser.text(from: Data(contentsOf: url), extension: url.pathExtension)
+            if title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func importAudio(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result, let url = urls.first else { return }
+        isWorking = true
+        let scoped = url.startAccessingSecurityScopedResource()
+        Task {
+            defer { if scoped { url.stopAccessingSecurityScopedResource() }; isWorking = false }
+            do {
+                transcript = try await MacTranscriber.transcribe(audioURL: url)
+                if title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 
-    private func row(_ job: PipelineJob, icon: String, color: Color, subtitle: String,
-                     @ViewBuilder trailing: () -> some View) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon).foregroundStyle(color).font(.system(size: 18)).frame(width: 24)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(job.displayName).font(.system(size: 13.5, weight: .semibold))
-                Text(subtitle).font(.system(size: 11.5)).foregroundStyle(.secondary)
-            }
-            Spacer()
-            trailing()
-        }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-    }
-}
-
-private extension View {
-    func sectionHeader() -> some View {
-        self.font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(.secondary).textCase(.uppercase)
-    }
-    func badgeStyle() -> some View {
-        self.font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(.quaternary, in: Capsule())
+    private func generateNotes() async {
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            notes = try await MeetingNotesService.generate(from: transcript, title: title)
+            errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
     }
 }

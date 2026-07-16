@@ -1,5 +1,4 @@
 import ActivityKit
-import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -30,13 +29,8 @@ struct RecordingLiveActivity: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Button(intent: StopRecordingLiveActivityIntent()) {
-                        Label("Stop Recording", systemImage: "stop.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-                    .controlSize(.large)
+                    Label("Recording in TransLocalAI", systemImage: "mic.fill")
+                        .frame(maxWidth: .infinity)
                 }
             } compactLeading: {
                 Image(systemName: "mic.fill")
@@ -73,15 +67,12 @@ struct RecordingLiveActivity: Widget {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Button(intent: StopRecordingLiveActivityIntent()) {
-                Image(systemName: "stop.fill")
-                    .font(.title2)
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(.red)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
+            Image(systemName: "stop.fill")
+                .font(.title2)
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(.red)
+                .clipShape(Circle())
         }
         .padding()
     }

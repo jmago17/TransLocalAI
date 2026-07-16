@@ -102,10 +102,6 @@
 		A9B0E0032F0B000100000003 /* Exceptions for "Transcriber" folder in "TranscriberWidgets" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AudioFileManager.swift,
-				AudioRecorderManager.swift,
-				AppIntents/StopRecordingLiveActivityIntent.swift,
-				Item.swift,
 				RecordingActivityAttributes.swift,
 				TranscriptionActivityAttributes.swift,
 			);
@@ -134,13 +130,6 @@
 				9B7A114FDC319FF849C2B92C /* Exceptions for "TranscriberMac" folder in "TranscriberMac" target */,
 			);
 			path = TranscriberMac;
-			sourceTree = "<group>";
-		};
-		9B3026965D73A675C7EFA85F /* Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
-			path = Shared;
 			sourceTree = "<group>";
 		};
 		A92826512EF5455C001B6365 /* TranscriberShare */ = {
@@ -265,7 +254,6 @@
 				A950DED32EF038E100CF2226 /* Products */,
 				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
 				A92826652EF74C58001B6365 /* Frameworks */,
-				9B3026965D73A675C7EFA85F /* Shared */,
 				60524AF6438A9097708DF7EC /* Core */,
 				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
 			);
@@ -301,7 +289,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A92826512EF5455C001B6365 /* TranscriberShare */,
-				9B3026965D73A675C7EFA85F /* Shared */,
 			);
 			name = TranscriberShare;
 			packageProductDependencies = (
@@ -328,7 +315,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A950DED42EF038E100CF2226 /* Transcriber */,
-				9B3026965D73A675C7EFA85F /* Shared */,
 				60524AF6438A9097708DF7EC /* Core */,
 			);
 			name = Transcriber;
@@ -416,7 +402,6 @@
 			fileSystemSynchronizedGroups = (
 				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
 				60524AF6438A9097708DF7EC /* Core */,
-				9B3026965D73A675C7EFA85F /* Shared */,
 			);
 			name = TranscriberMac;
 			packageProductDependencies = (

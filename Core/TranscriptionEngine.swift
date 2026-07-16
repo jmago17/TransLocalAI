@@ -299,8 +299,8 @@ final class HybridTranscriptionService: @unchecked Sendable {
             return
         }
         let normalized = normalize(language)
-        // Prepare WhisperKit model for both .auto and .whisper (WhisperKit is the default)
-        guard engine == .whisper || engine == .auto else { return }
+        let shouldUseWhisper = engine == .whisper || normalized == "eu-ES"
+        guard shouldUseWhisper else { return }
         if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
             try await preparer.prepareModel(for: normalized, progress: progress)
         }
@@ -310,7 +310,8 @@ final class HybridTranscriptionService: @unchecked Sendable {
         if language == "multilingual" { return .whisper }
         switch engine {
         case .apple: return .appleSpeech
-        case .whisper, .auto: return .whisper
+        case .whisper: return .whisper
+        case .auto: return normalize(language) == "eu-ES" ? .whisper : .appleSpeech
         }
     }
 
@@ -322,8 +323,17 @@ final class HybridTranscriptionService: @unchecked Sendable {
         switch engine {
         case .apple:
             return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
-        case .whisper, .auto:
+        case .whisper:
             return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+        case .auto:
+            if normalized == "eu-ES" {
+                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+            }
+            do {
+                return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
+            } catch TranscriptionEngineError.unsupportedLanguage {
+                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+            }
         }
     }
 

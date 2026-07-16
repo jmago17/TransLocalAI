@@ -21,6 +21,13 @@ struct ShortcutsGuideView: View {
 
                 Section("Available Shortcuts") {
                     ShortcutRow(
+                        title: "Create Meeting Notes",
+                        description: "Turns transcript text from any app into structured notes entirely on device.",
+                        icon: "sparkles",
+                        color: .indigo,
+                        phrases: ["Create meeting notes"]
+                    )
+                    ShortcutRow(
                         title: "Transcribe Audio",
                         description: "Transcribes an audio file and returns the text. Perfect for quick transcriptions without saving.",
                         icon: "waveform",
@@ -59,8 +66,8 @@ struct ShortcutsGuideView: View {
                         steps: [
                             "1. Record meeting with Voice Memos",
                             "2. Share to Transcriber",
-                            "3. Get transcription text",
-                            "4. Send to Notes or email"
+                            "3. Create Meeting Notes from the transcript",
+                            "4. Create Note with the returned Markdown"
                         ]
                     )
 

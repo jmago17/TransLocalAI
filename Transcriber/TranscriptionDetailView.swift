@@ -32,23 +32,7 @@ struct TranscriptionDetailView: View {
     @State private var isMerging = false
     @State private var showCorrectionReview = false
 
-    private let defaultPrompt = """
-    provide detailed notes for the following meeting:
-
-    1. Summary:
-     • Briefly summarize the main topics discussed during the meeting.
-     • Highlight any key decisions or outcomes reached.
-    2. Important Bullet Point List:
-     • List the key topics covered in the meeting.
-     • Note any significant discussions or points raised by participants.
-     • Highlight major decisions or actions agreed upon.
-    3. Cited Tasks:
-     • Detail all tasks assigned to each participant.
-     • Specify deadlines and responsibilities for each task.
-     • Ensure that all tasks are clearly cited and linked back to specific actions taken during the meeting.
-
-    Please ensure that the notes are clear, concise, and organized to facilitate easy reference and follow-up actions.
-    """
+    private let defaultPrompt = MeetingNotesService.shortcutPrompt
 
     @State private var customPrompt: String = ""
 
@@ -73,6 +57,17 @@ struct TranscriptionDetailView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .disabled(transcription.transcriptionText.isEmpty)
+
+                        if !transcription.meetingNotes.isEmpty {
+                            Button {
+                                generatedNotes = transcription.meetingNotes
+                                showNotes = true
+                            } label: {
+                                Label("View Saved Meeting Notes", systemImage: "doc.text.fill")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                        }
 
                         Button {
                             showCorrectionReview = true
@@ -418,97 +413,20 @@ struct TranscriptionDetailView: View {
 
     @available(iOS 26, macOS 26, *)
     private func generateMeetingNotes() async {
-        #if canImport(FoundationModels)
-        // Reset merge state
-        await MainActor.run {
-            canMergeNotes = false
-            rawChunkSummaries = []
-        }
-
         do {
-            let transcript = transcription.transcriptionText
-
-            // On-device model has limited context (~4000 tokens ≈ ~8000 chars with prompt)
-            // Use smaller chunks to be safe
-            let maxChunkSize = 6000
-
-            if transcript.count <= maxChunkSize {
-                // Short enough - process directly
-                await MainActor.run { progressMessage = "Analyzing transcript..." }
-                let session = LanguageModelSession()
-                let input = "\(customPrompt)\n\nMeeting Transcript:\n\(transcript)"
-                let response = try await session.respond(to: input)
-                generatedNotes = response.content
-            } else {
-                // Long transcript - summarize in chunks then combine
-                var chunkSummaries: [String] = []
-                let chunks = splitIntoChunks(text: transcript, maxSize: maxChunkSize)
-
-                for (index, chunk) in chunks.enumerated() {
-                    await MainActor.run {
-                        progressMessage = "Processing part \(index + 1) of \(chunks.count)..."
-                    }
-
-                    // Create a fresh session for each chunk to avoid context buildup
-                    let chunkSession = LanguageModelSession()
-                    let chunkPrompt = """
-                    Extract information from this meeting transcript segment. Use EXACTLY this format with these section headers:
-
-                    [SUMMARY]
-                    Brief overview of what was discussed
-
-                    [KEY POINTS]
-                    - Point 1
-                    - Point 2
-
-                    [DECISIONS]
-                    - Decision 1
-                    - Decision 2
-
-                    [ACTION ITEMS]
-                    - Action 1
-                    - Action 2
-
-                    Transcript:
-                    \(chunk)
-                    """
-                    let response = try await chunkSession.respond(to: chunkPrompt)
-                    chunkSummaries.append(response.content)
-                }
-
-                // Store raw summaries for potential merging later
-                await MainActor.run {
-                    rawChunkSummaries = chunkSummaries
-                }
-
-                // Format notes with parts
-                let combinedSummaries = chunkSummaries.enumerated()
-                    .map { "## Part \($0.offset + 1)\n\($0.element)" }
-                    .joined(separator: "\n\n---\n\n")
-
-                generatedNotes = """
-                # Meeting Notes
-
-                \(combinedSummaries)
-                """
-
-                // Enable merge option
-                await MainActor.run {
-                    canMergeNotes = true
-                }
-            }
+            progressMessage = "Analyzing transcript on this device..."
+            let notes = try await MeetingNotesService.generate(
+                from: transcription.transcriptionText,
+                title: transcription.title,
+                instructions: customPrompt
+            )
+            generatedNotes = notes
+            transcription.meetingNotes = notes
+            canMergeNotes = false
         } catch {
-            let errorMessage = error.localizedDescription
-            if errorMessage.contains("context") || errorMessage.contains("token") || errorMessage.contains("length") {
-                generatedNotes = "The transcript is too long for the on-device model.\n\nTry with a shorter recording (under 10 minutes works best)."
-            } else {
-                generatedNotes = "Failed to generate notes: \(errorMessage)"
-            }
+            generatedNotes = "Failed to generate notes: \(error.localizedDescription)"
         }
-        #else
-        generatedNotes = "Apple Intelligence is not available on this platform"
-        #endif
-        await MainActor.run { isGeneratingNotes = false }
+        isGeneratingNotes = false
     }
 
     @available(iOS 26, macOS 26, *)
@@ -702,4 +620,3 @@ struct TranscriptionDetailView: View {
     }
     .modelContainer(for: Transcription.self, inMemory: true)
 }
-

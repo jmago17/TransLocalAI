@@ -2,22 +2,15 @@
 //  RootTabView.swift
 //  Transcriber
 //
-//  App root. Splits the app into the Mac-backed "Actas" pipeline, the local
-//  transcription library, recording, and settings. The PipelineController is
-//  created once here and shared down via the environment.
+//  Device-local app root for iPhone and iPad.
 //
 
 import SwiftUI
 import SwiftData
 
 struct RootTabView: View {
-    @State private var controller = PipelineController()
-
     var body: some View {
         TabView {
-            Tab("Actas", systemImage: "doc.text.fill") {
-                ActasView()
-            }
             Tab("Biblioteca", systemImage: "books.vertical.fill") {
                 ContentView()
             }
@@ -25,14 +18,13 @@ struct RootTabView: View {
                 RecordTabView()
             }
             Tab("Ajustes", systemImage: "gearshape.fill") {
-                ActasSettingsView()
+                LocalSettingsView()
             }
         }
-        .environment(controller)
     }
 }
 
 #Preview {
     RootTabView()
-        .modelContainer(for: [Transcription.self, PipelineJob.self], inMemory: true)
+        .modelContainer(for: Transcription.self, inMemory: true)
 }

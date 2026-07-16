@@ -34,6 +34,7 @@ struct ContentView: View {
     @Query(sort: \Transcription.timestamp, order: .reverse) private var transcriptions: [Transcription]
     
     @State private var showImportView = false
+    @State private var showTranscriptImport = false
     @State private var showRecordView = false
     @State private var showShortcutsGuide = false
     @State private var searchText = ""
@@ -62,6 +63,9 @@ struct ContentView: View {
                         Button(action: { showImportView = true }) {
                             Label("Import Audio", systemImage: "plus.circle.fill")
                         }
+                        Button(action: { showTranscriptImport = true }) {
+                            Label("Import Transcript", systemImage: "doc.text.fill")
+                        }
                     }
                 }
 
@@ -88,6 +92,9 @@ struct ContentView: View {
                 ImportAudioView()
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showTranscriptImport) {
+                TranscriptImportView()
             }
             .sheet(isPresented: $showRecordView) {
                 RecordingView()

@@ -21,12 +21,11 @@ struct TranscriberApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
-            PipelineJob.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .none
         )
 
         do {
@@ -42,8 +41,6 @@ struct TranscriberApp: App {
                 .onAppear {
                     importPendingTranscriptions()
                     registerBackgroundTask()
-                    AudioFileManager.shared.migrateLocalFilesToCloud()
-                    ActasNotifications.requestAuthorizationIfNeeded()
                 }
         }
         .modelContainer(sharedModelContainer)
@@ -113,7 +110,7 @@ struct TranscriberApp: App {
                     let audioFileName = json["audioFile"] as? String
                     let timestamp = json["timestamp"] as? TimeInterval ?? Date().timeIntervalSince1970
 
-                    // Copy audio to iCloud container (or local fallback)
+                    // Copy audio from the local App Group into app storage.
                     var savedAudioFileName: String? = nil
                     if let audioFileName = audioFileName {
                         let sourceAudioURL = audioDirectory.appendingPathComponent(audioFileName)
@@ -152,4 +149,3 @@ struct TranscriberApp: App {
         }
     }
 }
-

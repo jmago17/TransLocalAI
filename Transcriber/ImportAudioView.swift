@@ -294,7 +294,7 @@ struct ImportAudioView: View {
         case .success(let urls):
             guard let url = urls.first else { return }
             
-            // Copy file to iCloud audio directory (or local fallback)
+            // Copy the selected file into this device's app storage.
             do {
                 // Preserve original filename with timestamp to avoid conflicts
                 let originalName = url.deletingPathExtension().lastPathComponent
