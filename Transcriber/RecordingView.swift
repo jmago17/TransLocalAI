@@ -202,8 +202,7 @@ struct RecordingView: View {
 
     private var transcribingView: some View {
         VStack(spacing: 24) {
-            ProgressView()
-                .scaleEffect(1.5)
+            TranscribingAnimation()
 
             Text("Transcribing...")
                 .font(.headline)

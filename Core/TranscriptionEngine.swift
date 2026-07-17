@@ -217,11 +217,17 @@ private final class WhisperKitSession {
         var options = DecodingOptions()
         options.task = .transcribe
         options.language = language
+        if let tokenizer = whisper.tokenizer {
+            let vocabularyPrompt = "Preferred spellings: " + TranscriptionVocabulary.terms.joined(separator: ", ")
+            options.promptTokens = tokenizer.encode(text: " " + vocabularyPrompt)
+                .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+            options.usePrefillPrompt = true
+        }
         let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
         var lines: [String] = []
         for result in results {
             for segment in result.segments {
-                let text = Self.stripSpecialTokens(segment.text)
+                let text = TranscriptionVocabulary.correcting(Self.stripSpecialTokens(segment.text))
                 guard !text.isEmpty else { continue }
                 let stamp = Self.formatTimestamp(Double(segment.start))
                 lines.append("[\(stamp)] \(text)")

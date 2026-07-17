@@ -154,8 +154,7 @@ struct TranscriptionDetailView: View {
                 if transcription.audioFileURL != nil {
                     if isTranscribing {
                         VStack(spacing: 12) {
-                            ProgressView()
-                                .scaleEffect(1.2)
+                            TranscribingAnimation(size: CGSize(width: 150, height: 66))
                             Text("Transcribing...")
                                 .font(.headline)
                             Text("This may take a few moments")
@@ -415,7 +414,9 @@ struct TranscriptionDetailView: View {
     @available(iOS 26, macOS 26, *)
     private func generateMeetingNotes() async {
         do {
-            progressMessage = "Analyzing transcript on this device..."
+            progressMessage = MeetingNotesService.willUsePrivateCloudCompute
+                ? "Analyzing transcript with Private Cloud Compute..."
+                : "Analyzing transcript on this device..."
             let notes = try await MeetingNotesService.generate(
                 from: transcription.transcriptionText,
                 title: transcription.title,

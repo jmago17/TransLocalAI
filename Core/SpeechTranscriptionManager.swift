@@ -103,7 +103,7 @@ class SpeechTranscriptionManager {
             self.transcriptionProgress = 1.0
         }
 
-        return result
+        return TranscriptionVocabulary.correcting(result)
     }
 
     nonisolated static func formatTimestamp(_ seconds: Double) -> String {

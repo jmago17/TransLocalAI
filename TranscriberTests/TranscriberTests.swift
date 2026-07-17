@@ -31,4 +31,20 @@ struct TranscriberTests {
         #expect(output == "First\nSecond")
     }
 
+    @Test @MainActor func correctsCloseSpecialTerms() {
+        let output = TranscriptionVocabulary.correcting(
+            "[00:19] We met perfactor yesterday.",
+            terms: ["Profactor"]
+        )
+        #expect(output == "[00:19] We met Profactor yesterday.")
+    }
+
+    @Test @MainActor func leavesUnrelatedWordsUntouched() {
+        let output = TranscriptionVocabulary.correcting(
+            "The professor reviewed the performance.",
+            terms: ["Profactor"]
+        )
+        #expect(output == "The professor reviewed the performance.")
+    }
+
 }

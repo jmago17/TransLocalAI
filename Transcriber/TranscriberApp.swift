@@ -37,6 +37,7 @@ struct TranscriberApp: App {
 
     init() {
         Self.registerBackgroundTask()
+        TranscriptionVocabulary.startSync()
     }
 
     var body: some Scene {

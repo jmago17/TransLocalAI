@@ -3,7 +3,7 @@ import Foundation
 
 struct CreateMeetingNotesIntent: AppIntent {
     static var title: LocalizedStringResource = "Create Meeting Notes"
-    static var description = IntentDescription("Creates structured meeting notes from an existing transcript using the on-device language model.")
+    static var description = IntentDescription("Creates structured meeting notes using Private Cloud Compute when available, with an automatic on-device fallback.")
     static var openAppWhenRun = false
 
     @Parameter(title: "Transcript")

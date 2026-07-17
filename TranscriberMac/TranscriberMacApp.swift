@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct TranscriberMacApp: App {
+    init() {
+        TranscriptionVocabulary.startSync()
+    }
+
     var body: some Scene {
         WindowGroup("TransLocalAI") {
             MacMainView()

@@ -1,16 +1,35 @@
 import SwiftUI
+#if canImport(FoundationModels) && compiler(>=6.4)
+import FoundationModels
+#endif
 
 struct LocalSettingsView: View {
+    @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
+    private var privateCloudComputeEnabled = true
     @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Privacy") {
-                    Label("Audio, transcripts, and notes stay on this device", systemImage: "lock.shield.fill")
-                    Text("No companion computer, server, account, or network connection is used for processing.")
+                    Label("Audio, transcripts, and notes are stored on this device", systemImage: "lock.shield.fill")
+                    Text("Transcription stays on device. When enhanced notes are enabled, transcript text is processed by Apple's Private Cloud Compute and is not stored by Apple.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Toggle(isOn: $privateCloudComputeEnabled) {
+                        Label("Enhanced meeting notes", systemImage: "cloud.fill")
+                    }
+
+                    if privateCloudComputeEnabled {
+                        PrivateCloudComputeStatusView()
+                    }
+                } header: {
+                    Text("Private Cloud Compute")
+                } footer: {
+                    Text("Uses Apple's 32K-context model with reasoning on iOS 27. If it is unavailable or its daily limit is reached, Transcriber automatically uses the on-device model.")
                 }
 
                 Section("Transcription") {
@@ -27,10 +46,16 @@ struct LocalSettingsView: View {
                         .onChange(of: vocabularyText) { _, value in
                             TranscriptionVocabulary.terms = value.components(separatedBy: .newlines)
                         }
+                        .onReceive(NotificationCenter.default.publisher(for: .transcriptionVocabularyDidChange)) { _ in
+                            let syncedText = TranscriptionVocabulary.terms.joined(separator: "\n")
+                            if vocabularyText != syncedText {
+                                vocabularyText = syncedText
+                            }
+                        }
                 } header: {
                     Text("Names and companies")
                 } footer: {
-                    Text("One short name or phrase per line, up to 100. Apple Speech uses these words as recognition context.")
+                    Text("One short name or phrase per line, up to 100. Synced with iCloud and used by Apple Speech and WhisperKit.")
                 }
             }
             .scrollContentBackground(.hidden)
@@ -39,3 +64,65 @@ struct LocalSettingsView: View {
         }
     }
 }
+
+private struct PrivateCloudComputeStatusView: View {
+    var body: some View {
+        #if canImport(FoundationModels) && compiler(>=6.4)
+        if #available(iOS 27, macOS 27, *) {
+            PrivateCloudComputeAvailabilityView()
+        } else {
+            unavailableLabel
+        }
+        #else
+        unavailableLabel
+        #endif
+    }
+
+    private var unavailableLabel: some View {
+        Label("Requires iOS 27 or later", systemImage: "info.circle")
+            .foregroundStyle(.secondary)
+    }
+}
+
+#if canImport(FoundationModels) && compiler(>=6.4)
+@available(iOS 27, macOS 27, *)
+private struct PrivateCloudComputeAvailabilityView: View {
+    private let model = PrivateCloudComputeLanguageModel()
+
+    var body: some View {
+        switch model.availability {
+        case .available:
+            quotaStatus
+        case .unavailable(.deviceNotEligible):
+            Label("This device is not eligible", systemImage: "xmark.circle")
+                .foregroundStyle(.secondary)
+        case .unavailable(.systemNotReady):
+            Label("Temporarily unavailable — using on-device model", systemImage: "clock")
+                .foregroundStyle(.secondary)
+        @unknown default:
+            Label("Unavailable — using on-device model", systemImage: "xmark.circle")
+                .foregroundStyle(.secondary)
+        }
+
+        if let suggestion = model.quotaUsage.limitIncreaseSuggestion {
+            Button("Show usage options") {
+                suggestion.show()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var quotaStatus: some View {
+        if model.quotaUsage.isLimitReached {
+            Label("Daily limit reached — using on-device model", systemImage: "exclamationmark.circle")
+                .foregroundStyle(.orange)
+        } else if case .belowLimit(let info) = model.quotaUsage.status, info.isApproachingLimit {
+            Label("Approaching daily limit", systemImage: "gauge.with.dots.needle.67percent")
+                .foregroundStyle(.orange)
+        } else {
+            Label("Available", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        }
+    }
+}
+#endif

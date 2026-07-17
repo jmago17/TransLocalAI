@@ -5,23 +5,40 @@ struct LiquidCrystalBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack {
-            Color(uiColor: .systemGroupedBackground)
+        GeometryReader { proxy in
+            let diagonal = hypot(proxy.size.width, proxy.size.height)
 
-            LinearGradient(
-                colors: colorScheme == .dark
-                    ? [Color.purple.opacity(0.32), .clear, Color.orange.opacity(0.18)]
-                    : [Color.purple.opacity(0.14), .clear, Color.orange.opacity(0.15)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            ZStack {
+                Color(uiColor: .systemGroupedBackground)
 
-            RadialGradient(
-                colors: [Color.white.opacity(colorScheme == .dark ? 0.10 : 0.58), .clear],
-                center: .top,
-                startRadius: 0,
-                endRadius: 520
-            )
+                // One continuous 834 × 1194 pt composition on an 11-inch iPad.
+                // Normalized centers keep the same balance in either orientation.
+                RadialGradient(
+                    colors: [
+                        Color.purple.opacity(colorScheme == .dark ? 0.34 : 0.15),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.08, y: 0.04),
+                    startRadius: 0,
+                    endRadius: diagonal * 0.68
+                )
+
+                RadialGradient(
+                    colors: [
+                        Color.orange.opacity(colorScheme == .dark ? 0.22 : 0.16),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.94, y: 0.96),
+                    startRadius: 0,
+                    endRadius: diagonal * 0.64
+                )
+
+                LinearGradient(
+                    colors: [Color.white.opacity(colorScheme == .dark ? 0.06 : 0.34), .clear],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+            }
         }
         .ignoresSafeArea()
         .accessibilityHidden(true)

@@ -50,7 +50,10 @@ struct ContentView: View {
                     transcriptionsList
                 }
             }
-            .liquidCrystalScreen()
+            .containerBackground(.ultraThinMaterial, for: .navigation)
+            .containerBackground(for: .navigationSplitView) {
+                LiquidCrystalBackground()
+            }
             .navigationTitle("Transcriptions")
             .searchable(text: $searchText, prompt: "Search transcriptions")
             .toolbar {
@@ -113,7 +116,7 @@ struct ContentView: View {
                 systemImage: "text.bubble",
                 description: Text("Choose a transcription from the list to view its details")
             )
-            .liquidCrystalScreen()
+            .containerBackground(.ultraThinMaterial, for: .navigation)
         }
     }
     
@@ -142,7 +145,6 @@ struct ContentView: View {
             .onDelete(perform: deleteTranscriptions)
         }
         .scrollContentBackground(.hidden)
-        .liquidCrystalScreen()
     }
     
     private var recordingIndicatorBar: some View {

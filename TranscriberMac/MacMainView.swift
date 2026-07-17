@@ -18,8 +18,8 @@ struct MacMainView: View {
                     Button("Transcript File", systemImage: "doc.text") { showingTranscriptImporter = true }
                 }
                 Section("Privacy") {
-                    Label("Processed on this Mac", systemImage: "lock.shield.fill")
-                    Text("No companion device or remote service is used.")
+                    Label("Stored on this Mac", systemImage: "lock.shield.fill")
+                    Text("Transcription stays local. Enhanced notes can process transcript text with Apple's Private Cloud Compute.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }

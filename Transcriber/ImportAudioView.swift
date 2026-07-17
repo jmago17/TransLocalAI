@@ -226,8 +226,7 @@ struct ImportAudioView: View {
     
     private var transcribingView: some View {
         VStack(spacing: 30) {
-            ProgressView()
-                .scaleEffect(1.5)
+            TranscribingAnimation()
             
             if isDetectingLanguage {
                 Text("Detecting language...")

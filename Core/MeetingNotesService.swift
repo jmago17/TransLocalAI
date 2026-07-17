@@ -16,6 +16,25 @@ enum MeetingNotesError: LocalizedError {
 }
 
 enum MeetingNotesService {
+    nonisolated static let privateCloudComputePreferenceKey = "meetingNotes.privateCloudComputeEnabled"
+
+    nonisolated static var prefersPrivateCloudCompute: Bool {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: privateCloudComputePreferenceKey) != nil else { return true }
+        return defaults.bool(forKey: privateCloudComputePreferenceKey)
+    }
+
+    nonisolated static var willUsePrivateCloudCompute: Bool {
+        guard prefersPrivateCloudCompute else { return false }
+        #if canImport(FoundationModels) && compiler(>=6.4)
+        if #available(iOS 27, macOS 27, *) {
+            let model = PrivateCloudComputeLanguageModel()
+            return model.isAvailable && !model.quotaUsage.isLimitReached
+        }
+        #endif
+        return false
+    }
+
     nonisolated static let shortcutPrompt = """
     Create accurate meeting notes from the transcript below. Use only facts stated in the transcript; never invent names, decisions, owners, or dates. Preserve the exact spelling of people and company names found in the transcript. Write in the transcript's language.
 
@@ -38,6 +57,37 @@ enum MeetingNotesService {
         let clean = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { throw MeetingNotesError.emptyTranscript }
         #if canImport(FoundationModels)
+        #if compiler(>=6.4)
+        if #available(iOS 27, macOS 27, *), prefersPrivateCloudCompute {
+            let cloudModel = PrivateCloudComputeLanguageModel()
+            if cloudModel.isAvailable, !cloudModel.quotaUsage.isLimitReached {
+                do {
+                    return try await generateWithPrivateCloudCompute(
+                        from: clean,
+                        title: title,
+                        instructions: instructions,
+                        model: cloudModel
+                    )
+                } catch is PrivateCloudComputeLanguageModel.Error {
+                    // Retry locally for network, quota, or transient PCC failures.
+                }
+            }
+        }
+        #endif
+
+        return try await generateOnDevice(from: clean, title: title, instructions: instructions)
+        #else
+        throw MeetingNotesError.unavailable("The language model is not available on this device.")
+        #endif
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, macOS 26, *)
+    private static func generateOnDevice(
+        from transcript: String,
+        title: String?,
+        instructions: String
+    ) async throws -> String {
         let model = SystemLanguageModel.default
         switch model.availability {
         case .available:
@@ -52,7 +102,7 @@ enum MeetingNotesService {
             throw MeetingNotesError.unavailable("The on-device language model is temporarily unavailable.")
         }
 
-        let chunks = split(clean, limit: 6_000)
+        let chunks = split(transcript, limit: 6_000)
         var extracts: [String] = []
         for (index, chunk) in chunks.enumerated() {
             let session = LanguageModelSession()
@@ -73,10 +123,51 @@ enum MeetingNotesService {
 
             \(extracts.joined(separator: "\n\n--- PART ---\n\n"))
             """).content
-        #else
-        throw MeetingNotesError.unavailable("The on-device language model is not available on this device.")
-        #endif
     }
+
+    #if compiler(>=6.4)
+    @available(iOS 27, macOS 27, *)
+    private static func generateWithPrivateCloudCompute(
+        from transcript: String,
+        title: String?,
+        instructions: String,
+        model: PrivateCloudComputeLanguageModel
+    ) async throws -> String {
+        // PCC has a 32K-token context window. Keep much more of each meeting
+        // together while leaving room for the prompt, reasoning, and response.
+        let chunks = split(transcript, limit: 60_000)
+        var extracts: [String] = []
+        let contextOptions = ContextOptions(reasoningLevel: .moderate)
+
+        for (index, chunk) in chunks.enumerated() {
+            let session = LanguageModelSession(model: model)
+            let context = title.map { "Meeting title: \($0)\n" } ?? ""
+            let prompt = """
+            \(instructions)
+            \(context)This is part \(index + 1) of \(chunks.count). Treat timestamps and speaker labels as source text.
+
+            TRANSCRIPT:
+            \(chunk)
+            """
+            extracts.append(try await session.respond(
+                to: prompt,
+                contextOptions: contextOptions
+            ).content)
+        }
+
+        guard extracts.count > 1 else { return extracts[0] }
+        let mergeSession = LanguageModelSession(model: model)
+        return try await mergeSession.respond(
+            to: """
+            Merge the partial meeting notes below into one concise, deduplicated document. Keep the same five Markdown headings. Use only information present in the partial notes. Preserve exact names and retain disagreements or uncertainty.
+
+            \(extracts.joined(separator: "\n\n--- PART ---\n\n"))
+            """,
+            contextOptions: contextOptions
+        ).content
+    }
+    #endif
+    #endif
 
     private static func split(_ text: String, limit: Int) -> [String] {
         var result: [String] = []
