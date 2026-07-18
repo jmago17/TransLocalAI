@@ -47,6 +47,21 @@ struct TranscriberTests {
         #expect(output == "We visited Danobat. It went well.")
     }
 
+    @Test @MainActor func replacesDeclaredMishearingsWithCanonicalSpelling() {
+        let output = TranscriptionVocabulary.correcting(
+            "Yankee and dinalan met at the office.",
+            terms: ["Iñaki = Yankee, Ianki", "Dynamaz = Dinalan"]
+        )
+        #expect(output == "Iñaki and Dynamaz met at the office.")
+    }
+
+    @Test @MainActor func aliasLinesExposeOnlyCanonicalSpelling() {
+        #expect(TranscriptionVocabulary.correcting(
+            "We met inaki.",
+            terms: ["Iñaki = Yankee"]
+        ) == "We met Iñaki.")
+    }
+
     @Test @MainActor func leavesUnrelatedWordsUntouched() {
         let output = TranscriptionVocabulary.correcting(
             "The professor reviewed the performance.",

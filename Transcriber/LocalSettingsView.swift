@@ -7,6 +7,7 @@ struct LocalSettingsView: View {
     @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
     private var privateCloudComputeEnabled = true
     @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
+    @FocusState private var vocabularyFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,7 @@ struct LocalSettingsView: View {
                         .frame(minHeight: 140)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
+                        .focused($vocabularyFocused)
                         .onChange(of: vocabularyText) { _, value in
                             TranscriptionVocabulary.updateIfChanged(value.components(separatedBy: .newlines))
                         }
@@ -55,12 +57,24 @@ struct LocalSettingsView: View {
                 } header: {
                     Text("Names and companies")
                 } footer: {
-                    Text("One short name or phrase per line, up to 100. Synced with iCloud and used by Apple Speech and WhisperKit.")
+                    Text("One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.")
                 }
             }
             .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .liquidCrystalScreen()
             .navigationTitle("Settings")
+            .toolbar {
+                if vocabularyFocused {
+                    ToolbarItem(placement: .keyboard) {
+                        HStack {
+                            Spacer()
+                            Button("Done") { vocabularyFocused = false }
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -90,7 +104,13 @@ private struct PrivateCloudComputeAvailabilityView: View {
     private let model = PrivateCloudComputeLanguageModel()
 
     var body: some View {
+        if !MeetingNotesService.hasPrivateCloudComputeEntitlement {
+            Label("Not enabled for this build — using on-device model", systemImage: "xmark.circle")
+                .foregroundStyle(.secondary)
+        }
         switch model.availability {
+        case .available where !MeetingNotesService.hasPrivateCloudComputeEntitlement:
+            EmptyView()
         case .available:
             quotaStatus
         case .unavailable(.deviceNotEligible):

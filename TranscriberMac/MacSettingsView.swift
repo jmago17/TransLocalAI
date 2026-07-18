@@ -22,7 +22,7 @@ struct MacSettingsView: View {
                             vocabulary = syncedText
                         }
                     }
-                Text("One name or company per line. Synced with iCloud and used by Apple Speech and WhisperKit.")
+                Text("One name or company per line. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Models") {
@@ -67,7 +67,13 @@ private struct MacPrivateCloudComputeAvailabilityView: View {
     private let model = PrivateCloudComputeLanguageModel()
 
     var body: some View {
+        if !MeetingNotesService.hasPrivateCloudComputeEntitlement {
+            Label("Not enabled for this build — using on-device model", systemImage: "xmark.circle")
+                .foregroundStyle(.secondary)
+        }
         switch model.availability {
+        case .available where !MeetingNotesService.hasPrivateCloudComputeEntitlement:
+            EmptyView()
         case .available where model.quotaUsage.isLimitReached:
             Label("Daily limit reached — using on-device model", systemImage: "exclamationmark.circle")
                 .foregroundStyle(.orange)

@@ -42,23 +42,56 @@ enum TranscriptionVocabulary {
         reconcileWithCloud()
     }
 
+    /// Canonical spellings only — what speech engines should be biased toward.
+    /// Alias lines ("Iñaki = Yankee") contribute just their left-hand side.
+    static var canonicalTerms: [String] {
+        terms.map { Self.parse(line: $0).canonical }
+    }
+
     /// Applies the canonical spelling of short vocabulary terms after recognition.
-    /// Fuzzy replacement is deliberately limited to close, long-word matches.
+    /// Fuzzy replacement is deliberately limited to close, long-word matches;
+    /// aliases declared as "Canonical = heard1, heard2" are replaced verbatim.
     static func correcting(_ text: String) -> String {
         correcting(text, terms: terms)
+    }
+
+    /// Splits a vocabulary line into its canonical spelling and the misheard
+    /// variants the user wants replaced (the part after "=", comma-separated).
+    nonisolated private static func parse(line: String) -> (canonical: String, variants: [String]) {
+        guard let separator = line.firstIndex(of: "=") else {
+            return (line.trimmingCharacters(in: .whitespaces), [])
+        }
+        let canonical = String(line[..<separator]).trimmingCharacters(in: .whitespaces)
+        let variants = line[line.index(after: separator)...]
+            .components(separatedBy: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        return (canonical, variants)
     }
 
     nonisolated static func correcting(_ text: String, terms vocabulary: [String]) -> String {
         guard !text.isEmpty else { return text }
         var corrected = text
+        let entries = vocabulary.map(parse(line:)).filter { !$0.canonical.isEmpty }
 
-        // Canonicalize exact multi-word phrases first.
-        for term in vocabulary where term.contains(where: { $0.isWhitespace }) {
+        // User-declared mishearings first: replace each variant with its canonical
+        // spelling, whole-word and case-insensitive.
+        for entry in entries {
+            for variant in entry.variants {
+                let pattern = "(?i)(?<![\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: variant))(?![\\p{L}\\p{N}])"
+                corrected = corrected.replacingOccurrences(of: pattern, with: entry.canonical, options: .regularExpression)
+            }
+        }
+
+        let canonicals = entries.map(\.canonical)
+
+        // Canonicalize exact multi-word phrases (fixes casing/diacritic drift).
+        for term in canonicals where term.contains(where: { $0.isWhitespace }) {
             let pattern = "(?i)(?<![\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: term))(?![\\p{L}\\p{N}])"
             corrected = corrected.replacingOccurrences(of: pattern, with: term, options: .regularExpression)
         }
 
-        let singleTerms = vocabulary.compactMap { term -> (term: String, normalized: String)? in
+        let singleTerms = canonicals.compactMap { term -> (term: String, normalized: String)? in
             guard !term.contains(where: { $0.isWhitespace }) else { return nil }
             let normalized = normalize(term)
             return normalized.isEmpty ? nil : (term, normalized)

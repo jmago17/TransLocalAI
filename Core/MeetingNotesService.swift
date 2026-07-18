@@ -24,8 +24,24 @@ enum MeetingNotesService {
         return defaults.bool(forKey: privateCloudComputePreferenceKey)
     }
 
+    /// PCC's `respond` traps with a fatal error — it does not throw — when the
+    /// process lacks com.apple.developer.private-cloud-compute (and `isAvailable`
+    /// still returns true, so it can't be used as the guard). Check the embedded
+    /// provisioning profile before ever touching the PCC session.
+    nonisolated static let hasPrivateCloudComputeEntitlement: Bool = {
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url),
+              let profile = String(data: data, encoding: .isoLatin1)
+        else {
+            // No embedded profile (simulator / App Store): signing already
+            // validated the entitlements, so the API is safe to attempt.
+            return true
+        }
+        return profile.contains("com.apple.developer.private-cloud-compute")
+    }()
+
     nonisolated static var willUsePrivateCloudCompute: Bool {
-        guard prefersPrivateCloudCompute else { return false }
+        guard prefersPrivateCloudCompute, hasPrivateCloudComputeEntitlement else { return false }
         #if canImport(FoundationModels) && compiler(>=6.4)
         if #available(iOS 27, macOS 27, *) {
             let model = PrivateCloudComputeLanguageModel()
@@ -58,7 +74,7 @@ enum MeetingNotesService {
         guard !clean.isEmpty else { throw MeetingNotesError.emptyTranscript }
         #if canImport(FoundationModels)
         #if compiler(>=6.4)
-        if #available(iOS 27, macOS 27, *), prefersPrivateCloudCompute {
+        if #available(iOS 27, macOS 27, *), prefersPrivateCloudCompute, hasPrivateCloudComputeEntitlement {
             let cloudModel = PrivateCloudComputeLanguageModel()
             if cloudModel.isAvailable, !cloudModel.quotaUsage.isLimitReached {
                 do {

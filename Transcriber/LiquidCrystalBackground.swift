@@ -46,7 +46,11 @@ struct LiquidCrystalBackground: View {
 }
 
 extension View {
+    /// Expands to fill the screen first — `background` alone sizes to the
+    /// modified view, which left small floating patches behind compact content
+    /// (e.g. the analysis spinner) with the rest of the sheet white.
     func liquidCrystalScreen() -> some View {
-        background(LiquidCrystalBackground())
+        frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(LiquidCrystalBackground())
     }
 }

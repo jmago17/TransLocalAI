@@ -67,7 +67,7 @@ class SpeechTranscriptionManager {
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let context = AnalysisContext()
-        context.contextualStrings[.general] = TranscriptionVocabulary.terms
+        context.contextualStrings[.general] = TranscriptionVocabulary.canonicalTerms
         try await analyzer.setContext(context)
 
         async let transcriptionFuture: String = {
@@ -160,7 +160,7 @@ class SpeechTranscriptionManager {
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let context = AnalysisContext()
-        context.contextualStrings[.general] = TranscriptionVocabulary.terms
+        context.contextualStrings[.general] = TranscriptionVocabulary.canonicalTerms
         try await analyzer.setContext(context)
 
         async let textFuture: String = {

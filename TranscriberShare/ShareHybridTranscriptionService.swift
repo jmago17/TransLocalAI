@@ -125,7 +125,7 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
         let context = AnalysisContext()
-        context.contextualStrings[.general] = vocabulary
+        context.contextualStrings[.general] = await MainActor.run { TranscriptionVocabulary.canonicalTerms }
         try await analyzer.setContext(context)
 
         async let textFuture: String = {
@@ -354,8 +354,9 @@ private final class WhisperKitSession {
         options.task = .transcribe
         options.language = language
         let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
-        if let tokenizer = whisper.tokenizer, !vocabulary.isEmpty {
-            let vocabularyPrompt = "Preferred spellings: " + vocabulary.joined(separator: ", ")
+        let canonical = await MainActor.run { TranscriptionVocabulary.canonicalTerms }
+        if let tokenizer = whisper.tokenizer, !canonical.isEmpty {
+            let vocabularyPrompt = "Preferred spellings: " + canonical.joined(separator: ", ")
             options.promptTokens = tokenizer.encode(text: " " + vocabularyPrompt)
                 .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
             options.usePrefillPrompt = true

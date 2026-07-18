@@ -1,61 +1,53 @@
 #include <metal_stdlib>
 using namespace metal;
 
-// Liquid glow waveform shown while a transcription is running.
-// Three ribbons of "speech energy" flow through the capsule, each with a
-// bright core and a soft halo, tinted by a hue sweep between the two colors.
+// Equalizer shown while a transcription is running: rounded bars mirrored
+// around the center line, animated like live speech (layered sines with
+// per-bar phase), tinted with a red→purple sweep and a soft glow.
 // Output is premultiplied alpha so it composites cleanly over materials.
-[[ stitchable ]] half4 transcriptionFlow(
+[[ stitchable ]] half4 transcriptionEqualizer(
     float2 position,
     float2 size,
     float time,
     half4 leadingColor,
     half4 trailingColor
 ) {
-    float2 uv = position / max(size, float2(1.0));
-    float x = uv.x;
-    float y = uv.y - 0.5;
+    constexpr float barCount = 21.0;
+    float2 safeSize = max(size, float2(1.0));
+    float cellWidth = safeSize.x / barCount;
+    float barIndex = clamp(floor(position.x / cellWidth), 0.0, barCount - 1.0);
+    float barCenterX = (barIndex + 0.5) * cellWidth;
+    float barHalfWidth = cellWidth * 0.28;
 
-    // Dissolve the ribbons before they touch the capsule's rounded ends.
-    float edgeFade = smoothstep(0.0, 0.16, x) * smoothstep(1.0, 0.84, x);
-    // Keep the glow inside the capsule vertically as well.
-    float verticalFade = 1.0 - smoothstep(0.30, 0.5, fabs(y));
+    // Speech-like level: layered sines with irrational per-bar phases, plus a
+    // slow "sentence" envelope, biased louder toward the middle of the capsule.
+    float phase = barIndex * 2.399;   // golden-angle spread avoids visible waves
+    float level = 0.34
+        + 0.30 * sin(time * 4.1 + phase)
+        + 0.22 * sin(time * 6.7 + phase * 1.73 + 1.4)
+        + 0.14 * sin(time * 2.3 + phase * 0.51 + 4.0);
+    float sentence = 0.72 + 0.28 * sin(time * 0.9 + barIndex * 0.13);
+    float centered = float(barIndex) / (barCount - 1.0) - 0.5;
+    float middleBias = 1.0 - 0.55 * centered * centered * 4.0;
+    level = clamp(level * sentence * middleBias, 0.06, 0.94);
 
-    half3 color = half3(0.0);
-    float energy = 0.0;
+    // Capsule-shaped bar SDF in pixel space, mirrored around the center line.
+    float maxHalfHeight = safeSize.y * 0.5 - barHalfWidth - 2.0;
+    float barHalfHeight = max(level * maxHalfHeight, barHalfWidth);
+    float2 delta = float2(position.x - barCenterX, position.y - safeSize.y * 0.5);
+    float2 outside = abs(delta) - float2(barHalfWidth, barHalfHeight - barHalfWidth);
+    float distance = length(max(outside, float2(0.0))) - barHalfWidth
+        + min(max(outside.x, outside.y), 0.0);
 
-    for (int i = 0; i < 3; i++) {
-        float fi = float(i);
-        float speed = 1.15 + fi * 0.42;
-        float freq = 5.2 + fi * 2.4;
+    float core = 1.0 - smoothstep(-0.8, 0.8, distance);
+    float glow = exp(-max(distance, 0.0) * 0.30);
 
-        // Slow breathing so the ribbons feel like live speech, not a loop.
-        float breathe = 0.55 + 0.45 * sin(time * (0.63 + fi * 0.29) + fi * 2.1);
-        float amplitude = (0.17 - fi * 0.035) * breathe;
+    // Red→purple across the capsule with a slow moving shimmer; taller bars
+    // burn slightly hotter toward white at the core.
+    float hue = clamp(position.x / safeSize.x + 0.10 * sin(time * 0.8 + barIndex * 0.45), 0.0, 1.0);
+    half3 tint = mix(leadingColor.rgb, trailingColor.rgb, half(hue));
+    half3 color = mix(tint, half3(1.0), half(core * level * 0.30));
 
-        float wave = sin(x * freq + time * speed * 2.1 + fi * 1.9)
-                   + 0.55 * sin(x * freq * 1.83 - time * speed * 1.35 + fi * 4.0)
-                   + 0.25 * sin(x * freq * 3.1 + time * (speed + 0.8) + fi * 0.7);
-        float centerY = wave * amplitude * 0.45;
-
-        float distance = fabs(y - centerY);
-        float core = exp(-distance * distance * 2600.0);
-        float halo = exp(-distance * 11.0);
-        float intensity = (core * 0.9 + halo * 0.32) * edgeFade * verticalFade;
-
-        float hue = 0.5 + 0.5 * sin(x * 2.6 + time * (0.45 + 0.2 * fi) + fi * 2.09);
-        half3 ribbon = mix(leadingColor.rgb, trailingColor.rgb, half(hue));
-        // Lift the core toward white for a hot, glassy center line.
-        ribbon = mix(ribbon, half3(1.0), half(core * 0.35));
-
-        color += ribbon * half(intensity);
-        energy += intensity;
-    }
-
-    // Faint ambient wash so the capsule never looks empty between pulses.
-    float ambient = (0.075 + 0.035 * sin(time * 0.7 + x * 3.2)) * edgeFade * verticalFade;
-    color += mix(leadingColor.rgb, trailingColor.rgb, half(x)) * half(ambient);
-
-    float alpha = clamp(energy * 0.85 + ambient, 0.0, 1.0);
-    return half4(min(color, half3(1.0)) * half(alpha), half(alpha));
+    float alpha = clamp(core + glow * 0.22, 0.0, 1.0);
+    return half4(color * half(core * 0.95 + glow * 0.22), half(alpha));
 }

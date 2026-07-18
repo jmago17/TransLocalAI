@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Capsule with a Metal "liquid glow waveform" (see TranscriptionShaders.metal)
+/// Capsule with a Metal equalizer (see TranscriptionShaders.metal)
 /// shown wherever a transcription is in progress.
 struct TranscribingAnimation: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,15 +18,14 @@ struct TranscribingAnimation: View {
 
                 Capsule()
                     .fill(
-                        ShaderLibrary.transcriptionFlow(
-                            .float2(size),
+                        ShaderLibrary.transcriptionEqualizer(
+                            .float2(CGSize(width: size.width - 24, height: size.height - 20)),
                             .float(Float(time.truncatingRemainder(dividingBy: 1_000))),
                             .color(.red),
                             .color(.purple)
                         )
                     )
-                    .padding(6)
-                    .blendMode(.plusLighter)
+                    .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
 
                 Capsule()
                     .stroke(

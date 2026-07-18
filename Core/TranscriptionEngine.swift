@@ -218,7 +218,7 @@ private final class WhisperKitSession {
         options.task = .transcribe
         options.language = language
         if let tokenizer = whisper.tokenizer {
-            let vocabularyPrompt = "Preferred spellings: " + TranscriptionVocabulary.terms.joined(separator: ", ")
+            let vocabularyPrompt = "Preferred spellings: " + TranscriptionVocabulary.canonicalTerms.joined(separator: ", ")
             options.promptTokens = tokenizer.encode(text: " " + vocabularyPrompt)
                 .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
             options.usePrefillPrompt = true
