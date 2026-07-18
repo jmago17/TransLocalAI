@@ -123,6 +123,10 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
         }
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
+        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
+        let context = AnalysisContext()
+        context.contextualStrings[.general] = vocabulary
+        try await analyzer.setContext(context)
 
         async let textFuture: String = {
             var segments: [String] = []
@@ -147,7 +151,7 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
             try await analyzer.finalizeAndFinish(through: lastSample)
         }
 
-        return try await textFuture
+        return TranscriptionVocabulary.correcting(try await textFuture, terms: vocabulary)
     }
 
     static func formatTimestamp(_ seconds: Double) -> String {
@@ -349,11 +353,18 @@ private final class WhisperKitSession {
         var options = DecodingOptions()
         options.task = .transcribe
         options.language = language
+        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
+        if let tokenizer = whisper.tokenizer, !vocabulary.isEmpty {
+            let vocabularyPrompt = "Preferred spellings: " + vocabulary.joined(separator: ", ")
+            options.promptTokens = tokenizer.encode(text: " " + vocabularyPrompt)
+                .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
+            options.usePrefillPrompt = true
+        }
         let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
         var lines: [String] = []
         for result in results {
             for segment in result.segments {
-                let text = Self.stripSpecialTokens(segment.text)
+                let text = TranscriptionVocabulary.correcting(Self.stripSpecialTokens(segment.text), terms: vocabulary)
                 guard !text.isEmpty else { continue }
                 let stamp = Self.formatTimestamp(Double(segment.start))
                 lines.append("[\(stamp)] \(text)")

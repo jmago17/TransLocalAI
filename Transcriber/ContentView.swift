@@ -5,27 +5,6 @@
 //  Created by Josu Martinez Gonzalez on 15/12/25.
 //
 
-// TODO: [Arquitectura] Integrar motor híbrido (Apple Speech + WhisperKit)
-// - Crear protocolo `TranscriptionEngine` con APIs async: detectLanguage(audioURL:), transcribe(audioURL:language:)
-// - Implementar `AppleSpeechEngine` (motor principal) y `WhisperKitEngine` (fallback)
-// - Implementar `HybridTranscriptionService` que seleccione motor según idioma/soporte
-// - Soporte para euskera (eu-ES) usando WhisperKit automáticamente
-// - Diseño modular y testeable (inyección de dependencias)
-// - Añadir pruebas del split/merge y del selector de motor
-// TODO: [Descargas] Gestión de modelo Whisper bajo demanda
-// - `WhisperModelManager` descarga modelos cuando se necesiten (no en el bundle)
-// - Guardar modelos en Application Support y reutilizarlos
-// - Comprobar integridad/tamaño/versión y caché con invalidación
-// - Exponer progreso/cancelación de descarga
-// TODO: [Integración] Modificar puntos de entrada de transcripción
-// - `ImportAudioView` y `TranscribeAndSaveIntent` deben usar `HybridTranscriptionService`
-// - Mantener 100% offline una vez descargado el modelo
-// - Manejar errores y timeouts de forma robusta (memoria y rendimiento en iPhone)
-// TODO: [UI/UX] Indicadores y controles
-// - Mostrar estado de descarga del modelo Whisper y tamaño aproximado
-// - Permitir pre-descarga desde ajustes (futuro)
-// - Mostrar qué motor se usó en cada transcripción
-
 import SwiftUI
 import SwiftData
 
@@ -203,8 +182,6 @@ struct ContentView: View {
     }
 }
 
-import AVFoundation
-
 struct TranscriptionRowView: View {
     let transcription: Transcription
     
@@ -252,7 +229,6 @@ struct TranscriptionRowView: View {
         .padding(.vertical, 4)
     }
 
-    // TODO: Mostrar motor usado (Apple/Whisper) en la fila si está disponible en el modelo
     private var languageIcon: String {
         if transcription.language == "multilingual" {
             return "globe"

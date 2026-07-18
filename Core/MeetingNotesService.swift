@@ -68,8 +68,11 @@ enum MeetingNotesService {
                         instructions: instructions,
                         model: cloudModel
                     )
-                } catch is PrivateCloudComputeLanguageModel.Error {
-                    // Retry locally for network, quota, or transient PCC failures.
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    // Any PCC failure (network, quota, service, or a session
+                    // GenerationError) falls back to the on-device model.
                 }
             }
         }
@@ -133,9 +136,11 @@ enum MeetingNotesService {
         instructions: String,
         model: PrivateCloudComputeLanguageModel
     ) async throws -> String {
-        // PCC has a 32K-token context window. Keep much more of each meeting
-        // together while leaving room for the prompt, reasoning, and response.
-        let chunks = split(transcript, limit: 60_000)
+        // Size chunks from the model's real context window (~3 chars per token,
+        // minus headroom for the prompt, reasoning, and response), so long
+        // meetings need as few round-trips as possible.
+        let chunkLimit = ((try? await model.contextSize).map { max(24_000, ($0 - 4_000) * 3) }) ?? 60_000
+        let chunks = split(transcript, limit: chunkLimit)
         var extracts: [String] = []
         let contextOptions = ContextOptions(reasoningLevel: .moderate)
 

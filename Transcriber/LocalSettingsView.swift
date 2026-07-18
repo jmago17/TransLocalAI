@@ -29,7 +29,7 @@ struct LocalSettingsView: View {
                 } header: {
                     Text("Private Cloud Compute")
                 } footer: {
-                    Text("Uses Apple's 32K-context model with reasoning on iOS 27. If it is unavailable or its daily limit is reached, Transcriber automatically uses the on-device model.")
+                    Text("Uses Apple's large-context Private Cloud Compute model with reasoning on iOS 27 — ideal for notes on long recordings. If it is unavailable or its daily limit is reached, Transcriber automatically uses the on-device model.")
                 }
 
                 Section("Transcription") {
@@ -44,7 +44,7 @@ struct LocalSettingsView: View {
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .onChange(of: vocabularyText) { _, value in
-                            TranscriptionVocabulary.terms = value.components(separatedBy: .newlines)
+                            TranscriptionVocabulary.updateIfChanged(value.components(separatedBy: .newlines))
                         }
                         .onReceive(NotificationCenter.default.publisher(for: .transcriptionVocabularyDidChange)) { _ in
                             let syncedText = TranscriptionVocabulary.terms.joined(separator: "\n")

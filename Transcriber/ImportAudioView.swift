@@ -264,7 +264,7 @@ struct ImportAudioView: View {
         }
         switch selectedEngine {
         case .auto:
-            return "Uses WhisperKit by default for all languages."
+            return "Apple Speech for most languages; WhisperKit for Euskara."
         case .apple:
             return "Apple SpeechAnalyzer: fast, on-device transcription."
         case .whisper:

@@ -23,13 +23,14 @@ struct AICorrectionService {
     ) async throws -> [TranscriptionCorrection] {
         let chunks = splitIntoChunks(text: text, maxSize: 6000)
         var allCorrections: [TranscriptionCorrection] = []
+        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
 
         for (index, chunk) in chunks.enumerated() {
             try Task.checkCancellation()
             progressCallback?(index, chunks.count)
 
             let session = LanguageModelSession()
-            let prompt = buildPrompt(for: chunk, language: language)
+            let prompt = buildPrompt(for: chunk, language: language, vocabulary: vocabulary)
             let response = try await session.respond(to: prompt, generating: CorrectionBatch.self)
 
             let corrections = response.content.corrections.prefix(20).map { single in
@@ -55,8 +56,11 @@ struct AICorrectionService {
 
     // MARK: - Private
 
-    private static func buildPrompt(for chunk: String, language: String) -> String {
-        """
+    private static func buildPrompt(for chunk: String, language: String, vocabulary: [String]) -> String {
+        let vocabularyRule = vocabulary.isEmpty
+            ? ""
+            : "\n- These names and terms are spelled correctly on purpose; NEVER flag or change them: \(vocabulary.joined(separator: ", "))."
+        return """
         You are a transcription proofreader. Analyze the following transcribed text and find errors.
 
         Look for these categories of issues:
@@ -73,7 +77,7 @@ struct AICorrectionService {
         - Keep corrections concise and focused.
         - For filler words, the suggestedText should be the text with the filler removed.
         - Maximum 20 corrections per batch.
-        - The text language is: \(language)
+        - The text language is: \(language)\(vocabularyRule)
 
         Text to analyze:
         \(chunk)

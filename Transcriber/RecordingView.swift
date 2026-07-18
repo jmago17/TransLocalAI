@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct RecordingView: View {
     @Environment(\.modelContext) private var modelContext
@@ -304,8 +305,9 @@ struct RecordingView: View {
     }
 
     private func audioDuration(url: URL) -> TimeInterval {
-        let asset = AVURLAsset(url: url)
-        return asset.duration.seconds.isNaN ? 0 : asset.duration.seconds
+        guard let file = try? AVAudioFile(forReading: url) else { return 0 }
+        let sampleRate = file.fileFormat.sampleRate
+        return sampleRate > 0 ? Double(file.length) / sampleRate : 0
     }
 }
 
@@ -333,8 +335,6 @@ private struct AudioLevelView: View {
         return .green
     }
 }
-
-import AVFoundation
 
 #Preview {
     RecordingView()

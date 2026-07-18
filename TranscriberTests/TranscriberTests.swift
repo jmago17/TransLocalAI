@@ -39,6 +39,14 @@ struct TranscriberTests {
         #expect(output == "[00:19] We met Profactor yesterday.")
     }
 
+    @Test @MainActor func keepsSentencePunctuationAfterReplacement() {
+        let output = TranscriptionVocabulary.correcting(
+            "We visited danobat. It went well.",
+            terms: ["Danobat"]
+        )
+        #expect(output == "We visited Danobat. It went well.")
+    }
+
     @Test @MainActor func leavesUnrelatedWordsUntouched() {
         let output = TranscriptionVocabulary.correcting(
             "The professor reviewed the performance.",

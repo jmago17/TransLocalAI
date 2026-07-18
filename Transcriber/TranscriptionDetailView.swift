@@ -11,10 +11,6 @@ import SwiftData
 import UIKit
 #endif
 
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
-
 struct TranscriptionDetailView: View {
     @Bindable var transcription: Transcription
     @Environment(\.modelContext) private var modelContext
@@ -28,10 +24,8 @@ struct TranscriptionDetailView: View {
     @State private var showNotes = false
     @State private var showPromptCustomization = false
     @State private var progressMessage = "Generating notes..."
-    @State private var canMergeNotes = false  // True when notes are in parts and can be merged
-    @State private var rawChunkSummaries: [String] = []  // Store raw summaries for merging
-    @State private var isMerging = false
     @State private var showCorrectionReview = false
+    @State private var vocabularyFixCount: Int?
 
     private let defaultPrompt = MeetingNotesService.shortcutPrompt
 
@@ -79,6 +73,18 @@ struct TranscriptionDetailView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.large)
                         .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button(action: applyVocabulary) {
+                            Label(
+                                vocabularyFixCount.map { $0 == 0 ? "No Changes Needed" : "\($0) Names Fixed" }
+                                    ?? "Fix Names & Terms",
+                                systemImage: vocabularyFixCount == nil ? "character.magnify" : "checkmark"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
 
                         Button {
                             withAnimation {
@@ -297,34 +303,6 @@ struct TranscriptionDetailView: View {
                                 #endif
                             }
 
-                            // Show merge button if notes are in parts
-                            if canMergeNotes && !isMerging {
-                                if #available(iOS 26, macOS 26, *) {
-                                    Button {
-                                        isMerging = true
-                                        Task {
-                                            await mergeNotes()
-                                        }
-                                    } label: {
-                                        Label("Merge into Single Summary", systemImage: "arrow.triangle.merge")
-                                            .frame(maxWidth: .infinity)
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.orange)
-                                }
-                            }
-
-                            if isMerging {
-                                HStack {
-                                    ProgressView()
-                                    Text("Merging summaries...")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                            }
-
                             Divider()
 
                             Text(notes)
@@ -425,190 +403,29 @@ struct TranscriptionDetailView: View {
             generatedNotes = notes
             transcription.meetingNotes = notes
             try modelContext.save()
-            canMergeNotes = false
         } catch {
             generatedNotes = "Failed to generate notes: \(error.localizedDescription)"
         }
         isGeneratingNotes = false
     }
 
-    @available(iOS 26, macOS 26, *)
-    private func mergeNotes() async {
-        #if canImport(FoundationModels)
-        guard !rawChunkSummaries.isEmpty else {
-            await MainActor.run { isMerging = false }
-            return
+    /// Re-applies the user's vocabulary (Settings → Names and companies) to an
+    /// existing transcript, so terms added after transcribing can fix it too.
+    private func applyVocabulary() {
+        let original = transcription.transcriptionText
+        let corrected = TranscriptionVocabulary.correcting(original)
+        if corrected != original {
+            transcription.transcriptionText = corrected
+            try? modelContext.save()
         }
-
-        await MainActor.run {
-            progressMessage = "Extracting sections from all parts..."
+        vocabularyFixCount = zip(
+            original.components(separatedBy: .newlines),
+            corrected.components(separatedBy: .newlines)
+        ).count(where: { $0 != $1 })
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            vocabularyFixCount = nil
         }
-
-        // Extract sections from each part and combine them directly
-        var allSummaries: [String] = []
-        var allKeyPoints: [String] = []
-        var allDecisions: [String] = []
-        var allActionItems: [String] = []
-
-        for (index, summary) in rawChunkSummaries.enumerated() {
-            let extracted = extractSections(from: summary, partNumber: index + 1)
-            if !extracted.summary.isEmpty {
-                allSummaries.append(extracted.summary)
-            }
-            allKeyPoints.append(contentsOf: extracted.keyPoints)
-            allDecisions.append(contentsOf: extracted.decisions)
-            allActionItems.append(contentsOf: extracted.actionItems)
-        }
-
-        // Build the merged notes directly without re-summarizing
-        var mergedNotes = "# Meeting Notes\n\n"
-
-        // Summaries section - combine part summaries
-        if !allSummaries.isEmpty {
-            mergedNotes += "## Summary\n\n"
-            for (index, summary) in allSummaries.enumerated() {
-                if allSummaries.count > 1 {
-                    mergedNotes += "**Part \(index + 1):** \(summary)\n\n"
-                } else {
-                    mergedNotes += "\(summary)\n\n"
-                }
-            }
-        }
-
-        // Key Points - deduplicated list
-        if !allKeyPoints.isEmpty {
-            mergedNotes += "## Key Points\n\n"
-            let uniquePoints = removeDuplicates(from: allKeyPoints)
-            for point in uniquePoints {
-                mergedNotes += "- \(point)\n"
-            }
-            mergedNotes += "\n"
-        }
-
-        // Decisions - deduplicated list
-        if !allDecisions.isEmpty {
-            mergedNotes += "## Decisions\n\n"
-            let uniqueDecisions = removeDuplicates(from: allDecisions)
-            for decision in uniqueDecisions {
-                mergedNotes += "- \(decision)\n"
-            }
-            mergedNotes += "\n"
-        }
-
-        // Action Items - deduplicated list
-        if !allActionItems.isEmpty {
-            mergedNotes += "## Action Items\n\n"
-            let uniqueActions = removeDuplicates(from: allActionItems)
-            for action in uniqueActions {
-                mergedNotes += "- \(action)\n"
-            }
-        }
-
-        await MainActor.run {
-            generatedNotes = mergedNotes
-            canMergeNotes = false
-            isMerging = false
-        }
-        #else
-        await MainActor.run { isMerging = false }
-        #endif
-    }
-
-    private func extractSections(from text: String, partNumber: Int) -> (summary: String, keyPoints: [String], decisions: [String], actionItems: [String]) {
-        var summary = ""
-        var keyPoints: [String] = []
-        var decisions: [String] = []
-        var actionItems: [String] = []
-
-        // Split by section headers
-        let sections = text.components(separatedBy: "[")
-
-        for section in sections {
-            let trimmed = section.trimmingCharacters(in: .whitespacesAndNewlines)
-
-            if trimmed.hasPrefix("SUMMARY]") {
-                let content = trimmed.replacingOccurrences(of: "SUMMARY]", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
-                summary = content.components(separatedBy: "\n").first ?? content
-            } else if trimmed.hasPrefix("KEY POINTS]") {
-                let content = trimmed.replacingOccurrences(of: "KEY POINTS]", with: "")
-                keyPoints = extractBulletPoints(from: content)
-            } else if trimmed.hasPrefix("DECISIONS]") {
-                let content = trimmed.replacingOccurrences(of: "DECISIONS]", with: "")
-                decisions = extractBulletPoints(from: content)
-            } else if trimmed.hasPrefix("ACTION ITEMS]") {
-                let content = trimmed.replacingOccurrences(of: "ACTION ITEMS]", with: "")
-                actionItems = extractBulletPoints(from: content)
-            }
-        }
-
-        return (summary, keyPoints, decisions, actionItems)
-    }
-
-    private func extractBulletPoints(from text: String) -> [String] {
-        let lines = text.components(separatedBy: "\n")
-        var points: [String] = []
-
-        for line in lines {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("- ") {
-                let point = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                if !point.isEmpty && point.lowercased() != "none" && point.lowercased() != "n/a" {
-                    points.append(point)
-                }
-            } else if trimmed.hasPrefix("• ") {
-                let point = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                if !point.isEmpty && point.lowercased() != "none" && point.lowercased() != "n/a" {
-                    points.append(point)
-                }
-            }
-        }
-
-        return points
-    }
-
-    private func removeDuplicates(from items: [String]) -> [String] {
-        var seen = Set<String>()
-        var unique: [String] = []
-
-        for item in items {
-            let normalized = item.lowercased().trimmingCharacters(in: .punctuationCharacters)
-            if !seen.contains(normalized) {
-                seen.insert(normalized)
-                unique.append(item)
-            }
-        }
-
-        return unique
-    }
-
-    private func splitIntoChunks(text: String, maxSize: Int) -> [String] {
-        var chunks: [String] = []
-        var currentIndex = text.startIndex
-
-        while currentIndex < text.endIndex {
-            let endIndex = text.index(currentIndex, offsetBy: maxSize, limitedBy: text.endIndex) ?? text.endIndex
-
-            // Try to break at a sentence or paragraph boundary
-            var breakIndex = endIndex
-            if endIndex < text.endIndex {
-                let searchRange = text.index(endIndex, offsetBy: -200, limitedBy: currentIndex) ?? currentIndex
-                let substring = text[searchRange..<endIndex]
-
-                if let lastPeriod = substring.lastIndex(of: ".") {
-                    breakIndex = text.index(after: lastPeriod)
-                } else if let lastNewline = substring.lastIndex(of: "\n") {
-                    breakIndex = text.index(after: lastNewline)
-                }
-            }
-
-            let chunk = String(text[currentIndex..<breakIndex]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !chunk.isEmpty {
-                chunks.append(chunk)
-            }
-            currentIndex = breakIndex
-        }
-
-        return chunks
     }
 }
 

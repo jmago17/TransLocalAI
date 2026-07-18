@@ -12,7 +12,6 @@
 		A928265A2EF5455C001B6365 /* TranscriberShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A92826502EF5455C001B6365 /* TranscriberShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A92826672EF74C58001B6365 /* FoundationModels.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826662EF74C58001B6365 /* FoundationModels.framework */; };
 		A92826692EF74C61001B6365 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A92826682EF74C61001B6365 /* Foundation.framework */; };
-		A97B592B2EF041BA00216DE0 /* SampleAudioHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */; };
 		A9A1C0033B00000100000003 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
 		A9A1C0073B00000300000007 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
 		A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -73,7 +72,6 @@
 		A950DED22EF038E100CF2226 /* Transcriber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Transcriber.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A950DEE12EF038E200CF2226 /* TranscriberTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A950DEEB2EF038E200CF2226 /* TranscriberUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TranscriberUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAudioHelper.swift; sourceTree = "<group>"; };
 		A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -114,12 +112,20 @@
 			);
 			target = A9B0E0102F0B000100000010 /* TranscriberWidgets */;
 		};
+		A9C10F012F0C100100000001 /* Exceptions for "Core" folder in "TranscriberShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				TranscriptionVocabulary.swift,
+			);
+			target = A928264F2EF5455C001B6365 /* TranscriberShare */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		60524AF6438A9097708DF7EC /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				A9C10F012F0C100100000001 /* Exceptions for "Core" folder in "TranscriberShare" target */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -252,7 +258,6 @@
 				A92826512EF5455C001B6365 /* TranscriberShare */,
 				A9B0E0042F0B000100000004 /* TranscriberWidgets */,
 				A950DED32EF038E100CF2226 /* Products */,
-				A97B592A2EF041BA00216DE0 /* SampleAudioHelper.swift */,
 				A92826652EF74C58001B6365 /* Frameworks */,
 				60524AF6438A9097708DF7EC /* Core */,
 				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
@@ -525,7 +530,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A97B592B2EF041BA00216DE0 /* SampleAudioHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

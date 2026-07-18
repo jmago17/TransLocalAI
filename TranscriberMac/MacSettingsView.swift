@@ -14,7 +14,7 @@ struct MacSettingsView: View {
                 TextEditor(text: $vocabulary)
                     .frame(minHeight: 160)
                     .onChange(of: vocabulary) { _, value in
-                        TranscriptionVocabulary.terms = value.components(separatedBy: .newlines)
+                        TranscriptionVocabulary.updateIfChanged(value.components(separatedBy: .newlines))
                     }
                     .onReceive(NotificationCenter.default.publisher(for: .transcriptionVocabularyDidChange)) { _ in
                         let syncedText = TranscriptionVocabulary.terms.joined(separator: "\n")

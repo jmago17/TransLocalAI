@@ -11,18 +11,29 @@ enum TranscriptionVocabulary {
     private static let cloudRecordKey = "transcription.contextualTerms.record"
     private static let defaults = ["Danobat", "Eneko", "Borja", "Gorosabel", "Ion Azpeitia", "Iván Olariaga"]
 
+    /// App Group storage so the Share extension sees the same list as the app.
+    private static let store = UserDefaults(suiteName: "group.com.josumartinez.transcriber") ?? .standard
+
     static var terms: [String] {
         get {
-            let stored = UserDefaults.standard.stringArray(forKey: localKey) ?? defaults
+            let stored = store.stringArray(forKey: localKey)
+                ?? UserDefaults.standard.stringArray(forKey: localKey)  // pre-App-Group installs
+                ?? defaults
             return Array(stored.prefix(100))
         }
         set {
-            let cleaned = clean(newValue)
-            let updatedAt = Date().timeIntervalSince1970
-            saveLocally(cleaned, updatedAt: updatedAt)
-            saveToCloud(cleaned, updatedAt: updatedAt)
-            NotificationCenter.default.post(name: .transcriptionVocabularyDidChange, object: nil)
+            save(clean(newValue))
         }
+    }
+
+    /// Saves the edited term list only when the cleaned result differs from what
+    /// is stored. Editors call this on every keystroke, so it must not write —
+    /// or notify — while the effective list is unchanged (e.g. a trailing
+    /// newline the user just typed); otherwise the sync-back deletes their input.
+    static func updateIfChanged(_ values: [String]) {
+        let cleaned = clean(values)
+        guard cleaned != terms else { return }
+        save(cleaned)
     }
 
     static func startSync() {
@@ -37,7 +48,7 @@ enum TranscriptionVocabulary {
         correcting(text, terms: terms)
     }
 
-    static func correcting(_ text: String, terms vocabulary: [String]) -> String {
+    nonisolated static func correcting(_ text: String, terms vocabulary: [String]) -> String {
         guard !text.isEmpty else { return text }
         var corrected = text
 
@@ -52,8 +63,11 @@ enum TranscriptionVocabulary {
             let normalized = normalize(term)
             return normalized.isEmpty ? nil : (term, normalized)
         }
+        // Word tokens may contain internal apostrophes/periods/hyphens, but must
+        // not swallow trailing punctuation ("danobat." → token "danobat"), or the
+        // replacement would delete the sentence's period.
         guard !singleTerms.isEmpty,
-              let expression = try? NSRegularExpression(pattern: #"[\p{L}\p{N}][\p{L}\p{N}'’.-]*"#)
+              let expression = try? NSRegularExpression(pattern: #"[\p{L}\p{N}](?:[\p{L}\p{N}]|['’.-](?=[\p{L}\p{N}]))*"#)
         else { return corrected }
 
         let matches = expression.matches(in: corrected, range: NSRange(corrected.startIndex..., in: corrected))
@@ -79,7 +93,7 @@ enum TranscriptionVocabulary {
         }
 
         let cloudUpdatedAt = record["updatedAt"] as? Double ?? 0
-        let localUpdatedAt = UserDefaults.standard.double(forKey: localUpdatedAtKey)
+        let localUpdatedAt = store.double(forKey: localUpdatedAtKey)
         if cloudUpdatedAt >= localUpdatedAt {
             let cleaned = clean(cloudTerms)
             saveLocally(cleaned, updatedAt: cloudUpdatedAt)
@@ -100,9 +114,15 @@ enum TranscriptionVocabulary {
         }.prefix(100).map(\.self)
     }
 
+    private static func save(_ cleaned: [String]) {
+        let updatedAt = Date().timeIntervalSince1970
+        saveLocally(cleaned, updatedAt: updatedAt)
+        saveToCloud(cleaned, updatedAt: updatedAt)
+    }
+
     private static func saveLocally(_ values: [String], updatedAt: Double) {
-        UserDefaults.standard.set(values, forKey: localKey)
-        UserDefaults.standard.set(updatedAt, forKey: localUpdatedAtKey)
+        store.set(values, forKey: localKey)
+        store.set(updatedAt, forKey: localUpdatedAtKey)
     }
 
     private static func saveToCloud(_ values: [String], updatedAt: Double) {
@@ -112,7 +132,7 @@ enum TranscriptionVocabulary {
         )
     }
 
-    private static func normalize(_ value: String) -> String {
+    nonisolated private static func normalize(_ value: String) -> String {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
             .unicodeScalars
             .filter { CharacterSet.alphanumerics.contains($0) }
@@ -121,7 +141,7 @@ enum TranscriptionVocabulary {
             .lowercased()
     }
 
-    private static func bestReplacement(
+    nonisolated private static func bestReplacement(
         for recognized: String,
         from candidates: [(term: String, normalized: String)]
     ) -> String? {
@@ -145,15 +165,15 @@ enum TranscriptionVocabulary {
         return best?.term
     }
 
-    private static func commonPrefixLength(_ lhs: String, _ rhs: String) -> Int {
+    nonisolated private static func commonPrefixLength(_ lhs: String, _ rhs: String) -> Int {
         zip(lhs, rhs).prefix(while: ==).count
     }
 
-    private static func commonSuffixLength(_ lhs: String, _ rhs: String) -> Int {
+    nonisolated private static func commonSuffixLength(_ lhs: String, _ rhs: String) -> Int {
         zip(lhs.reversed(), rhs.reversed()).prefix(while: ==).count
     }
 
-    private static func editDistance(_ lhs: String, _ rhs: String, stoppingAfter limit: Int) -> Int {
+    nonisolated private static func editDistance(_ lhs: String, _ rhs: String, stoppingAfter limit: Int) -> Int {
         let left = Array(lhs)
         let right = Array(rhs)
         var previous = Array(0...right.count)
