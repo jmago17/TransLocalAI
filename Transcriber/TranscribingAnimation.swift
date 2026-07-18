@@ -21,8 +21,8 @@ struct TranscribingAnimation: View {
                         ShaderLibrary.transcriptionEqualizer(
                             .float2(CGSize(width: size.width - 24, height: size.height - 20)),
                             .float(Float(time.truncatingRemainder(dividingBy: 1_000))),
-                            .color(.red),
-                            .color(.purple)
+                            .color(.yellow),
+                            .color(.red)
                         )
                     )
                     .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
@@ -32,7 +32,7 @@ struct TranscribingAnimation: View {
                         AngularGradient(
                             colors: [
                                 .white.opacity(0.45),
-                                .purple.opacity(0.25),
+                                .orange.opacity(0.30),
                                 .white.opacity(0.10),
                                 .red.opacity(0.25),
                                 .white.opacity(0.45)
@@ -45,7 +45,7 @@ struct TranscribingAnimation: View {
             }
             .frame(width: size.width, height: size.height)
             .compositingGroup()
-            .shadow(color: .purple.opacity(0.25), radius: 18)
+            .shadow(color: .orange.opacity(0.25), radius: 18)
         }
         .accessibilityHidden(true)
     }

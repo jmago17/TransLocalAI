@@ -40,16 +40,14 @@ using namespace metal;
     float distance = length(max(outside, float2(0.0))) - barHalfWidth
         + min(max(outside.x, outside.y), 0.0);
 
-    float core = 1.0 - smoothstep(-0.8, 0.8, distance);
-    // Tight halo so neighboring bars stay visually separate.
-    float glow = exp(-max(distance, 0.0) * 0.55);
+    // Crisp ~1pt anti-aliased edge; no halo — glow reads as blur at this size.
+    float core = 1.0 - smoothstep(-0.5, 0.5, distance);
 
-    // Red→purple across the capsule with a slow moving shimmer; taller bars
-    // burn slightly hotter toward white at the core.
+    // Gradient across the capsule with a slow moving shimmer; taller bars
+    // warm up slightly at the core.
     float hue = clamp(position.x / safeSize.x + 0.10 * sin(time * 0.8 + barIndex * 0.45), 0.0, 1.0);
     half3 tint = mix(leadingColor.rgb, trailingColor.rgb, half(hue));
-    half3 color = mix(tint, half3(1.0), half(core * level * 0.30));
+    half3 color = mix(tint, half3(1.0), half(core * level * 0.12));
 
-    float alpha = clamp(core + glow * 0.16, 0.0, 1.0);
-    return half4(color * half(core * 0.95 + glow * 0.16), half(alpha));
+    return half4(color * half(core), half(core));
 }
