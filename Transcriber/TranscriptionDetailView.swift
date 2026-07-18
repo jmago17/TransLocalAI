@@ -26,6 +26,10 @@ struct TranscriptionDetailView: View {
     @State private var progressMessage = "Generating notes..."
     @State private var showCorrectionReview = false
     @State private var vocabularyFixCount: Int?
+    @State private var showSuspiciousTerms = false
+    @State private var replaceCandidate = ""
+    @State private var replacementText = ""
+    @State private var showReplaceDialog = false
 
     private let defaultPrompt = MeetingNotesService.shortcutPrompt
 
@@ -74,17 +78,29 @@ struct TranscriptionDetailView: View {
                         .controlSize(.large)
                         .disabled(transcription.transcriptionText.isEmpty)
 
-                        Button(action: applyVocabulary) {
-                            Label(
-                                vocabularyFixCount.map { $0 == 0 ? "No Changes Needed" : "\($0) Names Fixed" }
-                                    ?? "Fix Names & Terms",
-                                systemImage: vocabularyFixCount == nil ? "character.magnify" : "checkmark"
-                            )
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 12) {
+                            Button(action: applyVocabulary) {
+                                Label(
+                                    vocabularyFixCount.map { $0 == 0 ? "No Changes" : "\($0) Fixed" }
+                                        ?? "Fix Names",
+                                    systemImage: vocabularyFixCount == nil ? "character.magnify" : "checkmark"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                            .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
+
+                            Button {
+                                showSuspiciousTerms = true
+                            } label: {
+                                Label("Suspicious", systemImage: "questionmark.text.page")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+                            .disabled(transcription.transcriptionText.isEmpty)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
 
                         Button {
                             withAnimation {
@@ -224,9 +240,17 @@ struct TranscriptionDetailView: View {
                         .background(Color(.secondarySystemBackground))
                         .cornerRadius(12)
                 } else if !transcription.transcriptionText.isEmpty {
+                    #if os(iOS)
+                    SelectableTranscriptView(text: transcription.transcriptionText) { selected in
+                        replaceCandidate = selected
+                        replacementText = ""
+                        showReplaceDialog = true
+                    }
+                    #else
                     Text(transcription.transcriptionText)
                         .textSelection(.enabled)
                         .font(.body)
+                    #endif
                 }
 
                 Spacer()
@@ -328,6 +352,17 @@ struct TranscriptionDetailView: View {
                 CorrectionReviewView(transcription: transcription)
             }
         }
+        .sheet(isPresented: $showSuspiciousTerms) {
+            SuspiciousTermsView(transcription: transcription)
+        }
+        .alert("Replace “\(replaceCandidate)”", isPresented: $showReplaceDialog) {
+            TextField("Correct spelling", text: $replacementText)
+                .autocorrectionDisabled()
+            Button("Replace & Save") { applyManualReplacement() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Replaces every occurrence and adds it to your names list, so future transcriptions get it right.")
+        }
     }
 
     private var resolvedAudioURL: URL? {
@@ -407,6 +442,21 @@ struct TranscriptionDetailView: View {
             generatedNotes = "Failed to generate notes: \(error.localizedDescription)"
         }
         isGeneratingNotes = false
+    }
+
+    /// Applies a selection-driven fix everywhere in the transcript and stores
+    /// it as a vocabulary alias for future transcriptions.
+    private func applyManualReplacement() {
+        let variant = replaceCandidate
+        let canonical = replacementText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !canonical.isEmpty, !variant.isEmpty, canonical != variant else { return }
+
+        TranscriptionVocabulary.addAlias(canonical: canonical, variant: variant)
+        transcription.transcriptionText = TranscriptionVocabulary.correcting(
+            transcription.transcriptionText,
+            terms: ["\(canonical) = \(variant)"]
+        )
+        try? modelContext.save()
     }
 
     /// Re-applies the user's vocabulary (Settings → Names and companies) to an

@@ -12,12 +12,13 @@ using namespace metal;
     half4 leadingColor,
     half4 trailingColor
 ) {
-    constexpr float barCount = 21.0;
+    constexpr float barCount = 17.0;
     float2 safeSize = max(size, float2(1.0));
     float cellWidth = safeSize.x / barCount;
     float barIndex = clamp(floor(position.x / cellWidth), 0.0, barCount - 1.0);
     float barCenterX = (barIndex + 0.5) * cellWidth;
-    float barHalfWidth = cellWidth * 0.28;
+    // Bars take ~38% of the cell; the rest is breathing room between them.
+    float barHalfWidth = cellWidth * 0.19;
 
     // Speech-like level: layered sines with irrational per-bar phases, plus a
     // slow "sentence" envelope, biased louder toward the middle of the capsule.
@@ -40,7 +41,8 @@ using namespace metal;
         + min(max(outside.x, outside.y), 0.0);
 
     float core = 1.0 - smoothstep(-0.8, 0.8, distance);
-    float glow = exp(-max(distance, 0.0) * 0.30);
+    // Tight halo so neighboring bars stay visually separate.
+    float glow = exp(-max(distance, 0.0) * 0.55);
 
     // Red→purple across the capsule with a slow moving shimmer; taller bars
     // burn slightly hotter toward white at the core.
@@ -48,6 +50,6 @@ using namespace metal;
     half3 tint = mix(leadingColor.rgb, trailingColor.rgb, half(hue));
     half3 color = mix(tint, half3(1.0), half(core * level * 0.30));
 
-    float alpha = clamp(core + glow * 0.22, 0.0, 1.0);
-    return half4(color * half(core * 0.95 + glow * 0.22), half(alpha));
+    float alpha = clamp(core + glow * 0.16, 0.0, 1.0);
+    return half4(color * half(core * 0.95 + glow * 0.16), half(alpha));
 }

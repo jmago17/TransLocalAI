@@ -36,6 +36,31 @@ enum TranscriptionVocabulary {
         save(cleaned)
     }
 
+    /// Records that `variant` should always be replaced by `canonical`, merging
+    /// into an existing line for the same canonical spelling when there is one.
+    static func addAlias(canonical: String, variant: String) {
+        let canonical = canonical.trimmingCharacters(in: .whitespacesAndNewlines)
+        let variant = variant.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !canonical.isEmpty, !variant.isEmpty else { return }
+
+        var lines = terms
+        let canonicalKey = normalize(canonical)
+        let variantKey = normalize(variant)
+        if let index = lines.firstIndex(where: { normalize(parse(line: $0).canonical) == canonicalKey }) {
+            let entry = parse(line: lines[index])
+            guard variantKey != canonicalKey,
+                  !entry.variants.contains(where: { normalize($0) == variantKey })
+            else { return }
+            lines[index] = "\(entry.canonical) = \((entry.variants + [variant]).joined(separator: ", "))"
+        } else if variantKey == canonicalKey {
+            lines.append(canonical)
+        } else {
+            lines.append("\(canonical) = \(variant)")
+        }
+        terms = lines
+        NotificationCenter.default.post(name: .transcriptionVocabularyDidChange, object: nil)
+    }
+
     static func startSync() {
         VocabularySyncCoordinator.shared.start()
         NSUbiquitousKeyValueStore.default.synchronize()
@@ -96,11 +121,8 @@ enum TranscriptionVocabulary {
             let normalized = normalize(term)
             return normalized.isEmpty ? nil : (term, normalized)
         }
-        // Word tokens may contain internal apostrophes/periods/hyphens, but must
-        // not swallow trailing punctuation ("danobat." → token "danobat"), or the
-        // replacement would delete the sentence's period.
         guard !singleTerms.isEmpty,
-              let expression = try? NSRegularExpression(pattern: #"[\p{L}\p{N}](?:[\p{L}\p{N}]|['’.-](?=[\p{L}\p{N}]))*"#)
+              let expression = try? NSRegularExpression(pattern: wordPattern)
         else { return corrected }
 
         let matches = expression.matches(in: corrected, range: NSRange(corrected.startIndex..., in: corrected))
@@ -114,6 +136,71 @@ enum TranscriptionVocabulary {
             corrected.replaceSubrange(range, with: replacement)
         }
         return corrected
+    }
+
+    /// Word tokens may contain internal apostrophes/periods/hyphens, but must
+    /// not swallow trailing punctuation ("danobat." → token "danobat"), or a
+    /// replacement would delete the sentence's period.
+    nonisolated private static let wordPattern = #"[\p{L}\p{N}](?:[\p{L}\p{N}]|['’.-](?=[\p{L}\p{N}]))*"#
+
+    struct SuspiciousTerm: Identifiable, Equatable {
+        var id: String { word }
+        let word: String
+        let count: Int
+        let suggestion: String?
+    }
+
+    /// Capitalized words used mid-sentence that match neither a vocabulary
+    /// spelling nor a known variant — the usual shape of a misheard name.
+    /// Words close to a vocabulary term carry it as a suggestion.
+    nonisolated static func suspiciousTerms(in text: String, terms vocabulary: [String]) -> [SuspiciousTerm] {
+        guard let expression = try? NSRegularExpression(pattern: wordPattern) else { return [] }
+        let entries = vocabulary.map(parse(line:)).filter { !$0.canonical.isEmpty }
+        let knownKeys = Set(entries.map { normalize($0.canonical) })
+            .union(entries.flatMap(\.variants).map(normalize))
+        let canonicals = entries.map { (term: $0.canonical, normalized: normalize($0.canonical)) }
+
+        let source = text as NSString
+        var found: [String: (display: String, count: Int)] = [:]
+        for match in expression.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+            let word = source.substring(with: match.range)
+            guard word.count >= 4, let first = word.first, first.isUppercase,
+                  !word.dropFirst().contains(where: \.isUppercase)
+            else { continue }
+
+            // Skip words in sentence-start position — capitalization proves
+            // nothing there. Timestamps ("[00:19] Word") count as starts too.
+            var lookback = match.range.location - 1
+            var previous: Character?
+            while lookback >= 0 {
+                let character = Character(source.substring(with: NSRange(location: lookback, length: 1)))
+                if character == " " || character == "\t" { lookback -= 1; continue }
+                previous = character
+                break
+            }
+            if previous == nil || ".!?\n]…»\"”".contains(previous!) { continue }
+
+            let key = normalize(word)
+            guard !key.isEmpty, !knownKeys.contains(key) else { continue }
+            found[key, default: (word, 0)].count += 1
+        }
+
+        return found.values.map { entry -> SuspiciousTerm in
+            let key = normalize(entry.display)
+            let limit = key.count >= 8 ? 3 : 2
+            let nearest = canonicals
+                .map { (term: $0.term, distance: editDistance($0.normalized, key, stoppingAfter: limit)) }
+                .filter { $0.distance <= limit }
+                .min { $0.distance < $1.distance }
+            return SuspiciousTerm(word: entry.display, count: entry.count, suggestion: nearest?.term)
+        }
+        .sorted { lhs, rhs in
+            if (lhs.suggestion != nil) != (rhs.suggestion != nil) { return lhs.suggestion != nil }
+            if lhs.count != rhs.count { return lhs.count > rhs.count }
+            return lhs.word < rhs.word
+        }
+        .prefix(25)
+        .map(\.self)
     }
 
     fileprivate static func reconcileWithCloud() {

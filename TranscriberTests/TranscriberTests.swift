@@ -62,6 +62,19 @@ struct TranscriberTests {
         ) == "We met Iñaki.")
     }
 
+    @Test @MainActor func findsSuspiciousMidSentenceNames() {
+        let suspects = TranscriptionVocabulary.suspiciousTerms(
+            in: "[00:12] Yesterday we met Dinalan at the office.\nThen Danobat signed. So Gorosbel agreed too.",
+            terms: ["Danobat", "Gorosabel"]
+        )
+        let words = suspects.map(\.word)
+        #expect(words.contains("Dinalan"))
+        #expect(!words.contains("Danobat"))       // known spelling
+        #expect(!words.contains("Yesterday"))     // sentence start after timestamp
+        #expect(!words.contains("Then"))          // sentence start
+        #expect(suspects.first(where: { $0.word == "Gorosbel" })?.suggestion == "Gorosabel")
+    }
+
     @Test @MainActor func leavesUnrelatedWordsUntouched() {
         let output = TranscriptionVocabulary.correcting(
             "The professor reviewed the performance.",

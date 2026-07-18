@@ -334,9 +334,10 @@ struct ImportAudioView: View {
         do {
             try BGTaskScheduler.shared.submit(bgTaskRequest)
         } catch {
-            errorMessage = "The system could not start a background-protected transcription: \(error.localizedDescription)"
-            showError = true
-            return
+            // Background protection is best-effort: without it the transcription
+            // still runs, it just pauses if the app is backgrounded. Refusing to
+            // start here made imports fail whenever the system throttled BG tasks.
+            print("Continued-processing task unavailable, transcribing in foreground: \(error)")
         }
 
         isTranscribing = true

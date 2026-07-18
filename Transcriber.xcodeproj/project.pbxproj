@@ -65,7 +65,7 @@
 
 /* Begin PBXFileReference section */
 		504204433C0B5CC4530B4846 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		6D93FE8DC307683FB9A17D67 /* TranscriberMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranscriberMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6D93FE8DC307683FB9A17D67 /* TranscriberMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = TranscriberMac.app; path = TransLocalAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A92826502EF5455C001B6365 /* TranscriberShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranscriberShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A92826662EF74C58001B6365 /* FoundationModels.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FoundationModels.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/FoundationModels.framework; sourceTree = DEVELOPER_DIR; };
 		A92826682EF74C61001B6365 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.2.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -157,15 +157,11 @@
 		};
 		A950DEE42EF038E200CF2226 /* TranscriberTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = TranscriberTests;
 			sourceTree = "<group>";
 		};
 		A950DEEE2EF038E200CF2226 /* TranscriberUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = TranscriberUITests;
 			sourceTree = "<group>";
 		};
@@ -319,8 +315,8 @@
 				A9B0E00F2F0B000100000009 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				A950DED42EF038E100CF2226 /* Transcriber */,
 				60524AF6438A9097708DF7EC /* Core */,
+				A950DED42EF038E100CF2226 /* Transcriber */,
 			);
 			name = Transcriber;
 			packageProductDependencies = (
@@ -405,8 +401,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
 				60524AF6438A9097708DF7EC /* Core */,
+				800176E8BA072CFFA8D09F77 /* TranscriberMac */,
 			);
 			name = TranscriberMac;
 			packageProductDependencies = (
