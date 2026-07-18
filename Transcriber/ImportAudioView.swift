@@ -31,6 +31,7 @@ struct ImportAudioView: View {
     private let hybridService = HybridTranscriptionService()
     @State private var hasPermission = false
     @State private var transcriptionTask: Task<Void, Never>?  // Track the transcription task
+    @State private var overallProgress: Double = 0
     
     var body: some View {
         NavigationStack {
@@ -226,8 +227,10 @@ struct ImportAudioView: View {
     
     private var transcribingView: some View {
         VStack(spacing: 30) {
-            TranscribingAnimation()
-            
+            TranscribingAnimation(
+                progress: isDetectingLanguage || isPreparingWhisperModel ? nil : overallProgress
+            )
+
             if isDetectingLanguage {
                 Text("Detecting language...")
                     .font(.headline)
@@ -398,7 +401,27 @@ struct ImportAudioView: View {
 
                 updateLiveActivity(phase: "Transcribing...", progress: 0.3)
 
+                // The system expires continued-processing tasks whose progress
+                // stalls, which killed transcriptions as soon as the app was
+                // backgrounded. Advance progress asymptotically toward 90%
+                // (scaled to the audio length) until the real work finishes.
+                let audioSeconds = (try? AVAudioFile(forReading: audioURL))
+                    .map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 60
+                let estimatedSeconds = max(20.0, audioSeconds * 0.6)
+                let heartbeatStart = Date()
+                let heartbeat = Task { @MainActor in
+                    while !Task.isCancelled {
+                        try? await Task.sleep(for: .seconds(2))
+                        guard !Task.isCancelled else { return }
+                        let elapsed = Date().timeIntervalSince(heartbeatStart)
+                        let fraction = 0.3 + 0.6 * (1 - exp(-elapsed / estimatedSeconds))
+                        updateLiveActivity(phase: "Transcribing...", progress: fraction)
+                    }
+                }
+                defer { heartbeat.cancel() }
+
                 let result = try await hybridService.transcribe(audioURL: audioURL, language: languageToUse, engine: selectedEngine)
+                heartbeat.cancel()
                 let transcriptionText = result.text
                 let duration = result.duration
 
@@ -476,12 +499,12 @@ struct ImportAudioView: View {
 
     private func updateLiveActivity(phase: String, progress: Double) {
         let boundedProgress = min(max(progress, 0), 1)
+        overallProgress = boundedProgress
         TranscriberApp.currentBGTask?.progress.completedUnitCount = Int64(boundedProgress * 100)
         TranscriberApp.currentBGTask?.updateTitle(
             "Transcribing audio",
             subtitle: "\(phase) \(Int(boundedProgress * 100))%"
         )
-
     }
 }
 

@@ -1,58 +1,41 @@
 import SwiftUI
 
-/// Capsule with a Metal equalizer (see TranscriptionShaders.metal)
-/// shown wherever a transcription is in progress.
+/// Metal equalizer (see TranscriptionShaders.metal) shown wherever a
+/// transcription is in progress — bare bars, no container.
+/// Pass `progress` (0...1) to fill the bars from the left as work advances;
+/// leave it nil for the indeterminate, fully-lit state.
 struct TranscribingAnimation: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var size = CGSize(width: 190, height: 84)
+    var progress: Double?
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion)) { timeline in
             // A fixed timestamp yields a pleasant static frame under Reduce Motion.
             let time = reduceMotion ? 1.6 : timeline.date.timeIntervalSinceReferenceDate
 
-            ZStack {
-                Capsule()
-                    .fill(.ultraThinMaterial)
-
-                Capsule()
-                    .fill(
-                        ShaderLibrary.transcriptionEqualizer(
-                            .float2(CGSize(width: size.width - 24, height: size.height - 20)),
-                            .float(Float(time.truncatingRemainder(dividingBy: 1_000))),
-                            .color(.yellow),
-                            .color(.red)
-                        )
+            Rectangle()
+                .fill(
+                    ShaderLibrary.transcriptionEqualizer(
+                        .float2(size),
+                        .float(Float(time.truncatingRemainder(dividingBy: 1_000))),
+                        .float(Float(progress ?? -1)),
+                        .color(.yellow),
+                        .color(.red)
                     )
-                    .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-
-                Capsule()
-                    .stroke(
-                        AngularGradient(
-                            colors: [
-                                .white.opacity(0.45),
-                                .orange.opacity(0.30),
-                                .white.opacity(0.10),
-                                .red.opacity(0.25),
-                                .white.opacity(0.45)
-                            ],
-                            center: .center,
-                            angle: .degrees(reduceMotion ? 0 : time.truncatingRemainder(dividingBy: 8) * 45)
-                        ),
-                        lineWidth: 1
-                    )
-            }
-            .frame(width: size.width, height: size.height)
-            .compositingGroup()
-            .shadow(color: .orange.opacity(0.25), radius: 18)
+                )
+                .frame(width: size.width, height: size.height)
         }
         .accessibilityHidden(true)
     }
 }
 
 #Preview {
-    TranscribingAnimation()
-        .padding(40)
-        .background(Color(.systemGroupedBackground))
+    VStack(spacing: 30) {
+        TranscribingAnimation()
+        TranscribingAnimation(progress: 0.55)
+    }
+    .padding(40)
+    .background(Color(.systemGroupedBackground))
 }
