@@ -258,13 +258,13 @@ struct RecordingView: View {
     private var languageHint: String {
         switch selectedLanguage {
         case "multilingual":
-            return "Auto-detects language (may misidentify mixed-language audio)"
+            return String(localized: "Auto-detects language (may misidentify mixed-language audio)")
         case "eu-ES":
-            return "Force Basque — best for Basque-dominant recordings"
+            return String(localized: "Force Basque — best for Basque-dominant recordings")
         case "es-ES":
-            return "Force Spanish — best for Spanish-dominant recordings"
+            return String(localized: "Force Spanish — best for Spanish-dominant recordings")
         case "en-US":
-            return "Force English — best for English-dominant recordings"
+            return String(localized: "Force English — best for English-dominant recordings")
         default:
             return ""
         }

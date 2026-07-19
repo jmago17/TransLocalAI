@@ -442,7 +442,7 @@
 				};
 			};
 			buildConfigurationList = A950DECD2EF038E100CF2226 /* Build configuration list for PBXProject "Transcriber" */;
-			developmentRegion = es;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,

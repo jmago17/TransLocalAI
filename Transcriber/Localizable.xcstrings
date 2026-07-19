@@ -1,790 +1,2075 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "\"%@\"" : {
-
+  "sourceLanguage": "en",
+  "strings": {
+    "“": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“"
+          }
+        }
+      }
+    },
+    "”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "”"
+          }
+        }
+      }
+    },
+    "\"%@\"": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"%@\""
+          }
+        }
+      }
+    },
+    "“%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“%@”"
+          }
+        }
+      }
+    },
+    "%lld corrections found": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld correcciones encontradas"
+          }
+        }
+      }
+    },
+    "%lld Fixed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld corregidos"
+          }
+        }
+      }
+    },
+    "×%lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "×%lld"
+          }
+        }
+      }
+    },
+    "A recording is already in progress: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya hay una grabación en curso: %@"
+          }
+        }
+      }
+    },
+    "Accept": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
+          }
+        }
+      }
+    },
+    "Accept All": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar todo"
+          }
+        }
+      }
+    },
+    "AI Review": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisión con IA"
+          }
+        }
+      }
+    },
+    "Analysis Failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error en el análisis"
+          }
+        }
+      }
+    },
+    "Analyzing audio to determine the best language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizando audio para determinar el mejor idioma"
+          }
+        }
+      }
+    },
+    "Analyzing transcription...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizando la transcripción..."
+          }
+        }
+      }
+    },
+    "Apply %lld Accepted": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplicar %lld aceptadas"
+          }
+        }
+      }
+    },
+    "Approaching daily limit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acercándose al límite diario"
+          }
+        }
+      }
+    },
+    "Audio File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo de Audio"
+          }
+        }
+      }
+    },
+    "Audio, transcripts, and notes are stored on this device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El audio, las transcripciones y las notas se guardan en este dispositivo"
+          }
+        }
+      }
+    },
+    "Auto-detect language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectar idioma automáticamente"
+          }
+        }
+      }
+    },
+    "Auto-detect Language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectar Idioma Automáticamente"
+          }
+        }
+      }
+    },
+    "Automatic engine": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motor automático"
+          }
+        }
+      }
+    },
+    "Automatically detect the language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectar el idioma automáticamente"
+          }
+        }
+      }
+    },
+    "Available": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible"
+          }
+        }
+      }
+    },
+    "Available Shortcuts": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atajos disponibles"
+          }
+        }
+      }
+    },
+    "Basque (Euskara)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euskera"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Capture the conversation, then transcribe it privately on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captura la conversación y transcríbela de forma privada en este dispositivo."
+          }
+        }
+      }
+    },
+    "Choose a transcription from the list to view its details": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una transcripción de la lista para ver sus detalles"
+          }
+        }
+      }
+    },
+    "Choose Audio File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir Archivo de Audio"
+          }
+        }
+      }
+    },
+    "Choose Different File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir Otro Archivo"
+          }
+        }
+      }
+    },
+    "Choose Transcript File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir archivo de transcripción"
+          }
+        }
+      }
+    },
+    "Close": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerrar"
+          }
+        }
+      }
+    },
+    "Confidence: %lld/10": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confianza: %lld/10"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar"
+          }
+        }
+      }
+    },
+    "Correct spelling": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortografía correcta"
+          }
+        }
+      }
+    },
+    "Create Meeting Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear notas de reunión"
+          }
+        }
+      }
+    },
+    "Create notes for ${meetingTitle} from ${transcript}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear notas para ${meetingTitle} a partir de ${transcript}"
+          }
+        }
+      }
+    },
+    "Creates structured meeting notes using Private Cloud Compute when available, with an automatic on-device fallback.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea notas de reunión estructuradas usando Private Cloud Compute cuando está disponible, con recurso automático al modelo en el dispositivo."
+          }
+        }
+      }
+    },
+    "Customize Prompt": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personalizar instrucción"
+          }
+        }
+      }
+    },
+    "Daily limit reached — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite diario alcanzado: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    },
+    "Date": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fecha"
+          }
+        }
+      }
+    },
+    "Delete": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar"
+          }
+        }
+      }
+    },
+    "Detecting language...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectando idioma..."
+          }
+        }
+      }
+    },
+    "Did you mean %@?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Querías decir %@?"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        }
+      }
+    },
+    "Downloading Whisper model...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando el modelo Whisper..."
+          }
+        }
+      }
+    },
+    "Duration": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duración"
+          }
+        }
+      }
+    },
+    "Edit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editar"
+          }
+        }
+      }
+    },
+    "Enable microphone access in Settings to record audio.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa el acceso al micrófono en Ajustes para grabar audio."
+          }
+        }
+      }
+    },
+    "Engine": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Motor"
+          }
+        }
+      }
+    },
+    "English": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés"
+          }
+        }
+      }
+    },
+    "English (US)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inglés (EE.UU.)"
+          }
+        }
+      }
+    },
+    "Enhanced meeting notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas de reunión mejoradas"
+          }
+        }
+      }
+    },
+    "Error": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        }
+      }
+    },
+    "Español": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Español"
+          }
+        }
+      }
+    },
+    "Euskara": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euskera"
+          }
+        }
+      }
+    },
+    "Euskara / multilingual": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euskera / multilingüe"
+          }
+        }
+      }
+    },
+    "Every name in this transcript matches your vocabulary or looks ordinary.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los nombres de esta transcripción coinciden con tu vocabulario o parecen normales."
+          }
+        }
+      }
+    },
+    "Example Automations": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejemplos de automatización"
+          }
+        }
+      }
+    },
+    "Failed to process audio file. The file may be corrupted or in an unsupported format.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al procesar el archivo de audio. El archivo puede estar corrupto o en un formato no soportado."
+          }
+        }
+      }
+    },
+    "Fast, private transcription using Apple's on-device speech recognition. No internet required.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción rápida y privada usando el reconocimiento de voz de Apple en el dispositivo. No requiere internet."
+          }
+        }
+      }
+    },
+    "File Selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo Seleccionado"
+          }
+        }
+      }
+    },
+    "Fix Names": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corregir nombres"
+          }
+        }
+      }
+    },
+    "Found in: “%@”\n\nReplaces every occurrence and adds it to your names list.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encontrado en: “%@”\n\nReemplaza todas las apariciones y lo añade a tu lista de nombres."
+          }
+        }
+      }
+    },
+    "Generate Meeting Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generar notas de reunión"
+          }
+        }
+      }
+    },
+    "Generating Notes…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generando notas…"
+          }
+        }
+      }
+    },
+    "Get last ${limit} transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener las últimas ${limit} transcripciones"
+          }
+        }
+      }
+    },
+    "Get Transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener transcripciones"
+          }
+        }
+      }
+    },
+    "Gets your recent transcriptions from the Transcriber library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtiene tus transcripciones recientes de la biblioteca de Transcriber."
+          }
+        }
+      }
+    },
+    "Grant Permission": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conceder Permiso"
+          }
+        }
+      }
+    },
+    "iCloud Sync": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sincronización con iCloud"
+          }
+        }
+      }
+    },
+    "Import": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        }
+      }
+    },
+    "Import an audio file to get started": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa un archivo de audio para comenzar"
+          }
+        }
+      }
+    },
+    "Import Audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar Audio"
+          }
+        }
+      }
+    },
+    "Import Audio File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar Archivo de Audio"
+          }
+        }
+      }
+    },
+    "Import audio files to create transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa archivos de audio para crear transcripciones"
+          }
+        }
+      }
+    },
+    "Import Transcript": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar transcripción"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma"
+          }
+        }
+      }
+    },
+    "Language will be automatically detected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El idioma se detectará automáticamente"
+          }
+        }
+      }
+    },
+    "Library": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biblioteca"
+          }
+        }
+      }
+    },
+    "Limit": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite"
+          }
+        }
+      }
+    },
+    "Maximum number of transcriptions to return": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Número máximo de transcripciones a devolver"
+          }
+        }
+      }
+    },
+    "Meeting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reunión"
+          }
+        }
+      }
+    },
+    "Meeting Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas de reunión"
+          }
+        }
+      }
+    },
+    "Meeting Title": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título de la reunión"
+          }
+        }
+      }
+    },
+    "Microphone Access Required": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se necesita acceso al micrófono"
+          }
+        }
+      }
+    },
+    "More": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más"
+          }
+        }
+      }
+    },
+    "Multilingual": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multilingüe"
+          }
+        }
+      }
+    },
+    "Names and companies": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombres y empresas"
+          }
+        }
+      }
+    },
+    "No audio file found to transcribe.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró archivo de audio para transcribir."
+          }
+        }
+      }
+    },
+    "No Changes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin cambios"
+          }
+        }
+      }
+    },
+    "No corrections found": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontraron correcciones"
+          }
+        }
+      }
+    },
+    "No transcription available": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin transcripción disponible"
+          }
+        }
+      }
+    },
+    "No transcription was generated. The audio may not contain recognizable speech, or the language model may not be downloaded. Go to Settings → General → Keyboard → Dictation to download language models.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se generó ninguna transcripción. El audio puede no contener voz reconocible, o el modelo de idioma puede no estar descargado. Ve a Ajustes → General → Teclado → Dictado para descargar modelos de idioma."
+          }
+        }
+      }
+    },
+    "No Transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin Transcripciones"
+          }
+        }
+      }
+    },
+    "No transcriptions yet": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin transcripciones aún"
+          }
+        }
+      }
+    },
+    "Not enabled for this build — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No habilitado en esta compilación: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    },
+    "Nothing suspicious": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nada sospechoso"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aceptar"
+          }
+        }
+      }
+    },
+    "On-Device Transcription": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción en el Dispositivo"
+          }
+        }
+      }
+    },
+    "One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un nombre o frase por línea, hasta 100. Para corregir una palabra que el transcriptor sigue equivocando, escribe la ortografía correcta, =, y luego lo que oye: Iñaki = Yankee, Ianki. Se sincroniza con iCloud y lo usan Apple Speech y WhisperKit."
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir"
+          }
+        }
+      }
+    },
+    "Open Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir grabación"
+          }
+        }
+      }
     },
-    "Analyzing audio to determine the best language" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analizando audio para determinar el mejor idioma"
+    "Open Shortcuts App": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir la app Atajos"
           }
         }
       }
     },
-    "Audio File" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Archivo de Audio"
+    "Optional title for the transcription": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título opcional para la transcripción"
           }
         }
       }
     },
-    "Auto-detect language" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detectar idioma automáticamente"
+    "Print": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imprimir"
           }
         }
       }
     },
-    "Auto-detect Language" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detectar Idioma Automáticamente"
+    "Privacy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacidad"
           }
         }
       }
     },
-    "Automatically detect the language" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detectar el idioma automáticamente"
+    "Private Cloud Compute": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private Cloud Compute"
           }
         }
       }
     },
-    "Available Shortcuts" : {
-
+    "Recent Transcriptions": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripciones Recientes"
+          }
+        }
+      }
     },
-    "Basque (Euskara)" : {
-
+    "Record": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar"
+          }
+        }
+      }
     },
-    "Cancel" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancelar"
+    "Record a meeting": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Graba una reunión"
           }
         }
       }
     },
-    "Choose a transcription from the list to view its details" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige una transcripción de la lista para ver sus detalles"
+    "Record Audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabar audio"
           }
         }
       }
     },
-    "Choose Audio File" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elegir Archivo de Audio"
+    "Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabando"
           }
         }
       }
     },
-    "Choose Different File" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elegir Otro Archivo"
+    "Recording '%@' saved.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación '%@' guardada."
           }
         }
       }
     },
-    "Library" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Biblioteca"
+    "Recording '%@' stopped and transcribed successfully.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación '%@' detenida y transcrita correctamente."
           }
         }
       }
     },
-    "Record" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grabar"
+    "Recording Complete": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación completada"
           }
         }
       }
     },
-    "Settings" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajustes"
+    "Recording Name": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombre de la grabación"
           }
         }
       }
     },
-    "Close" : {
-
+    "Recording started: %@. You can switch to another app — recording will continue in the background.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación iniciada: %@. Puedes cambiar a otra app; la grabación continuará en segundo plano."
+          }
+        }
+      }
     },
-    "Copy" : {
-
+    "Reject": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rechazar"
+          }
+        }
+      }
     },
-    "Customize Prompt" : {
-
+    "Replace “%@”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reemplazar “%@”"
+          }
+        }
+      }
     },
-    "Date" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fecha"
+    "Replace & Save": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reemplazar y guardar"
           }
         }
       }
     },
-    "Delete" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminar"
+    "Replaces every occurrence and adds it to your names list, so future transcriptions get it right.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reemplaza todas las apariciones y lo añade a tu lista de nombres, para que las próximas transcripciones lo escriban bien."
           }
         }
       }
     },
-    "Detecting language..." : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detectando idioma..."
+    "Replaces every occurrence and adds it to your names list.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reemplaza todas las apariciones y lo añade a tu lista de nombres."
           }
         }
       }
     },
-    "Done" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Listo"
+    "Requires iOS 27 or later": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requiere iOS 27 o posterior"
           }
         }
       }
     },
-    "Downloading Whisper model..." : {
-
+    "Restore Default": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar predeterminado"
+          }
+        }
+      }
     },
-    "Duration" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duración"
+    "Retranscribe": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a transcribir"
           }
         }
       }
     },
-    "Edit" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editar"
+    "Save Audio Only": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar solo el audio"
           }
         }
       }
     },
-    "Engine" : {
-
+    "Say:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di:"
+          }
+        }
+      }
     },
-    "English (US)" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inglés (EE.UU.)"
+    "Search": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar"
           }
         }
       }
     },
-    "Error" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error"
+    "Search Text": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto de búsqueda"
           }
         }
       }
     },
-    "Example Automations" : {
-
+    "Search transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar transcripciones"
+          }
+        }
+      }
     },
-    "Failed to process audio file. The file may be corrupted or in an unsupported format." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Error al procesar el archivo de audio. El archivo puede estar corrupto o en un formato no soportado."
+    "Search Transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar Transcripciones"
           }
         }
       }
     },
-    "Fast, private transcription using Apple's on-device speech recognition. No internet required." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripción rápida y privada usando el reconocimiento de voz de Apple en el dispositivo. No requiere internet."
+    "Search transcriptions for ${searchText}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar ${searchText} en las transcripciones"
           }
         }
       }
     },
-    "File Selected" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Archivo Seleccionado"
+    "Searches your transcriptions for a keyword or phrase.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca una palabra o frase en tus transcripciones."
           }
         }
       }
     },
-    "Generate Meeting Notes" : {
-
+    "Select a Transcription": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona una Transcripción"
+          }
+        }
+      }
     },
-    "Get last ${limit} transcriptions" : {
-
+    "Select an audio file to transcribe": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona un archivo de audio para transcribir"
+          }
+        }
+      }
     },
-    "Get Transcriptions" : {
-
+    "Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
+          }
+        }
+      }
     },
-    "Gets your recent transcriptions from the Transcriber library." : {
-
+    "Share": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir"
+          }
+        }
+      }
     },
-    "Grant Permission" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conceder Permiso"
+    "Share Audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir audio"
           }
         }
       }
     },
-    "Import" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar"
+    "Shortcuts Guide": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guía de Atajos"
           }
         }
       }
     },
-    "Import an audio file to get started" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa un archivo de audio para comenzar"
+    "Show usage options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar opciones de uso"
           }
         }
       }
     },
-    "Import Audio" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar Audio"
+    "Sign in to iCloud in the Settings app to sync transcripts across your devices.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión en iCloud en la app Ajustes para sincronizar las transcripciones entre tus dispositivos."
           }
         }
       }
     },
-    "Import Audio File" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar Archivo de Audio"
+    "Spanish (Spain)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Español (España)"
           }
         }
       }
     },
-    "Import audio files to create transcriptions" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa archivos de audio para crear transcripciones"
+    "Speech Recognition Access": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acceso a Reconocimiento de Voz"
           }
         }
       }
     },
-    "Language" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idioma"
+    "Speech recognition is not supported for this language on this device.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El reconocimiento de voz no está soportado para este idioma en este dispositivo."
           }
         }
       }
     },
-    "Language will be automatically detected" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El idioma se detectará automáticamente"
+    "Speech recognition permission is required to transcribe audio.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se requiere permiso de reconocimiento de voz para transcribir audio."
           }
         }
       }
     },
-    "Limit" : {
-
+    "Speech recognizer is currently not available. Please check your internet connection or try again later.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El reconocedor de voz no está disponible actualmente. Por favor, comprueba tu conexión a internet o inténtalo más tarde."
+          }
+        }
+      }
     },
-    "Maximum number of transcriptions to return" : {
-
+    "Start Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar a grabar"
+          }
+        }
+      }
     },
-    "Meeting Notes" : {
-
+    "Start recording named ${name}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar una grabación llamada ${name}"
+          }
+        }
+      }
     },
-    "Merge into Single Summary" : {
-
+    "Start Transcription": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar Transcripción"
+          }
+        }
+      }
     },
-    "Merging summaries..." : {
-
+    "Starts recording audio with Transcriber. The app must open to begin the audio session.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empieza a grabar audio con Transcriber. La app debe abrirse para iniciar la sesión de audio."
+          }
+        }
+      }
     },
-    "More" : {
-
+    "Stop Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener grabación"
+          }
+        }
+      }
     },
-    "No audio file found to transcribe." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se encontró archivo de audio para transcribir."
+    "Stop recording and transcribe: ${transcribeAfterStopping}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener la grabación y transcribir: ${transcribeAfterStopping}"
           }
         }
       }
     },
-    "No transcription available" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin transcripción disponible"
+    "Stops the current recording and optionally transcribes it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detiene la grabación actual y, opcionalmente, la transcribe."
           }
         }
       }
     },
-    "No transcription was generated. The audio may not contain recognizable speech, or the language model may not be downloaded. Go to Settings → General → Keyboard → Dictation to download language models." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se generó ninguna transcripción. El audio puede no contener voz reconocible, o el modelo de idioma puede no estar descargado. Ve a Ajustes → General → Teclado → Dictado para descargar modelos de idioma."
+    "Successfully transcribed and saved '%@' to your library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha transcrito y guardado '%@' en tu biblioteca."
           }
         }
       }
     },
-    "No Transcriptions" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin Transcripciones"
+    "Supported formats: MP3, M4A, WAV, and more": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formatos soportados: MP3, M4A, WAV y más"
           }
         }
       }
     },
-    "No transcriptions yet" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sin transcripciones aún"
+    "Suspicious": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sospechosas"
           }
         }
       }
     },
-    "OK" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aceptar"
+    "Suspicious Words": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palabras sospechosas"
           }
         }
       }
     },
-    "On-Device Transcription" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripción en el Dispositivo"
+    "Tap a word to replace it everywhere. Fixes are added to your names list, so the next transcription gets them right automatically.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca una palabra para reemplazarla en todas partes. Las correcciones se añaden a tu lista de nombres, para que la próxima transcripción las escriba bien automáticamente."
           }
         }
       }
     },
-    "Open Shortcuts App" : {
-
+    "Temporarily unavailable — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible temporalmente: usando el modelo en el dispositivo"
+          }
+        }
+      }
     },
-    "Optional title for the transcription" : {
-
+    "The audio file to transcribe": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El archivo de audio a transcribir"
+          }
+        }
+      }
     },
-    "Print" : {
-
+    "The language of the audio (if not auto-detecting)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El idioma del audio (si no se detecta automáticamente)"
+          }
+        }
+      }
     },
-    "Recent Transcriptions" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripciones Recientes"
+    "The text to search for in your transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El texto que buscar en tus transcripciones"
           }
         }
       }
     },
-    "Restore Default" : {
-
+    "The transcription looks good!": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡La transcripción tiene buena pinta!"
+          }
+        }
+      }
     },
-    "Say:" : {
-
+    "This app needs speech recognition permission to transcribe audio files.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta app necesita permiso de reconocimiento de voz para transcribir archivos de audio."
+          }
+        }
+      }
     },
-    "Search" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buscar"
+    "This device is not eligible": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este dispositivo no es compatible"
           }
         }
       }
     },
-    "Search Text" : {
-
+    "This is a one-time download and will be reused offline": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es una descarga única y se reutilizará sin conexión"
+          }
+        }
+      }
     },
-    "Search transcriptions" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buscar transcripciones"
+    "This may take a few moments": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto puede tardar unos momentos"
           }
         }
       }
     },
-    "Search Transcriptions" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buscar Transcripciones"
+    "This may take a moment for long transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto puede tardar un momento en transcripciones largas"
           }
         }
       }
     },
-    "Search transcriptions for ${searchText}" : {
-
+    "Title": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
+          }
+        }
+      }
     },
-    "Searches your transcriptions for a keyword or phrase." : {
-
+    "Transcribe & Save": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir y guardar"
+          }
+        }
+      }
     },
-    "Select a Transcription" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona una Transcripción"
+    "Transcribe ${audioFile}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir ${audioFile}"
           }
         }
       }
     },
-    "Select an audio file to transcribe" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona un archivo de audio para transcribir"
+    "Transcribe ${audioFile} as ${title}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir ${audioFile} como ${title}"
           }
         }
       }
     },
-    "Share" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Compartir"
+    "Transcribe After Stopping": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir al detener"
           }
         }
       }
     },
-    "Shortcuts Guide" : {
-
+    "Transcribe and Save": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir y Guardar"
+          }
+        }
+      }
     },
-    "Spanish (Spain)" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Español (España)"
+    "Transcribe Audio": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir Audio"
           }
         }
       }
     },
-    "Speech Recognition Access" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acceso a Reconocimiento de Voz"
+    "Transcribe Now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir ahora"
           }
         }
       }
     },
-    "Speech recognition is not supported for this language on this device." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El reconocimiento de voz no está soportado para este idioma en este dispositivo."
+    "Transcriber integrates with Siri and the Shortcuts app. Use these actions to automate your transcription workflow.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcriber se integra con Siri y la app Atajos. Usa estas acciones para automatizar tu flujo de transcripción."
           }
         }
       }
     },
-    "Speech recognition permission is required to transcribe audio." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se requiere permiso de reconocimiento de voz para transcribir audio."
+    "Transcribes an audio file and returns the text. Does not save to library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe un archivo de audio y devuelve el texto. No lo guarda en la biblioteca."
           }
         }
       }
     },
-    "Speech recognizer is currently not available. Please check your internet connection or try again later." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El reconocedor de voz no está disponible actualmente. Por favor, comprueba tu conexión a internet o inténtalo más tarde."
+    "Transcribes an audio file and saves it to your Transcriber library.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe un archivo de audio y lo guarda en tu biblioteca de Transcriber."
           }
         }
       }
     },
-    "Start Transcription" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciar Transcripción"
+    "Transcribes an audio file to text using speech recognition.": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe un archivo de audio a texto usando reconocimiento de voz."
           }
         }
       }
     },
-    "Successfully transcribed and saved '%@' to your library." : {
-
+    "Transcribing audio...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribiendo audio..."
+          }
+        }
+      }
     },
-    "Supported formats: MP3, M4A, WAV, and more" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Formatos soportados: MP3, M4A, WAV y más"
+    "Transcribing...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribiendo..."
           }
         }
       }
     },
-    "The audio file to transcribe" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El archivo de audio a transcribir"
+    "Transcript": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción"
           }
         }
       }
     },
-    "The language of the audio (if not auto-detecting)" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El idioma del audio (si no se detecta automáticamente)"
+    "Transcription": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción"
           }
         }
       }
     },
-    "The text to search for in your transcriptions" : {
-
+    "Transcription Details": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detalles de Transcripción"
+          }
+        }
+      }
     },
-    "This app needs speech recognition permission to transcribe audio files." : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esta app necesita permiso de reconocimiento de voz para transcribir archivos de audio."
+    "Transcription failed: %@": {
+      "extractionState": "stale",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripción fallida: %@"
           }
         }
       }
     },
-    "This is a one-time download and will be reused offline" : {
-
+    "Transcription stays on device. When enhanced notes are enabled, transcript text is processed by Apple's Private Cloud Compute and is not stored by Apple.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcripción permanece en el dispositivo. Cuando las notas mejoradas están activadas, el texto de la transcripción se procesa mediante Private Cloud Compute de Apple y Apple no lo almacena."
+          }
+        }
+      }
     },
-    "This may take a few moments" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esto puede tardar unos momentos"
+    "Transcriptions": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcripciones"
           }
         }
       }
     },
-    "This may take a moment for long transcriptions" : {
-
+    "Transcripts and meeting notes sync through your private iCloud. Audio recordings stay on this device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las transcripciones y las notas de reunión se sincronizan mediante tu iCloud privado. Las grabaciones de audio permanecen en este dispositivo."
+          }
+        }
+      }
     },
-    "Title" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Título"
+    "Try Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar"
           }
         }
       }
     },
-    "Transcribe & Save" : {
-
+    "TXT, Markdown, SRT, VTT, and JSON files are supported.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se admiten archivos TXT, Markdown, SRT, VTT y JSON."
+          }
+        }
+      }
     },
-    "Transcribe ${audioFile}" : {
-
+    "Unavailable — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible: usando el modelo en el dispositivo"
+          }
+        }
+      }
     },
-    "Transcribe ${audioFile} as ${title}" : {
-
+    "Uses Apple's large-context Private Cloud Compute model with reasoning on iOS 27 — ideal for notes on long recordings. If it is unavailable or its daily limit is reached, Transcriber automatically uses the on-device model.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa el modelo Private Cloud Compute de Apple, de gran contexto y con razonamiento, en iOS 27, ideal para notas de grabaciones largas. Si no está disponible o se alcanza su límite diario, Transcriber usa automáticamente el modelo en el dispositivo."
+          }
+        }
+      }
     },
-    "Transcribe and Save" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcribir y Guardar"
+    "View Saved Meeting Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver notas de reunión guardadas"
           }
         }
       }
     },
-    "Transcribe Audio" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcribir Audio"
+    "Whisper download": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga de Whisper"
           }
         }
       }
     },
-    "Transcriber integrates with Siri and the Shortcuts app. Use these actions to automate your transcription workflow." : {
-
+    "Your correction...": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu corrección..."
+          }
+        }
+      }
     },
-    "Transcribes an audio file and returns the text. Does not save to library." : {
-
+    "Multilingual mode requires WhisperKit for per-segment language detection.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo multilingüe requiere WhisperKit para detectar el idioma por segmentos."
+          }
+        }
+      }
     },
-    "Transcribes an audio file and saves it to your Transcriber library." : {
-
+    "Apple Speech for most languages; WhisperKit for Euskara.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Speech para la mayoría de idiomas; WhisperKit para euskera."
+          }
+        }
+      }
     },
-    "Transcribes an audio file to text using speech recognition." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcribe un archivo de audio a texto usando reconocimiento de voz."
+    "Apple SpeechAnalyzer: fast, on-device transcription.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple SpeechAnalyzer: transcripción rápida en el dispositivo."
           }
         }
       }
     },
-    "Transcribing audio..." : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcribiendo audio..."
+    "WhisperKit: open-source model, runs on-device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WhisperKit: modelo de código abierto, se ejecuta en el dispositivo."
           }
         }
       }
     },
-    "Transcription" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripción"
+    "Auto-detects language (may misidentify mixed-language audio)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detecta el idioma automáticamente (puede confundirse con audio en varios idiomas)"
           }
         }
       }
     },
-    "Transcription Details" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Detalles de Transcripción"
+    "Force Basque — best for Basque-dominant recordings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forzar euskera: ideal para grabaciones mayoritariamente en euskera"
           }
         }
       }
     },
-    "Transcription failed: %@" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripción fallida: %@"
+    "Force Spanish — best for Spanish-dominant recordings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forzar español: ideal para grabaciones mayoritariamente en español"
           }
         }
       }
     },
-    "Transcriptions" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transcripciones"
+    "Force English — best for English-dominant recordings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forzar inglés: ideal para grabaciones mayoritariamente en inglés"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

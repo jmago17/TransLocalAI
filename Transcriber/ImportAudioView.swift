@@ -263,15 +263,15 @@ struct ImportAudioView: View {
     
     private var engineDescription: String {
         if selectedLanguage == "multilingual" {
-            return "Multilingual mode requires WhisperKit for per-segment language detection."
+            return String(localized: "Multilingual mode requires WhisperKit for per-segment language detection.")
         }
         switch selectedEngine {
         case .auto:
-            return "Apple Speech for most languages; WhisperKit for Euskara."
+            return String(localized: "Apple Speech for most languages; WhisperKit for Euskara.")
         case .apple:
-            return "Apple SpeechAnalyzer: fast, on-device transcription."
+            return String(localized: "Apple SpeechAnalyzer: fast, on-device transcription.")
         case .whisper:
-            return "WhisperKit: open-source model, runs on-device."
+            return String(localized: "WhisperKit: open-source model, runs on-device.")
         }
     }
 

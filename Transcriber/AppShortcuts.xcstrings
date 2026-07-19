@@ -1,0 +1,76 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "Create meeting notes with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear notas de reunión con ${applicationName}"
+          }
+        }
+      }
+    },
+    "Get my transcriptions from ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener mis transcripciones de ${applicationName}"
+          }
+        }
+      }
+    },
+    "Search transcriptions in ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar transcripciones en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Start recording with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar a grabar con ${applicationName}"
+          }
+        }
+      }
+    },
+    "Stop recording with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener la grabación con ${applicationName}"
+          }
+        }
+      }
+    },
+    "Transcribe and save with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir y guardar con ${applicationName}"
+          }
+        }
+      }
+    },
+    "Transcribe audio with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir audio con ${applicationName}"
+          }
+        }
+      }
+    }
+  }
+}
