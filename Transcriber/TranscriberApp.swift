@@ -22,16 +22,29 @@ struct TranscriberApp: App {
         let schema = Schema([
             Transcription.self,
         ])
+        // Transcripts and meeting notes sync through the private CloudKit
+        // database. Audio files stay local — only the text travels.
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none
+            cloudKitDatabase: .private("iCloud.com.josumartinez.transcriber")
         )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // A missing iCloud account or container must not brick the app —
+            // fall back to the same store without CloudKit mirroring.
+            let localConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
+            do {
+                return try ModelContainer(for: schema, configurations: [localConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 
