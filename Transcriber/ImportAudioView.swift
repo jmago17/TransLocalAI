@@ -403,8 +403,9 @@ struct ImportAudioView: View {
 
                 // The system expires continued-processing tasks whose progress
                 // stalls, which killed transcriptions as soon as the app was
-                // backgrounded. Advance progress asymptotically toward 90%
-                // (scaled to the audio length) until the real work finishes.
+                // backgrounded. Real engine progress drives the bar; a slow
+                // asymptotic heartbeat guarantees liveness between callbacks.
+                // Both are monotonic via max() so the bar never jumps back.
                 let audioSeconds = (try? AVAudioFile(forReading: audioURL))
                     .map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 60
                 let estimatedSeconds = max(20.0, audioSeconds * 0.6)
@@ -414,13 +415,24 @@ struct ImportAudioView: View {
                         try? await Task.sleep(for: .seconds(2))
                         guard !Task.isCancelled else { return }
                         let elapsed = Date().timeIntervalSince(heartbeatStart)
-                        let fraction = 0.3 + 0.6 * (1 - exp(-elapsed / estimatedSeconds))
-                        updateLiveActivity(phase: "Transcribing...", progress: fraction)
+                        let estimate = 0.3 + 0.6 * (1 - exp(-elapsed / estimatedSeconds))
+                        updateLiveActivity(phase: "Transcribing...", progress: max(overallProgress, estimate))
                     }
                 }
                 defer { heartbeat.cancel() }
 
-                let result = try await hybridService.transcribe(audioURL: audioURL, language: languageToUse, engine: selectedEngine)
+                let result = try await hybridService.transcribe(
+                    audioURL: audioURL,
+                    language: languageToUse,
+                    engine: selectedEngine
+                ) { fraction in
+                    Task { @MainActor in
+                        let mapped = 0.3 + min(max(fraction, 0), 1) * 0.65
+                        if mapped > overallProgress {
+                            updateLiveActivity(phase: "Transcribing...", progress: mapped)
+                        }
+                    }
+                }
                 heartbeat.cancel()
                 let transcriptionText = result.text
                 let duration = result.duration

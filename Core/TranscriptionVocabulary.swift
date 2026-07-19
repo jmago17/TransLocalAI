@@ -148,6 +148,8 @@ enum TranscriptionVocabulary {
         let word: String
         let count: Int
         let suggestion: String?
+        /// The transcript line (or a window of it) around the first occurrence.
+        let snippet: String
     }
 
     /// Capitalized words used mid-sentence that match neither a vocabulary
@@ -161,7 +163,7 @@ enum TranscriptionVocabulary {
         let canonicals = entries.map { (term: $0.canonical, normalized: normalize($0.canonical)) }
 
         let source = text as NSString
-        var found: [String: (display: String, count: Int)] = [:]
+        var found: [String: (display: String, count: Int, snippet: String)] = [:]
         for match in expression.matches(in: text, range: NSRange(location: 0, length: source.length)) {
             let word = source.substring(with: match.range)
             guard word.count >= 4, let first = word.first, first.isUppercase,
@@ -182,7 +184,11 @@ enum TranscriptionVocabulary {
 
             let key = normalize(word)
             guard !key.isEmpty, !knownKeys.contains(key) else { continue }
-            found[key, default: (word, 0)].count += 1
+            if found[key] == nil {
+                found[key] = (word, 1, snippet(around: match.range, in: source))
+            } else {
+                found[key]?.count += 1
+            }
         }
 
         return found.values.map { entry -> SuspiciousTerm in
@@ -192,7 +198,12 @@ enum TranscriptionVocabulary {
                 .map { (term: $0.term, distance: editDistance($0.normalized, key, stoppingAfter: limit)) }
                 .filter { $0.distance <= limit }
                 .min { $0.distance < $1.distance }
-            return SuspiciousTerm(word: entry.display, count: entry.count, suggestion: nearest?.term)
+            return SuspiciousTerm(
+                word: entry.display,
+                count: entry.count,
+                suggestion: nearest?.term,
+                snippet: entry.snippet
+            )
         }
         .sorted { lhs, rhs in
             if (lhs.suggestion != nil) != (rhs.suggestion != nil) { return lhs.suggestion != nil }
@@ -201,6 +212,45 @@ enum TranscriptionVocabulary {
         }
         .prefix(25)
         .map(\.self)
+    }
+
+    /// A readable window of text around `range` — the enclosing transcript line
+    /// (minus any leading `[timestamp]`), trimmed to at most ~120 characters
+    /// centered on the word so the user can see the phrase it appeared in.
+    nonisolated private static func snippet(around range: NSRange, in source: NSString) -> String {
+        // Expand to the surrounding line.
+        var lineStart = range.location
+        while lineStart > 0,
+              source.character(at: lineStart - 1) != 0x0A {  // newline
+            lineStart -= 1
+        }
+        var lineEnd = range.location + range.length
+        while lineEnd < source.length,
+              source.character(at: lineEnd) != 0x0A {
+            lineEnd += 1
+        }
+        var line = source.substring(with: NSRange(location: lineStart, length: lineEnd - lineStart))
+        line = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Drop a leading "[00:19] " timestamp marker for readability.
+        if let bracket = line.firstIndex(of: "]"), line.hasPrefix("[") {
+            line = String(line[line.index(after: bracket)...]).trimmingCharacters(in: .whitespaces)
+        }
+
+        // Keep the snippet compact; if the line is long, window it around the word.
+        let maxLength = 120
+        guard line.count > maxLength else { return line }
+        let word = source.substring(with: range)
+        if let wordRange = line.range(of: word) {
+            let padding = (maxLength - word.count) / 2
+            let lower = line.index(wordRange.lowerBound, offsetBy: -padding, limitedBy: line.startIndex) ?? line.startIndex
+            let upper = line.index(wordRange.upperBound, offsetBy: padding, limitedBy: line.endIndex) ?? line.endIndex
+            var windowed = String(line[lower..<upper])
+            if lower != line.startIndex { windowed = "…" + windowed }
+            if upper != line.endIndex { windowed += "…" }
+            return windowed
+        }
+        return String(line.prefix(maxLength)) + "…"
     }
 
     fileprivate static func reconcileWithCloud() {

@@ -9,7 +9,17 @@ import WhisperKit
 // MARK: - Protocolo del motor de transcripción
 protocol TranscriptionEngine {
     func detectLanguage(audioURL: URL) async throws -> String
-    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult
+    func transcribe(
+        audioURL: URL,
+        language: String,
+        progress: (@Sendable (Double) -> Void)?
+    ) async throws -> TranscriptionResult
+}
+
+extension TranscriptionEngine {
+    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
+        try await transcribe(audioURL: audioURL, language: language, progress: nil)
+    }
 }
 
 protocol ModelPreparingTranscriptionEngine: TranscriptionEngine {
@@ -68,13 +78,17 @@ final class AppleSpeechEngine: TranscriptionEngine {
         return try await manager.detectLanguage(audioURL: audioURL)
     }
 
-    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
+    func transcribe(
+        audioURL: URL,
+        language: String,
+        progress: (@Sendable (Double) -> Void)?
+    ) async throws -> TranscriptionResult {
         let normalized = normalize(language)
         let supported = await AppleSpeechEngine.fetchSupportedLanguages()
         guard supported.contains(normalized) else {
             throw TranscriptionEngineError.unsupportedLanguage(normalized)
         }
-        let text = try await manager.transcribe(audioURL: audioURL, language: normalized)
+        let text = try await manager.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         let audioFile = try? AVAudioFile(forReading: audioURL)
         let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
         return TranscriptionResult(text: text, language: normalized, duration: duration, engineUsed: .appleSpeech)
@@ -139,7 +153,11 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
 #endif
     }
 
-    func transcribe(audioURL: URL, language: String) async throws -> TranscriptionResult {
+    func transcribe(
+        audioURL: URL,
+        language: String,
+        progress: (@Sendable (Double) -> Void)?
+    ) async throws -> TranscriptionResult {
 #if canImport(WhisperKit)
         let isMultilingual = language == "multilingual"
         let normalized = isMultilingual ? "eu-ES" : normalize(language)
@@ -147,7 +165,7 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
         let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
         let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
         let session = try await sessionCache.session(modelId: modelId, language: sessionLanguage)
-        let text = try await session.transcribe(audioURL: audioURL)
+        let text = try await session.transcribe(audioURL: audioURL, progress: progress)
         let audioFile = try? AVAudioFile(forReading: audioURL)
         let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
         return TranscriptionResult(text: text, language: language, duration: duration, engineUsed: .whisper)
@@ -213,7 +231,7 @@ private final class WhisperKitSession {
         return code
     }
 
-    func transcribe(audioURL: URL) async throws -> String {
+    func transcribe(audioURL: URL, progress progressHandler: (@Sendable (Double) -> Void)? = nil) async throws -> String {
         var options = DecodingOptions()
         options.task = .transcribe
         options.language = language
@@ -223,7 +241,15 @@ private final class WhisperKitSession {
                 .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
             options.usePrefillPrompt = true
         }
-        let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
+        // WhisperKit tracks overall completion on its Progress object; sample
+        // it whenever a decoding window reports in.
+        let callback: TranscriptionCallback = progressHandler.map { handler in
+            { [progressObject = whisper.progress] _ in
+                handler(min(progressObject.fractionCompleted, 0.99))
+                return true
+            }
+        } ?? nil
+        let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options, callback: callback)
         var lines: [String] = []
         for result in results {
             for segment in result.segments {
@@ -328,24 +354,29 @@ final class HybridTranscriptionService: @unchecked Sendable {
         }
     }
 
-    func transcribe(audioURL: URL, language: String, engine: EnginePreference = .auto) async throws -> TranscriptionResult {
+    func transcribe(
+        audioURL: URL,
+        language: String,
+        engine: EnginePreference = .auto,
+        progress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> TranscriptionResult {
         if language == "multilingual" {
-            return try await whisperEngine.transcribe(audioURL: audioURL, language: "multilingual")
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: "multilingual", progress: progress)
         }
         let normalized = normalize(language)
         switch engine {
         case .apple:
-            return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
+            return try await appleEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         case .whisper:
-            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         case .auto:
             if normalized == "eu-ES" {
-                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
             }
             do {
-                return try await appleEngine.transcribe(audioURL: audioURL, language: normalized)
+                return try await appleEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
             } catch TranscriptionEngineError.unsupportedLanguage {
-                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized)
+                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
             }
         }
     }

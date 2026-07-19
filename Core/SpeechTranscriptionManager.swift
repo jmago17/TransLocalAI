@@ -31,7 +31,11 @@ class SpeechTranscriptionManager {
 
     // MARK: - Transcription
 
-    func transcribe(audioURL: URL, language: String = "en-US") async throws -> String {
+    func transcribe(
+        audioURL: URL,
+        language: String = "en-US",
+        progress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> String {
         let locale = Locale(identifier: language)
 
         isTranscribing = true
@@ -42,12 +46,16 @@ class SpeechTranscriptionManager {
             transcriptionProgress = 0
         }
 
-        return try await transcribeWithSpeechAnalyzer(audioURL: audioURL, locale: locale)
+        return try await transcribeWithSpeechAnalyzer(audioURL: audioURL, locale: locale, progress: progress)
     }
 
     // MARK: - SpeechAnalyzer Implementation
 
-    private func transcribeWithSpeechAnalyzer(audioURL: URL, locale: Locale) async throws -> String {
+    private func transcribeWithSpeechAnalyzer(
+        audioURL: URL,
+        locale: Locale,
+        progress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> String {
         let transcriber = SpeechTranscriber(
             locale: locale,
             transcriptionOptions: [],
@@ -70,6 +78,11 @@ class SpeechTranscriptionManager {
         context.contextualStrings[.general] = TranscriptionVocabulary.canonicalTerms
         try await analyzer.setContext(context)
 
+        // Real progress: the timestamp of each final result against the total
+        // audio duration.
+        let durationFile = try? AVAudioFile(forReading: audioURL)
+        let totalSeconds = durationFile.map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 0
+
         async let transcriptionFuture: String = {
             var segments: [String] = []
             for try await result in transcriber.results {
@@ -81,12 +94,19 @@ class SpeechTranscriptionManager {
                     if let timeRange = result.text.audioTimeRange {
                         let stamp = Self.formatTimestamp(timeRange.start.seconds)
                         segments.append("[\(stamp)] \(plainText)")
+                        if totalSeconds > 0 {
+                            let fraction = min(0.99, timeRange.end.seconds / totalSeconds)
+                            progress?(fraction)
+                            await MainActor.run { self.transcriptionProgress = fraction }
+                        }
                     } else {
                         segments.append(plainText)
                     }
                 }
-                await MainActor.run {
-                    self.transcriptionProgress = min(0.95, self.transcriptionProgress + 0.01)
+                if totalSeconds <= 0 {
+                    await MainActor.run {
+                        self.transcriptionProgress = min(0.95, self.transcriptionProgress + 0.01)
+                    }
                 }
             }
             return segments.joined(separator: "\n")

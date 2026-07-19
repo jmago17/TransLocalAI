@@ -63,34 +63,60 @@ struct SuspiciousTermsView: View {
                 Button("Replace & Save") { applyReplacement() }
                 Button("Cancel", role: .cancel) { editingTerm = nil }
             } message: {
-                Text("Replaces every occurrence and adds it to your names list.")
+                if let snippet = editingTerm?.snippet, !snippet.isEmpty {
+                    Text("Found in: “\(snippet)”\n\nReplaces every occurrence and adds it to your names list.")
+                } else {
+                    Text("Replaces every occurrence and adds it to your names list.")
+                }
             }
             .onAppear(perform: refresh)
         }
     }
 
     private func row(for suspect: TranscriptionVocabulary.SuspiciousTerm) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
                 Text(suspect.word)
                     .font(.body.weight(.medium))
-                if let suggestion = suspect.suggestion {
-                    Label("Did you mean \(suggestion)?", systemImage: "arrow.turn.down.right")
+                Spacer()
+                if suspect.count > 1 {
+                    Text("×\(suspect.count)")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.secondary)
                 }
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
-            Spacer()
-            if suspect.count > 1 {
-                Text("×\(suspect.count)")
+
+            if !suspect.snippet.isEmpty {
+                highlightedSnippet(suspect.snippet, word: suspect.word)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+
+            if let suggestion = suspect.suggestion {
+                Label("Did you mean \(suggestion)?", systemImage: "arrow.turn.down.right")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
         }
         .contentShape(Rectangle())
+    }
+
+    /// Renders the snippet with the suspicious word emphasized in place.
+    private func highlightedSnippet(_ snippet: String, word: String) -> Text {
+        guard let range = snippet.range(of: word) else {
+            return Text("“\(snippet)”").italic()
+        }
+        let before = String(snippet[snippet.startIndex..<range.lowerBound])
+        let after = String(snippet[range.upperBound...])
+        return Text("“").italic()
+            + Text(before).italic()
+            + Text(word).font(.caption.weight(.semibold)).foregroundStyle(.primary)
+            + Text(after).italic()
+            + Text("”").italic()
     }
 
     private func refresh() {

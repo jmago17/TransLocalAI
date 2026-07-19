@@ -73,6 +73,10 @@ struct TranscriberTests {
         #expect(!words.contains("Yesterday"))     // sentence start after timestamp
         #expect(!words.contains("Then"))          // sentence start
         #expect(suspects.first(where: { $0.word == "Gorosbel" })?.suggestion == "Gorosabel")
+
+        // The snippet carries the surrounding phrase, without the timestamp.
+        let dinalan = suspects.first { $0.word == "Dinalan" }
+        #expect(dinalan?.snippet == "Yesterday we met Dinalan at the office.")
     }
 
     @Test @MainActor func leavesUnrelatedWordsUntouched() {
