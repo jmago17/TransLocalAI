@@ -1,76 +1,153 @@
 {
-  "sourceLanguage": "en",
-  "version": "1.0",
-  "strings": {
-    "Create meeting notes with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Crear notas de reunión con ${applicationName}"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Create meeting notes with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Create meeting notes with ${applicationName}",
+              "Summarize a transcript with ${applicationName}",
+              "Crear acta con ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Crear notas de reunión con ${applicationName}"
           }
         }
       }
     },
-    "Get my transcriptions from ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obtener mis transcripciones de ${applicationName}"
+    "Get my transcriptions from ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Get my transcriptions from ${applicationName}",
+              "Show recent transcriptions in ${applicationName}",
+              "What did I transcribe in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obtener mis transcripciones de ${applicationName}"
           }
         }
       }
     },
-    "Search transcriptions in ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar transcripciones en ${applicationName}"
+    "Search transcriptions in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Search transcriptions in ${applicationName}",
+              "Find in transcriptions with ${applicationName}",
+              "Look up transcription in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Buscar transcripciones en ${applicationName}"
           }
         }
       }
     },
-    "Start recording with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empezar a grabar con ${applicationName}"
+    "Start recording with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Start recording with ${applicationName}",
+              "Record audio with ${applicationName}",
+              "Start a recording in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Empezar a grabar con ${applicationName}"
           }
         }
       }
     },
-    "Stop recording with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Detener la grabación con ${applicationName}"
+    "Stop recording with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Stop recording with ${applicationName}",
+              "Finish recording in ${applicationName}",
+              "End recording with ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener la grabación con ${applicationName}"
           }
         }
       }
     },
-    "Transcribe and save with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transcribir y guardar con ${applicationName}"
+    "Transcribe and save with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Transcribe and save with ${applicationName}",
+              "Save transcription with ${applicationName}",
+              "Transcribe meeting with ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transcribir y guardar con ${applicationName}"
           }
         }
       }
     },
-    "Transcribe audio with ${applicationName}": {
-      "localizations": {
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transcribir audio con ${applicationName}"
+    "Transcribe audio with ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Transcribe audio with ${applicationName}",
+              "Convert audio to text with ${applicationName}",
+              "Transcribe this with ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Transcribir audio con ${applicationName}"
           }
         }
       }
     }
-  }
+  },
+  "version" : "1.0"
 }

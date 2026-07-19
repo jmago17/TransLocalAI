@@ -1,0 +1,256 @@
+{
+  "sourceLanguage": "en",
+  "version": "1.0",
+  "strings": {
+    "Audio File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo de audio"
+          }
+        }
+      }
+    },
+    "Automatic": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automático"
+          }
+        }
+      }
+    },
+    "Available": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disponible"
+          }
+        }
+      }
+    },
+    "Create Notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crear notas"
+          }
+        }
+      }
+    },
+    "Daily limit reached — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite diario alcanzado: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    },
+    "Enhanced meeting notes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notas de reunión mejoradas"
+          }
+        }
+      }
+    },
+    "Euskara / multilingual": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Euskera / multilingüe"
+          }
+        }
+      }
+    },
+    "Import": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar"
+          }
+        }
+      }
+    },
+    "Meeting title": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título de la reunión"
+          }
+        }
+      }
+    },
+    "Models": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelos"
+          }
+        }
+      }
+    },
+    "Names and companies": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nombres y empresas"
+          }
+        }
+      }
+    },
+    "Not enabled for this build — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No habilitado en esta compilación: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    },
+    "One name or company per line. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un nombre o empresa por línea. Para corregir una palabra que el transcriptor sigue equivocando, escribe la ortografía correcta, =, y luego lo que oye: Iñaki = Yankee, Ianki. Se sincroniza con iCloud y lo usan Apple Speech y WhisperKit."
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacidad"
+          }
+        }
+      }
+    },
+    "Private Cloud Compute": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private Cloud Compute"
+          }
+        }
+      }
+    },
+    "Processes transcript text with Apple's private 32K-context model. Data isn't stored by Apple, and TransLocalAI falls back to the on-device model automatically.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Procesa el texto de la transcripción con el modelo privado de 32K de contexto de Apple. Apple no almacena los datos y TransLocalAI recurre automáticamente al modelo en el dispositivo."
+          }
+        }
+      }
+    },
+    "Requires macOS 27 or later": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requiere macOS 27 o posterior"
+          }
+        }
+      }
+    },
+    "Show usage options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar opciones de uso"
+          }
+        }
+      }
+    },
+    "Stored on this Mac": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardado en este Mac"
+          }
+        }
+      }
+    },
+    "Temporarily unavailable — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible temporalmente: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    },
+    "This Mac is not eligible": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este Mac no es compatible"
+          }
+        }
+      }
+    },
+    "Transcript File": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo de transcripción"
+          }
+        }
+      }
+    },
+    "Transcription stays local. Enhanced notes can process transcript text with Apple's Private Cloud Compute.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcripción permanece local. Las notas mejoradas pueden procesar el texto de la transcripción con Private Cloud Compute de Apple."
+          }
+        }
+      }
+    },
+    "TransLocalAI": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TransLocalAI"
+          }
+        }
+      }
+    },
+    "Unavailable — using on-device model": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No disponible: usando el modelo en el dispositivo"
+          }
+        }
+      }
+    }
+  }
+}
