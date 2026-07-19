@@ -8,6 +8,7 @@ struct LocalSettingsView: View {
     private var privateCloudComputeEnabled = true
     @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
     @FocusState private var vocabularyFocused: Bool
+    @State private var cloudSync = CloudSyncStatus()
 
     var body: some View {
         NavigationStack {
@@ -17,6 +18,32 @@ struct LocalSettingsView: View {
                     Text("Transcription stays on device. When enhanced notes are enabled, transcript text is processed by Apple's Private Cloud Compute and is not stored by Apple.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    HStack {
+                        Label(cloudSync.state.title, systemImage: cloudSync.state.systemImage)
+                        Spacer()
+                        if cloudSync.state == .checking {
+                            ProgressView()
+                        } else if cloudSync.state.isHealthy {
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                        }
+                    }
+                    if case .signedOut = cloudSync.state {
+                        Text("Sign in to iCloud in the Settings app to sync transcripts across your devices.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    if case .localOnly(let reason) = cloudSync.state {
+                        Text(reason).font(.caption).foregroundStyle(.secondary)
+                    }
+                    if case .unavailable(let reason) = cloudSync.state {
+                        Text(reason).font(.caption).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("iCloud Sync")
+                } footer: {
+                    Text("Transcripts and meeting notes sync through your private iCloud. Audio recordings stay on this device.")
                 }
 
                 Section {
@@ -64,6 +91,7 @@ struct LocalSettingsView: View {
             .scrollDismissesKeyboard(.interactively)
             .liquidCrystalScreen()
             .navigationTitle("Settings")
+            .task { await cloudSync.refresh() }
             .toolbar {
                 if vocabularyFocused {
                     ToolbarItem(placement: .keyboard) {

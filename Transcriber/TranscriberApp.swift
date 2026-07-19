@@ -31,10 +31,15 @@ struct TranscriberApp: App {
         )
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            CloudSyncStatus.storeIsCloudKitBacked = true
+            print("CLOUDKIT_CHECK store=cloudkit container=\(CloudSyncStatus.containerIdentifier)")
+            return container
         } catch {
             // A missing iCloud account or container must not brick the app —
             // fall back to the same store without CloudKit mirroring.
+            CloudSyncStatus.storeIsCloudKitBacked = false
+            print("CLOUDKIT_CHECK store=local-fallback error=\(error)")
             let localConfiguration = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
