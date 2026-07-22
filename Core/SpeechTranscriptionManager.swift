@@ -75,7 +75,9 @@ class SpeechTranscriptionManager {
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let context = AnalysisContext()
-        context.contextualStrings[.general] = TranscriptionVocabulary.canonicalTerms
+        // Ranked subset (confirmed/corrected terms first) instead of the raw
+        // full list — large unranked biasing lists can hurt recognition.
+        context.contextualStrings[.general] = TranscriptionTerminology.appleContextualStrings()
         try await analyzer.setContext(context)
 
         // Real progress: the timestamp of each final result against the total
@@ -180,7 +182,9 @@ class SpeechTranscriptionManager {
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         let context = AnalysisContext()
-        context.contextualStrings[.general] = TranscriptionVocabulary.canonicalTerms
+        // Ranked subset (confirmed/corrected terms first) instead of the raw
+        // full list — large unranked biasing lists can hurt recognition.
+        context.contextualStrings[.general] = TranscriptionTerminology.appleContextualStrings()
         try await analyzer.setContext(context)
 
         async let textFuture: String = {

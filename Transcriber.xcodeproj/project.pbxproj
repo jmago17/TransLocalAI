@@ -115,7 +115,9 @@
 		A9C10F012F0C100100000001 /* Exceptions for "Core" folder in "TranscriberShare" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				TranscriptionTerminology.swift,
 				TranscriptionVocabulary.swift,
+				WhisperDecodingSupport.swift,
 			);
 			target = A928264F2EF5455C001B6365 /* TranscriberShare */;
 		};

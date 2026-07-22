@@ -7,6 +7,7 @@ struct LocalSettingsView: View {
     @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
     private var privateCloudComputeEnabled = true
     @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
+    @State private var whisperProfile = WhisperDecodingSupport.Profile.current
     @FocusState private var vocabularyFocused: Bool
     @State private var cloudSync = CloudSyncStatus()
 
@@ -60,13 +61,30 @@ struct LocalSettingsView: View {
                     Text("Uses Apple's large-context Private Cloud Compute model with reasoning on iOS 27 — ideal for notes on long recordings. If it is unavailable or its daily limit is reached, Transcriber automatically uses the on-device model.")
                 }
 
-                Section("Transcription") {
+                Section {
                     LabeledContent("Automatic engine", value: "Apple Speech")
                     LabeledContent("Euskara / multilingual", value: "Whisper Large v3")
                     LabeledContent("Whisper download", value: "About 626 MB")
+                    Picker("Whisper coverage", selection: $whisperProfile) {
+                        ForEach(WhisperDecodingSupport.Profile.allCases) { profile in
+                            Text(profile.rawValue).tag(profile)
+                        }
+                    }
+                    .onChange(of: whisperProfile) { _, value in
+                        WhisperDecodingSupport.Profile.current = value
+                    }
+                } header: {
+                    Text("Transcription")
+                } footer: {
+                    Text("Balanced re-checks long silent stretches once. Maximum coverage keeps borderline speech and retries more aggressively — slower, but misses the least. Fast skips retries.")
                 }
 
                 Section {
+                    NavigationLink {
+                        TerminologySettingsView()
+                    } label: {
+                        Label("Terminology manager", systemImage: "character.book.closed")
+                    }
                     TextEditor(text: $vocabularyText)
                         .frame(minHeight: 140)
                         .textInputAutocapitalization(.words)

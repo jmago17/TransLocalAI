@@ -451,7 +451,7 @@ struct TranscriptionDetailView: View {
         let canonical = replacementText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !canonical.isEmpty, !variant.isEmpty, canonical != variant else { return }
 
-        TranscriptionVocabulary.addAlias(canonical: canonical, variant: variant)
+        TranscriptionTerminology.recordCorrection(canonical: canonical, variant: variant)
         transcription.transcriptionText = TranscriptionVocabulary.correcting(
             transcription.transcriptionText,
             terms: ["\(canonical) = \(variant)"]

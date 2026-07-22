@@ -132,7 +132,7 @@ struct SuspiciousTermsView: View {
         editingTerm = nil
         guard !canonical.isEmpty else { return }
 
-        TranscriptionVocabulary.addAlias(canonical: canonical, variant: term.word)
+        TranscriptionTerminology.recordCorrection(canonical: canonical, variant: term.word)
         transcription.transcriptionText = TranscriptionVocabulary.correcting(
             transcription.transcriptionText,
             terms: ["\(canonical) = \(term.word)"]

@@ -232,14 +232,14 @@ private final class WhisperKitSession {
     }
 
     func transcribe(audioURL: URL, progress progressHandler: (@Sendable (Double) -> Void)? = nil) async throws -> String {
-        var options = DecodingOptions()
-        options.task = .transcribe
-        options.language = language
-        if let tokenizer = whisper.tokenizer {
-            let vocabularyPrompt = "Preferred spellings: " + TranscriptionVocabulary.canonicalTerms.joined(separator: ", ")
-            options.promptTokens = tokenizer.encode(text: " " + vocabularyPrompt)
-                .filter { $0 < tokenizer.specialTokens.specialTokenBegin }
-            options.usePrefillPrompt = true
+        let profile = WhisperDecodingSupport.Profile.current
+        var options = WhisperDecodingSupport.makeOptions(language: language, profile: profile)
+        // Ranked, token-capped vocabulary prompt — biases terminology without
+        // crowding the decoder's conditioning window like the old full list.
+        let promptTerms = await MainActor.run { TranscriptionTerminology.whisperPromptTerms() }
+        if let tokenizer = whisper.tokenizer,
+           let tokens = WhisperDecodingSupport.promptTokens(tokenizer: tokenizer, terms: promptTerms) {
+            options.promptTokens = tokens
         }
         // WhisperKit tracks overall completion on its Progress object; sample
         // it whenever a decoding window reports in.
@@ -249,15 +249,79 @@ private final class WhisperKitSession {
                 return true
             }
         } ?? nil
+
+        let startedAt = Date()
         let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options, callback: callback)
-        var lines: [String] = []
+        var segments: [WhisperDecodingSupport.Segment] = []
         for result in results {
             for segment in result.segments {
-                let text = TranscriptionVocabulary.correcting(Self.stripSpecialTokens(segment.text))
+                let text = Self.stripSpecialTokens(segment.text)
                 guard !text.isEmpty else { continue }
-                let stamp = Self.formatTimestamp(Double(segment.start))
-                lines.append("[\(stamp)] \(text)")
+                segments.append(WhisperDecodingSupport.Segment(
+                    start: Double(segment.start), end: Double(segment.end), text: text
+                ))
             }
+        }
+
+        let audioFile = try? AVAudioFile(forReading: audioURL)
+        let totalDuration = audioFile.map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 0
+
+        // Gap recovery: re-decode long uncovered stretches with relaxed
+        // thresholds instead of silently accepting the hole.
+        var retriedGaps = 0
+        var recoveredSegments = 0
+        if profile != .fast, totalDuration > 0 {
+            let minimumGap = profile == .maximumCoverage ? 6.0 : 10.0
+            let gaps = WhisperDecodingSupport.detectGaps(
+                segments: segments, totalDuration: totalDuration, minimumGap: minimumGap
+            )
+            for gap in gaps.prefix(profile == .maximumCoverage ? 6 : 4) {
+                guard let slice = try? await WhisperDecodingSupport.extractSlice(from: audioURL, range: gap)
+                else { continue }
+                retriedGaps += 1
+                let relaxed = WhisperDecodingSupport.relaxedOptions(language: language)
+                if let sliceResults = try? await whisper.transcribe(audioPath: slice.url.path, decodeOptions: relaxed) {
+                    var recovered: [WhisperDecodingSupport.Segment] = []
+                    for result in sliceResults {
+                        for segment in result.segments {
+                            let text = Self.stripSpecialTokens(segment.text)
+                            guard !text.isEmpty else { continue }
+                            recovered.append(WhisperDecodingSupport.Segment(
+                                start: Double(segment.start) + slice.offset,
+                                end: Double(segment.end) + slice.offset,
+                                text: text
+                            ))
+                        }
+                    }
+                    let before = segments.count
+                    segments = WhisperDecodingSupport.merge(primary: segments, recovered: recovered)
+                    recoveredSegments += max(0, segments.count - before)
+                } else {
+                    segments.sort { $0.start < $1.start }
+                }
+                try? FileManager.default.removeItem(at: slice.url)
+            }
+        }
+        segments.sort { $0.start < $1.start }
+
+        let metrics = WhisperDecodingSupport.computeMetrics(
+            segments: segments,
+            totalDuration: totalDuration,
+            processingTime: Date().timeIntervalSince(startedAt),
+            profile: profile,
+            retriedGaps: retriedGaps,
+            recoveredSegments: recoveredSegments
+        )
+        WhisperDecodingSupport.logMetrics(metrics)
+        WhisperDecodingSupport.lastRunMetrics = metrics
+
+        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
+        var lines: [String] = []
+        for segment in segments {
+            let text = TranscriptionVocabulary.correcting(segment.text, terms: vocabulary)
+            guard !text.isEmpty else { continue }
+            let stamp = Self.formatTimestamp(segment.start)
+            lines.append("[\(stamp)] \(text)")
         }
         return lines.joined(separator: "\n")
     }
@@ -359,6 +423,21 @@ final class HybridTranscriptionService: @unchecked Sendable {
         language: String,
         engine: EnginePreference = .auto,
         progress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> TranscriptionResult {
+        let result = try await transcribeWithSelectedEngine(
+            audioURL: audioURL, language: language, engine: engine, progress: progress
+        )
+        // Feedback loop: terms that actually appeared gain ranking weight for
+        // the next transcription's contextual vocabulary / prompt.
+        await MainActor.run { TranscriptionTerminology.recordRecognitions(in: result.text) }
+        return result
+    }
+
+    private func transcribeWithSelectedEngine(
+        audioURL: URL,
+        language: String,
+        engine: EnginePreference,
+        progress: (@Sendable (Double) -> Void)?
     ) async throws -> TranscriptionResult {
         if language == "multilingual" {
             return try await whisperEngine.transcribe(audioURL: audioURL, language: "multilingual", progress: progress)
