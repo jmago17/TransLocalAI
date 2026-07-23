@@ -11,6 +11,27 @@ struct TranscribingAnimation: View {
     var progress: Double?
 
     var body: some View {
+        // Engine progress arrives in bursts (parallel decode windows finish
+        // together), which used to light 3–4 bars at once. The Animatable
+        // surface interpolates between reported values so the fill sweeps
+        // smoothly instead of jumping.
+        EqualizerSurface(size: size, progress: progress ?? -1, reduceMotion: reduceMotion)
+            .animation(progress == nil || reduceMotion ? nil : .easeOut(duration: 1.1), value: progress ?? -1)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct EqualizerSurface: View, Animatable {
+    var size: CGSize
+    var progress: Double  // -1 = indeterminate
+    var reduceMotion: Bool
+
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: reduceMotion)) { timeline in
             // A fixed timestamp yields a pleasant static frame under Reduce Motion.
             let time = reduceMotion ? 1.6 : timeline.date.timeIntervalSinceReferenceDate
@@ -20,14 +41,13 @@ struct TranscribingAnimation: View {
                     ShaderLibrary.transcriptionEqualizer(
                         .float2(size),
                         .float(Float(time.truncatingRemainder(dividingBy: 1_000))),
-                        .float(Float(progress ?? -1)),
+                        .float(Float(progress)),
                         .color(.yellow),
                         .color(.red)
                     )
                 )
                 .frame(width: size.width, height: size.height)
         }
-        .accessibilityHidden(true)
     }
 }
 

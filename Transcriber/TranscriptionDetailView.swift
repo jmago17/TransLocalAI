@@ -30,6 +30,8 @@ struct TranscriptionDetailView: View {
     @State private var replaceCandidate = ""
     @State private var replacementText = ""
     @State private var showReplaceDialog = false
+    @State private var showPlayer = false
+    @State private var locateWord: String?
 
     private let defaultPrompt = MeetingNotesService.shortcutPrompt
 
@@ -213,6 +215,18 @@ struct TranscriptionDetailView: View {
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
 
+                            if !transcription.transcriptionText.isEmpty {
+                                Button {
+                                    locateWord = nil
+                                    showPlayer = true
+                                } label: {
+                                    Label("Play with Transcript", systemImage: "play.circle")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.large)
+                            }
+
                             if let audioURL = resolvedAudioURL {
                                 ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
                                     Label("Share Audio", systemImage: "square.and.arrow.up")
@@ -352,8 +366,23 @@ struct TranscriptionDetailView: View {
                 CorrectionReviewView(transcription: transcription)
             }
         }
-        .sheet(isPresented: $showSuspiciousTerms) {
-            SuspiciousTermsView(transcription: transcription)
+        .sheet(isPresented: $showSuspiciousTerms, onDismiss: {
+            // "Show in transcript" dismissed the sheet with a word queued up.
+            if locateWord != nil {
+                showPlayer = true
+            }
+        }) {
+            SuspiciousTermsView(transcription: transcription) { word in
+                locateWord = word
+            }
+        }
+        .sheet(isPresented: $showPlayer, onDismiss: { locateWord = nil }) {
+            TranscriptPlayerView(
+                title: transcription.title,
+                transcriptText: transcription.transcriptionText,
+                audioURL: resolvedAudioURL,
+                locateText: locateWord
+            )
         }
         .alert("Replace “\(replaceCandidate)”", isPresented: $showReplaceDialog) {
             TextField("Correct spelling", text: $replacementText)

@@ -6,6 +6,9 @@ import SwiftData
 /// saved as a vocabulary alias so future transcriptions get it right.
 struct SuspiciousTermsView: View {
     @Bindable var transcription: Transcription
+    /// Called with the word when the user wants to see it in context; the
+    /// presenter dismisses this sheet and opens the transcript at that spot.
+    var onShowInTranscript: ((String) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
@@ -61,12 +64,13 @@ struct SuspiciousTermsView: View {
                 TextField("Correct spelling", text: $replacementText)
                     .autocorrectionDisabled()
                 Button("Replace & Save") { applyReplacement() }
+                Button("It's Correct — Keep It") { confirmAsCorrect() }
                 Button("Cancel", role: .cancel) { editingTerm = nil }
             } message: {
                 if let snippet = editingTerm?.snippet, !snippet.isEmpty {
-                    Text("Found in: “\(snippet)”\n\nReplaces every occurrence and adds it to your names list.")
+                    Text("Found in: “\(snippet)”\n\n“Replace & Save” fixes every occurrence. “It's Correct” adds the word to your names list as-is, so it stops being flagged.")
                 } else {
-                    Text("Replaces every occurrence and adds it to your names list.")
+                    Text("“Replace & Save” fixes every occurrence. “It's Correct” adds the word to your names list as-is, so it stops being flagged.")
                 }
             }
             .onAppear(perform: refresh)
@@ -93,13 +97,25 @@ struct SuspiciousTermsView: View {
                 highlightedSnippet(suspect.snippet, word: suspect.word)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    .lineLimit(4)
             }
 
             if let suggestion = suspect.suggestion {
                 Label("Did you mean \(suggestion)?", systemImage: "arrow.turn.down.right")
                     .font(.caption)
                     .foregroundStyle(.orange)
+            }
+
+            if onShowInTranscript != nil {
+                Button {
+                    let word = suspect.word
+                    dismiss()
+                    onShowInTranscript?(word)
+                } label: {
+                    Label("Show in transcript", systemImage: "text.magnifyingglass")
+                        .font(.caption.weight(.medium))
+                }
+                .buttonStyle(.borderless)
             }
         }
         .contentShape(Rectangle())
@@ -124,6 +140,15 @@ struct SuspiciousTermsView: View {
             in: transcription.transcriptionText,
             terms: TranscriptionVocabulary.terms
         )
+    }
+
+    /// The flagged word is actually right: save it as a vocabulary term so
+    /// future transcriptions bias toward it and it is never flagged again.
+    private func confirmAsCorrect() {
+        guard let term = editingTerm else { return }
+        editingTerm = nil
+        TranscriptionTerminology.addTerm(term.word)
+        refresh()
     }
 
     private func applyReplacement() {

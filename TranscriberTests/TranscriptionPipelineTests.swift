@@ -127,6 +127,21 @@ struct TranscriptionTerminologyTests {
         TranscriptionTerminology.deleteTerm(canonical: "Profactor GmbH")
     }
 
+    @Test @MainActor func transcriptBlocksParseTimestampsAndPlainLines() {
+        let text = """
+        [00:05] Welcome to the meeting.
+        [1:23:45] Long recordings use hour stamps.
+        A line without a timestamp.
+        """
+        let blocks = TranscriptPlayerView.parseBlocks(from: text)
+        #expect(blocks.count == 3)
+        #expect(blocks[0].time == 5)
+        #expect(blocks[0].text == "Welcome to the meeting.")
+        #expect(blocks[1].time == TimeInterval(1 * 3600 + 23 * 60 + 45))
+        #expect(blocks[2].time == nil)
+        #expect(blocks[2].text == "A line without a timestamp.")
+    }
+
     @Test @MainActor func exportRoundTripsThroughImport() throws {
         let data = try #require(TranscriptionTerminology.exportJSON())
         let text = try #require(String(data: data, encoding: .utf8))

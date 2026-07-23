@@ -237,8 +237,8 @@ enum TranscriptionVocabulary {
             line = String(line[line.index(after: bracket)...]).trimmingCharacters(in: .whitespaces)
         }
 
-        // Keep the snippet compact; if the line is long, window it around the word.
-        let maxLength = 120
+        // Keep the snippet readable; if the line is long, window it around the word.
+        let maxLength = 240
         guard line.count > maxLength else { return line }
         let word = source.substring(with: range)
         if let wordRange = line.range(of: word) {
