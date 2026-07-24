@@ -1,4 +1,7 @@
 {
+  "features" : [
+    "refractivity"
+  ],
   "fill-specializations" : [
     {
       "value" : "system-light"
@@ -20,6 +23,12 @@
       "hidden" : false,
       "layers" : [
         {
+          "glass-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : true
+            }
+          ],
           "hidden" : false,
           "image-name" : "30-microphone.png",
           "name" : "30-microphone",
@@ -34,23 +43,43 @@
           ]
         },
         {
+          "glass-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : true
+            }
+          ],
           "hidden" : false,
           "image-name" : "20-stand.png",
           "name" : "20-stand",
           "opacity" : 1
         },
         {
+          "glass-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : false
+            }
+          ],
+          "hidden-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : false
+            }
+          ],
           "image-name" : "10-waveform.png",
           "name" : "10-waveform"
-        },
-        {
-          "hidden" : false,
-          "image-name" : "00-background.png",
-          "name" : "00-background",
-          "opacity" : 1
         }
       ],
-      "lighting" : "individual",
+      "lighting-specializations" : [
+        {
+          "value" : "individual"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "combined"
+        }
+      ],
       "opacity-specializations" : [
         {
           "value" : 0
@@ -67,15 +96,47 @@
           0
         ]
       },
-      "shadow" : {
-        "kind" : "layer-color",
-        "opacity" : 0.5
-      },
+      "refractivity-specializations" : [
+        {
+          "appearance" : "dark",
+          "value" : {
+            "depth" : 0.4034765625,
+            "enabled" : true,
+            "strength" : 0.253984375
+          }
+        }
+      ],
+      "shadow-specializations" : [
+        {
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 0.5
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "kind" : "layer-color",
+            "opacity" : 0.48
+          }
+        }
+      ],
       "specular" : true,
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
-      }
+      "translucency-specializations" : [
+        {
+          "value" : {
+            "enabled" : true,
+            "value" : 0.5
+          }
+        },
+        {
+          "appearance" : "dark",
+          "value" : {
+            "enabled" : true,
+            "value" : 0.5
+          }
+        }
+      ]
     },
     {
       "hidden-specializations" : [
@@ -113,12 +174,17 @@
           "value" : 0
         }
       ],
+      "refractivity" : {
+        "depth" : 0,
+        "enabled" : false,
+        "strength" : 0.5
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
       "translucency" : {
-        "enabled" : true,
+        "enabled" : false,
         "value" : 0.5
       }
     }
