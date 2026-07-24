@@ -92,8 +92,11 @@ class SpeechTranscriptionManager {
                     let plainText = String(result.text.characters).trimmingCharacters(in: .whitespaces)
                     guard !plainText.isEmpty else { continue }
 
-                    // Extract timestamp from the attributed string
-                    if let timeRange = result.text.audioTimeRange {
+                    // Extract timestamp from the attributed string. The
+                    // whole-string convenience is nil whenever the result
+                    // spans several timed runs (common in es-ES), so fall back
+                    // to scanning the runs for the first/last time range.
+                    if let timeRange = Self.audioTimeRange(of: result.text) {
                         let stamp = Self.formatTimestamp(timeRange.start.seconds)
                         segments.append("[\(stamp)] \(plainText)")
                         if totalSeconds > 0 {
@@ -126,6 +129,24 @@ class SpeechTranscriptionManager {
         }
 
         return TranscriptionVocabulary.correcting(result)
+    }
+
+    /// The audio time range covered by a transcriber result. Prefers the
+    /// whole-string value, but scans individual runs when it is absent — which
+    /// happens whenever the result is stitched from multiple timed runs (seen
+    /// with the Apple engine in Spanish), where the convenience returns nil and
+    /// timestamps would otherwise be dropped entirely.
+    nonisolated static func audioTimeRange(of text: AttributedString) -> CMTimeRange? {
+        if let whole = text.audioTimeRange { return whole }
+        var start: CMTime?
+        var end: CMTime?
+        for run in text.runs {
+            guard let range = run.audioTimeRange else { continue }
+            if start == nil { start = range.start }
+            end = range.end
+        }
+        guard let start, let end else { return nil }
+        return CMTimeRange(start: start, end: end)
     }
 
     nonisolated static func formatTimestamp(_ seconds: Double) -> String {

@@ -588,7 +588,7 @@
 		63FBCB80550A47042E0EEEB4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = transcriber;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TranscriberMac/TranscriberMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -620,7 +620,7 @@
 		65BB4159A54A0BC218FF2D86 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = transcriber;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = TranscriberMac/TranscriberMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -831,7 +831,7 @@
 		A950DEF62EF038E200CF2226 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = transcriber;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Transcriber/Transcriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -884,7 +884,7 @@
 		A950DEF72EF038E200CF2226 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = transcriber;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Transcriber/Transcriber.entitlements;
 				CODE_SIGN_STYLE = Automatic;

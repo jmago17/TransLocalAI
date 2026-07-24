@@ -137,7 +137,10 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
                     let plainText = String(result.text.characters).trimmingCharacters(in: .whitespaces)
                     guard !plainText.isEmpty else { continue }
 
-                    if let timeRange = result.text.audioTimeRange {
+                    // Whole-string range is nil when the result spans several
+                    // timed runs (common in es-ES); scan the runs so Spanish
+                    // transcripts keep their timestamps.
+                    if let timeRange = Self.audioTimeRange(of: result.text) {
                         let stamp = Self.formatTimestamp(timeRange.start.seconds)
                         segments.append("[\(stamp)] \(plainText)")
                     } else {
@@ -154,6 +157,21 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
         }
 
         return TranscriptionVocabulary.correcting(try await textFuture, terms: vocabulary)
+    }
+
+    /// See `SpeechTranscriptionManager.audioTimeRange(of:)` — scans runs when
+    /// the whole-string range is absent so Spanish results keep timestamps.
+    static func audioTimeRange(of text: AttributedString) -> CMTimeRange? {
+        if let whole = text.audioTimeRange { return whole }
+        var start: CMTime?
+        var end: CMTime?
+        for run in text.runs {
+            guard let range = run.audioTimeRange else { continue }
+            if start == nil { start = range.start }
+            end = range.end
+        }
+        guard let start, let end else { return nil }
+        return CMTimeRange(start: start, end: end)
     }
 
     static func formatTimestamp(_ seconds: Double) -> String {
