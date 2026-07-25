@@ -108,6 +108,7 @@ struct TranscribeAndSaveIntent: AppIntent {
                 title: title,
                 transcriptionText: transcriptionText,
                 language: languageToUse,
+                languageWasAutoDetected: autoDetect,
                 duration: duration,
                 audioFileURL: savedAudioURL.lastPathComponent,
                 engineUsed: (result.engineUsed == .appleSpeech ? "apple" : "whisper")

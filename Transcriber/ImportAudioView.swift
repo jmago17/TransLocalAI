@@ -457,6 +457,7 @@ struct ImportAudioView: View {
                     title: cleanTitle.capitalized,
                     transcriptionText: transcriptionText,
                     language: languageToUse,
+                    languageWasAutoDetected: useAutoDetect && !isMultilingual,
                     duration: duration,
                     audioFileURL: audioURL.lastPathComponent,
                     engineUsed: (result.engineUsed == .appleSpeech ? "apple" : "whisper")

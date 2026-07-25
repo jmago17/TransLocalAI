@@ -130,6 +130,7 @@ struct TranscriberApp: App {
                     let title = json["title"] as? String ?? "Shared Transcription"
                     let text = json["text"] as? String ?? ""
                     let language = json["language"] as? String ?? "en-US"
+                    let autoDetected = json["autoDetected"] as? Bool ?? false
                     let duration = json["duration"] as? TimeInterval ?? 0
                     let audioFileName = json["audioFile"] as? String
                     let timestamp = json["timestamp"] as? TimeInterval ?? Date().timeIntervalSince1970
@@ -152,6 +153,7 @@ struct TranscriberApp: App {
                         title: title,
                         transcriptionText: text,
                         language: language,
+                        languageWasAutoDetected: autoDetected,
                         duration: duration,
                         audioFileURL: savedAudioFileName
                     )

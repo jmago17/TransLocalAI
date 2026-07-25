@@ -103,12 +103,13 @@ struct ShareExtensionView: View {
             let language = try await manager.detectLanguage(audioURL: audioURL)
             let text = try await manager.transcribe(audioURL: audioURL, language: language)
             transcribedText = text
-            try await saveTranscription(text: text, audioURL: audioURL, fileName: name, language: language)
+            // The share flow always resolves the language by auto-detection.
+            try await saveTranscription(text: text, audioURL: audioURL, fileName: name, language: language, autoDetected: true)
             phase = .done("Saved to your local transcription library.")
         } catch { phase = .failed(error.localizedDescription) }
     }
 
-    private func saveTranscription(text: String, audioURL: URL, fileName: String, language: String) async throws {
+    private func saveTranscription(text: String, audioURL: URL, fileName: String, language: String, autoDetected: Bool) async throws {
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.josumartinez.transcriber") else { return }
         let audioDirectory = container.appendingPathComponent("SharedAudio", isDirectory: true)
         try FileManager.default.createDirectory(at: audioDirectory, withIntermediateDirectories: true)
@@ -117,7 +118,7 @@ struct ShareExtensionView: View {
         let pendingDirectory = container.appendingPathComponent("PendingTranscriptions", isDirectory: true)
         try FileManager.default.createDirectory(at: pendingDirectory, withIntermediateDirectories: true)
         let duration = (try? AVAudioFile(forReading: audioURL)).map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
-        let json: [String: Any] = ["title": fileName, "text": text, "language": language, "duration": duration, "audioFile": savedAudio.lastPathComponent, "timestamp": Date().timeIntervalSince1970]
+        let json: [String: Any] = ["title": fileName, "text": text, "language": language, "autoDetected": autoDetected, "duration": duration, "audioFile": savedAudio.lastPathComponent, "timestamp": Date().timeIntervalSince1970]
         try JSONSerialization.data(withJSONObject: json).write(to: pendingDirectory.appendingPathComponent("\(UUID().uuidString).json"))
     }
 }

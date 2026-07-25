@@ -147,6 +147,11 @@ struct TranscriptionDetailView: View {
                             transcription.language == "multilingual" ? "Multilingual" : transcription.language,
                             systemImage: "globe"
                         )
+                        if transcription.languageWasAutoDetected {
+                            Label("Auto-detected", systemImage: "wand.and.stars")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                         Spacer()
                         Label(formatDuration(transcription.duration), systemImage: "clock")
                     }
