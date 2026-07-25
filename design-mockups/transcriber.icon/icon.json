@@ -40,6 +40,18 @@
               "appearance" : "dark",
               "value" : 1
             }
+          ],
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
           ]
         },
         {
@@ -68,7 +80,19 @@
             }
           ],
           "image-name" : "10-waveform.png",
-          "name" : "10-waveform"
+          "name" : "10-waveform",
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1.05,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         }
       ],
       "lighting-specializations" : [
@@ -151,7 +175,19 @@
       "layers" : [
         {
           "image-name" : "10-waveform 2.png",
-          "name" : "10-waveform 2"
+          "name" : "10-waveform 2",
+          "position-specializations" : [
+            {
+              "idiom" : "square",
+              "value" : {
+                "scale" : 1.05,
+                "translation-in-points" : [
+                  0,
+                  0
+                ]
+              }
+            }
+          ]
         },
         {
           "image-name" : "20-stand 2.png",
@@ -172,6 +208,18 @@
         {
           "appearance" : "dark",
           "value" : 0
+        }
+      ],
+      "position-specializations" : [
+        {
+          "idiom" : "square",
+          "value" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "refractivity" : {
