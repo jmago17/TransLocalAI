@@ -74,9 +74,13 @@ struct TranscriberTests {
         #expect(!words.contains("Then"))          // sentence start
         #expect(suspects.first(where: { $0.word == "Gorosbel" })?.suggestion == "Gorosabel")
 
-        // The snippet carries the surrounding phrase, without the timestamp.
+        // The snippet carries the surrounding phrase, without the timestamp,
+        // while the timestamp is exposed separately so the user can locate it.
         let dinalan = suspects.first { $0.word == "Dinalan" }
         #expect(dinalan?.snippet == "Yesterday we met Dinalan at the office.")
+        #expect(dinalan?.timestamp == "00:12")
+        // A word on a line without a marker has no timestamp.
+        #expect(suspects.first { $0.word == "Gorosbel" }?.timestamp == nil)
     }
 
     @Test @MainActor func leavesUnrelatedWordsUntouched() {

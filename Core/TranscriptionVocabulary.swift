@@ -150,6 +150,9 @@ enum TranscriptionVocabulary {
         let suggestion: String?
         /// The transcript line (or a window of it) around the first occurrence.
         let snippet: String
+        /// The `[mm:ss]` timestamp of the line where the word first appears, so
+        /// the user knows where to look. Nil for transcripts without markers.
+        let timestamp: String?
     }
 
     /// Capitalized words used mid-sentence that match neither a vocabulary
@@ -163,7 +166,7 @@ enum TranscriptionVocabulary {
         let canonicals = entries.map { (term: $0.canonical, normalized: normalize($0.canonical)) }
 
         let source = text as NSString
-        var found: [String: (display: String, count: Int, snippet: String)] = [:]
+        var found: [String: (display: String, count: Int, snippet: String, timestamp: String?)] = [:]
         for match in expression.matches(in: text, range: NSRange(location: 0, length: source.length)) {
             let word = source.substring(with: match.range)
             guard word.count >= 4, let first = word.first, first.isUppercase,
@@ -185,7 +188,7 @@ enum TranscriptionVocabulary {
             let key = normalize(word)
             guard !key.isEmpty, !knownKeys.contains(key) else { continue }
             if found[key] == nil {
-                found[key] = (word, 1, snippet(around: match.range, in: source))
+                found[key] = (word, 1, snippet(around: match.range, in: source), timestamp(around: match.range, in: source))
             } else {
                 found[key]?.count += 1
             }
@@ -202,7 +205,8 @@ enum TranscriptionVocabulary {
                 word: entry.display,
                 count: entry.count,
                 suggestion: nearest?.term,
-                snippet: entry.snippet
+                snippet: entry.snippet,
+                timestamp: entry.timestamp
             )
         }
         .sorted { lhs, rhs in
@@ -212,6 +216,29 @@ enum TranscriptionVocabulary {
         }
         .prefix(25)
         .map(\.self)
+    }
+
+    /// The `[mm:ss]` / `[h:mm:ss]` marker at the start of the transcript line
+    /// containing `range`, returned as the inner text ("00:19"), or nil when the
+    /// line has no timestamp. Lets the Suspicious Words list point the user at
+    /// where the word occurs.
+    nonisolated private static func timestamp(around range: NSRange, in source: NSString) -> String? {
+        var lineStart = range.location
+        while lineStart > 0, source.character(at: lineStart - 1) != 0x0A {
+            lineStart -= 1
+        }
+        var lineEnd = range.location + range.length
+        while lineEnd < source.length, source.character(at: lineEnd) != 0x0A {
+            lineEnd += 1
+        }
+        let line = source.substring(with: NSRange(location: lineStart, length: lineEnd - lineStart))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard line.hasPrefix("["), let close = line.firstIndex(of: "]") else { return nil }
+        let inner = String(line[line.index(after: line.startIndex)..<close])
+            .trimmingCharacters(in: .whitespaces)
+        // Only accept clock-shaped markers, not arbitrary "[...]" bracketed text.
+        guard inner.range(of: #"^\d{1,2}(:\d{2}){1,2}$"#, options: .regularExpression) != nil else { return nil }
+        return inner
     }
 
     /// A readable window of text around `range` — the enclosing transcript line

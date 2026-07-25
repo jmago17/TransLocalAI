@@ -79,9 +79,15 @@ struct SuspiciousTermsView: View {
 
     private func row(for suspect: TranscriptionVocabulary.SuspiciousTerm) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(spacing: 8) {
                 Text(suspect.word)
                     .font(.body.weight(.medium))
+                if let timestamp = suspect.timestamp {
+                    Label(timestamp, systemImage: "clock")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .labelStyle(.titleAndIcon)
+                }
                 Spacer()
                 if suspect.count > 1 {
                     Text("×\(suspect.count)")
