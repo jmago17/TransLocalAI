@@ -63,8 +63,12 @@ struct TranscriptPlayerView: View {
                     }
                 }
                 .onAppear {
-                    setUpPlayer()
-                    locateIfNeeded(proxy: proxy)
+                    // `setUpPlayer` returns the instance directly: reading the
+                    // `player` @State back in the same update cycle is not
+                    // guaranteed to see the new value, which used to make the
+                    // "Show in transcript" seek silently no-op and play from 0.
+                    let preparedPlayer = setUpPlayer()
+                    locateIfNeeded(proxy: proxy, player: preparedPlayer)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -221,8 +225,10 @@ struct TranscriptPlayerView: View {
 
     // MARK: - Playback
 
-    private func setUpPlayer() {
-        guard player == nil, let audioURL else { return }
+    @discardableResult
+    private func setUpPlayer() -> AVAudioPlayer? {
+        if let player { return player }
+        guard let audioURL else { return nil }
         do {
             #if os(iOS)
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
@@ -233,8 +239,10 @@ struct TranscriptPlayerView: View {
             newPlayer.prepareToPlay()
             player = newPlayer
             duration = newPlayer.duration
+            return newPlayer
         } catch {
             player = nil
+            return nil
         }
     }
 
@@ -257,15 +265,21 @@ struct TranscriptPlayerView: View {
         currentTime = target
     }
 
-    private func locateIfNeeded(proxy: ScrollViewProxy) {
+    private func locateIfNeeded(proxy: ScrollViewProxy, player locatedPlayer: AVAudioPlayer?) {
         guard let locateText, !locateText.isEmpty else { return }
         let needle = locateText.lowercased()
         guard let match = blocks.first(where: { $0.text.lowercased().contains(needle) }) else { return }
         locatedBlockID = match.id
-        if let time = match.time, let player {
-            player.currentTime = time
-            currentTime = time
+
+        // Seek the audio to the located block so hitting play starts *there*
+        // rather than from the beginning. Falls back to the nearest preceding
+        // timestamped block when the matched line itself carries no timestamp.
+        if let time = match.time ?? nearestTime(before: match.id), let locatedPlayer {
+            let target = min(max(0, time), locatedPlayer.duration)
+            locatedPlayer.currentTime = target
+            currentTime = target
         }
+
         // Give the LazyVStack a beat to lay out before jumping.
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(250))
@@ -273,6 +287,12 @@ struct TranscriptPlayerView: View {
                 proxy.scrollTo(match.id, anchor: .center)
             }
         }
+    }
+
+    /// Last known timestamp at or before the given block, for transcripts where
+    /// the matched line is a continuation without its own `[mm:ss]` marker.
+    private func nearestTime(before id: Int) -> TimeInterval? {
+        blocks.last(where: { $0.id <= id && $0.time != nil })?.time
     }
 
     // MARK: - Parsing
