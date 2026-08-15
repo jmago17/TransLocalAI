@@ -75,10 +75,12 @@ struct RecordingLiveActivity: Widget {
                 .clipShape(Circle())
         }
         .padding()
-        // Without a tint the lock-screen activity renders on flat black. A
-        // translucent red lets the system material show through and matches
-        // the recording accent used in-app.
-        .activityBackgroundTint(Color.red.opacity(0.18))
-        .activitySystemActionForegroundColor(.white)
+        // Without a tint the lock-screen activity renders on flat black.
+        // A red tint was the other candidate, but on a light wallpaper it
+        // turns the panel pink and the red "Recording" label stops reading;
+        // `.clear` hands the background to the system material, which keeps
+        // the red accent legible over both light and dark wallpapers.
+        .activityBackgroundTint(Color.clear)
+        .activitySystemActionForegroundColor(Color.primary)
     }
 }

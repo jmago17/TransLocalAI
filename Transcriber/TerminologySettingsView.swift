@@ -24,6 +24,9 @@ struct TerminologySettingsView: View {
     @State private var importResult: String?
     @State private var exportURL: URL?
 
+    /// Beyond this the alias chips stop being scannable and start being noise.
+    private static let aliasDisplayLimit = 3
+
     var body: some View {
         List {
             if userEntries.isEmpty && builtInEntries.isEmpty {
@@ -40,7 +43,7 @@ struct TerminologySettingsView: View {
                         row(for: entry)
                     }
                 } header: {
-                    Text("Your terms")
+                    sectionHeader("Your terms", count: userEntries.count)
                 } footer: {
                     Text("Synced with iCloud. The most relevant terms are supplied to Apple Speech and Whisper before each transcription.")
                 }
@@ -52,12 +55,14 @@ struct TerminologySettingsView: View {
                         row(for: entry)
                     }
                 } header: {
-                    Text("Built-in suggestions")
+                    sectionHeader("Built-in suggestions", count: builtInEntries.count)
                 } footer: {
                     Text("Common technical vocabulary. It gains influence only when it actually appears in your transcripts, or when you confirm it.")
                 }
             }
         }
+        .listStyle(.plain)
+        .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .liquidCrystalScreen()
         .navigationTitle("Terminology")
@@ -65,6 +70,9 @@ struct TerminologySettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .searchable(text: $searchText, prompt: "Search terms")
+        // Sorting and the glossary file live above the list, not behind an
+        // overflow menu: they are how you steer a long glossary.
+        .safeAreaInset(edge: .top, spacing: 0) { glossaryControls }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -72,27 +80,6 @@ struct TerminologySettingsView: View {
                     isAddingTerm = true
                 } label: {
                     Label("Add term", systemImage: "plus")
-                }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Picker("Sort by", selection: $sortOrder) {
-                    ForEach(SortOrder.allCases) { order in
-                        Text(order.rawValue).tag(order)
-                    }
-                }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    isImporting = true
-                } label: {
-                    Label("Import…", systemImage: "square.and.arrow.down")
-                }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                if let exportURL {
-                    ShareLink(item: exportURL) {
-                        Label("Export glossary", systemImage: "square.and.arrow.up")
-                    }
                 }
             }
         }
@@ -132,36 +119,91 @@ struct TerminologySettingsView: View {
         }
     }
 
+    // MARK: - Controls
+
+    /// Sort order plus the glossary file, in reach and readable at a glance.
+    private var glossaryControls: some View {
+        HStack(spacing: LiquidCrystal.Layout.badgeSpacing) {
+            Picker("Sort by", selection: $sortOrder) {
+                ForEach(SortOrder.allCases) { order in
+                    Text(order.rawValue).tag(order)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+
+            Spacer()
+
+            Button {
+                isImporting = true
+            } label: {
+                Label("Import…", systemImage: "square.and.arrow.down")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+
+            if let exportURL {
+                ShareLink(item: exportURL) {
+                    Label("Export glossary", systemImage: "square.and.arrow.up")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
+            }
+        }
+        .padding(.horizontal, LiquidCrystal.Layout.cardInset)
+        .padding(.bottom, 8)
+    }
+
+    private func sectionHeader(_ title: LocalizedStringKey, count: Int) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+            Text(count, format: .number)
+                .font(.footnote)
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
+        }
+        .liquidCrystalSectionHeader()
+    }
+
     // MARK: - Rows
 
     private func row(for entry: TranscriptionTerminology.Entry) -> some View {
         Button {
             editingEntry = entry
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
+            VStack(alignment: .leading, spacing: LiquidCrystal.Layout.lineSpacing) {
+                HStack(spacing: LiquidCrystal.Layout.badgeSpacing) {
                     Text(entry.canonical)
-                        .font(.body.weight(.medium))
+                        .font(.headline)
                         .foregroundStyle(entry.state == .disabled ? .secondary : .primary)
                         .strikethrough(entry.state == .disabled)
+                        .lineLimit(1)
                     stateBadge(entry.state)
-                    Spacer()
+                    Spacer(minLength: 4)
                     Image(systemName: "chevron.right")
-                        .font(.caption2)
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(.tertiary)
                 }
+
                 if !entry.aliases.isEmpty {
-                    Text("Replaces: \(entry.aliases.joined(separator: ", "))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    aliasLine(entry.aliases)
                 }
+
                 Text(evidenceLine(for: entry))
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundStyle(.tertiary)
+                    .padding(.top, 2)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .liquidCrystalRow()
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if entry.source != .builtIn {
                 Button(role: .destructive) {
@@ -184,19 +226,49 @@ struct TerminologySettingsView: View {
         }
     }
 
+    /// What the term replaces, as the chips the engines actually swap out.
+    private func aliasLine(_ aliases: [String]) -> some View {
+        HStack(spacing: 4) {
+            Text("Replaces")
+                .font(.caption2.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tertiary)
+
+            ForEach(aliases.prefix(Self.aliasDisplayLimit), id: \.self) { alias in
+                Text(alias)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: LiquidCrystal.Radius.chip, style: .continuous)
+                            .fill(.quaternary)
+                    )
+            }
+
+            if aliases.count > Self.aliasDisplayLimit {
+                Text("+\(aliases.count - Self.aliasDisplayLimit)")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    /// The same badge the library uses, so a state always reads as a state —
+    /// with its name, not just an icon the reader has to decode.
     @ViewBuilder
     private func stateBadge(_ state: TranscriptionTerminology.State) -> some View {
         switch state {
         case .trusted:
-            Label("Trusted", systemImage: "checkmark.seal.fill")
-                .font(.caption2).labelStyle(.iconOnly).foregroundStyle(.green)
+            CrystalBadge(text: "Trusted", systemImage: "checkmark.seal.fill", tone: .positive)
+        case .confirmed:
+            CrystalBadge(text: "Confirmed", systemImage: "checkmark.circle.fill", tone: .accent)
         case .suggested:
-            Label("Suggested", systemImage: "sparkles")
-                .font(.caption2).labelStyle(.iconOnly).foregroundStyle(.orange)
+            CrystalBadge(text: "Suggested", systemImage: "sparkles", tone: .attention)
         case .disabled:
-            Label("Disabled", systemImage: "nosign")
-                .font(.caption2).labelStyle(.iconOnly).foregroundStyle(.secondary)
-        case .confirmed, .observed:
+            CrystalBadge(text: "Disabled", systemImage: "nosign")
+        case .observed:
             EmptyView()
         }
     }

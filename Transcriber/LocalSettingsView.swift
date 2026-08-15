@@ -104,6 +104,18 @@ struct LocalSettingsView: View {
                 } footer: {
                     Text("One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.")
                 }
+
+                Section {
+                    NavigationLink {
+                        ShortcutsGuideView()
+                    } label: {
+                        Label("Shortcuts guide", systemImage: "shortcuts")
+                    }
+                } header: {
+                    Text("Shortcuts and automation")
+                } footer: {
+                    Text("Record, transcribe, and search from Shortcuts, Siri, or an Action button.")
+                }
             }
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
