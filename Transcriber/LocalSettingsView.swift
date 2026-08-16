@@ -6,9 +6,9 @@ import FoundationModels
 struct LocalSettingsView: View {
     @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
     private var privateCloudComputeEnabled = true
-    @State private var vocabularyText = TranscriptionVocabulary.terms.joined(separator: "\n")
     @State private var whisperProfile = WhisperDecodingSupport.Profile.current
-    @FocusState private var vocabularyFocused: Bool
+    @State private var showBulkEditor = false
+    @State private var termCount = TranscriptionVocabulary.terms.count
     @State private var cloudSync = CloudSyncStatus()
 
     var body: some View {
@@ -83,26 +83,28 @@ struct LocalSettingsView: View {
                     NavigationLink {
                         TerminologySettingsView()
                     } label: {
-                        Label("Terminology manager", systemImage: "character.book.closed")
-                    }
-                    TextEditor(text: $vocabularyText)
-                        .frame(minHeight: 140)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .focused($vocabularyFocused)
-                        .onChange(of: vocabularyText) { _, value in
-                            TranscriptionVocabulary.updateIfChanged(value.components(separatedBy: .newlines))
-                        }
-                        .onReceive(NotificationCenter.default.publisher(for: .transcriptionVocabularyDidChange)) { _ in
-                            let syncedText = TranscriptionVocabulary.terms.joined(separator: "\n")
-                            if vocabularyText != syncedText {
-                                vocabularyText = syncedText
+                        HStack {
+                            Label("Terminology manager", systemImage: "character.book.closed")
+                            Spacer()
+                            if termCount > 0 {
+                                Text("\(termCount)")
+                                    .font(.subheadline.monospacedDigit())
+                                    .foregroundStyle(.secondary)
                             }
                         }
+                    }
+                    Button {
+                        showBulkEditor = true
+                    } label: {
+                        Label("Edit as text", systemImage: "text.alignleft")
+                    }
                 } header: {
                     Text("Names and companies")
                 } footer: {
-                    Text("One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.")
+                    Text("Names, companies, and terms your transcriptions should spell correctly. Manage them one by one, or paste a whole list with Edit as text. Synced with iCloud and used by Apple Speech and WhisperKit.")
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .transcriptionVocabularyDidChange)) { _ in
+                    termCount = TranscriptionVocabulary.terms.count
                 }
 
                 Section {
@@ -122,17 +124,56 @@ struct LocalSettingsView: View {
             .liquidCrystalScreen()
             .navigationTitle("Settings")
             .task { await cloudSync.refresh() }
+            .sheet(isPresented: $showBulkEditor) {
+                VocabularyBulkEditView()
+            }
+        }
+    }
+}
+
+/// Bulk paste/edit of the vocabulary as plain text — the fast path when
+/// migrating a list from Notes or another device. One term per line;
+/// `Correct = heard1, heard2` teaches replacements.
+private struct VocabularyBulkEditView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = TranscriptionVocabulary.terms.joined(separator: "\n")
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                TextEditor(text: $text)
+                    .font(.body.monospaced())
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .focused($focused)
+                    .scrollContentBackground(.hidden)
+                    .padding(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                Text("One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong: Iñaki = Yankee, Ianki")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .liquidCrystalScreen()
+            .navigationTitle("Edit terms as text")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                if vocabularyFocused {
-                    ToolbarItem(placement: .keyboard) {
-                        HStack {
-                            Spacer()
-                            Button("Done") { vocabularyFocused = false }
-                                .fontWeight(.semibold)
-                        }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        TranscriptionVocabulary.updateIfChanged(text.components(separatedBy: .newlines))
+                        dismiss()
                     }
+                    .fontWeight(.semibold)
                 }
             }
+            .onAppear { focused = true }
         }
     }
 }

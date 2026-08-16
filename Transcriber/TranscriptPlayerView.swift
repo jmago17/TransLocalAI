@@ -135,7 +135,7 @@ struct TranscriptPlayerView: View {
                         .frame(minWidth: 44, alignment: .trailing)
                 }
                 Text(block.text)
-                    .font(.body)
+                    .font(.body.weight(isCurrent ? .semibold : .regular))
                     .foregroundStyle(isCurrent ? .primary : (isPlaying ? .secondary : .primary))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -146,9 +146,21 @@ struct TranscriptPlayerView: View {
                           ? Color.accentColor.opacity(0.18)
                           : isLocated ? Color.orange.opacity(0.22) : Color.clear)
             )
+            .overlay(alignment: .leading) {
+                // Playhead marker: an accent bar that slides from block to
+                // block makes the progression visible even at a glance.
+                if isCurrent {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color.accentColor)
+                        .frame(width: 3)
+                        .padding(.vertical, 6)
+                }
+            }
+            .scaleEffect(isCurrent ? 1.01 : 1.0, anchor: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.3), value: isCurrent)
     }
 
     // MARK: - Player bar
@@ -255,6 +267,9 @@ struct TranscriptPlayerView: View {
             player.rate = rate
             player.play()
             isPlaying = true
+            // Hand over from the static orange "located" marker to the live
+            // playhead highlight the moment playback starts.
+            locatedBlockID = nil
         }
     }
 
