@@ -488,7 +488,7 @@ struct TranscriptionDetailView: View {
         TranscriptionTerminology.recordCorrection(canonical: canonical, variant: variant)
         transcription.transcriptionText = TranscriptionVocabulary.correcting(
             transcription.transcriptionText,
-            terms: ["\(canonical) = \(variant)"]
+            terms: ["\(canonical): \(variant)"]
         )
         try? modelContext.save()
     }

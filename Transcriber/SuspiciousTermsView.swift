@@ -166,7 +166,7 @@ struct SuspiciousTermsView: View {
         TranscriptionTerminology.recordCorrection(canonical: canonical, variant: term.word)
         transcription.transcriptionText = TranscriptionVocabulary.correcting(
             transcription.transcriptionText,
-            terms: ["\(canonical) = \(term.word)"]
+            terms: ["\(canonical): \(term.word)"]
         )
         try? modelContext.save()
         refresh()

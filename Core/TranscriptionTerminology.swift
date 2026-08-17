@@ -289,7 +289,7 @@ enum TranscriptionTerminology {
             .filter { !$0.isEmpty && normalize($0) != newKey }
         let newLine = cleanAliases.isEmpty
             ? newCanonical
-            : "\(newCanonical) = \(cleanAliases.joined(separator: ", "))"
+            : "\(newCanonical): \(cleanAliases.joined(separator: ", "))"
 
         var lines = TranscriptionVocabulary.terms
         if let index = lines.firstIndex(where: { normalize(parseLine($0).canonical) == oldKey }) {
@@ -373,7 +373,7 @@ enum TranscriptionTerminology {
             let key = normalize(canonical)
             guard !key.isEmpty, !known.contains(key) else { continue }
             known.insert(key)
-            lines.append(term.aliases.isEmpty ? canonical : "\(canonical) = \(term.aliases.joined(separator: ", "))")
+            lines.append(term.aliases.isEmpty ? canonical : "\(canonical): \(term.aliases.joined(separator: ", "))")
             added += 1
         }
         guard added > 0 else { return 0 }
@@ -385,7 +385,8 @@ enum TranscriptionTerminology {
     // MARK: - Helpers
 
     nonisolated private static func parseLine(_ line: String) -> (canonical: String, variants: [String]) {
-        guard let separator = line.firstIndex(of: "=") else {
+        // Accepts ":" (current UI syntax) and "=" (legacy synced lines).
+        guard let separator = line.firstIndex(where: { $0 == ":" || $0 == "=" }) else {
             return (line.trimmingCharacters(in: .whitespaces), [])
         }
         let canonical = String(line[..<separator]).trimmingCharacters(in: .whitespaces)

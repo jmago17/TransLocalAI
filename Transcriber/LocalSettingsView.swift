@@ -151,7 +151,7 @@ private struct VocabularyBulkEditView: View {
                     .padding(12)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-                Text("One name or phrase per line, up to 100. To fix a word the transcriber keeps getting wrong: Iñaki = Yankee, Ianki")
+                Text("One name or phrase per line. To teach a mishearing, write the correct spelling, then what it hears after a colon: Iñaki: Yankee, Ianki")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

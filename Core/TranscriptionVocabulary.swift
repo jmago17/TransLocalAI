@@ -81,9 +81,11 @@ enum TranscriptionVocabulary {
     }
 
     /// Splits a vocabulary line into its canonical spelling and the misheard
-    /// variants the user wants replaced (the part after "=", comma-separated).
+    /// variants the user wants replaced (comma-separated). Accepts either
+    /// ":" (what the UI now shows) or "=" (legacy lines already synced to
+    /// iCloud, which must keep working).
     nonisolated private static func parse(line: String) -> (canonical: String, variants: [String]) {
-        guard let separator = line.firstIndex(of: "=") else {
+        guard let separator = line.firstIndex(where: { $0 == ":" || $0 == "=" }) else {
             return (line.trimmingCharacters(in: .whitespaces), [])
         }
         let canonical = String(line[..<separator]).trimmingCharacters(in: .whitespaces)

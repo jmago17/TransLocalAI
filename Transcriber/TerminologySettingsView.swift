@@ -20,6 +20,7 @@ struct TerminologySettingsView: View {
     @State private var editingEntry: TranscriptionTerminology.Entry?
     @State private var isAddingTerm = false
     @State private var newTermText = ""
+    @State private var newTermAliases = ""
     @State private var isImporting = false
     @State private var importResult: String?
     @State private var exportURL: URL?
@@ -77,6 +78,7 @@ struct TerminologySettingsView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     newTermText = ""
+                    newTermAliases = ""
                     isAddingTerm = true
                 } label: {
                     Label("Add term", systemImage: "plus")
@@ -86,13 +88,28 @@ struct TerminologySettingsView: View {
         .alert("Add term", isPresented: $isAddingTerm) {
             TextField("Correct spelling", text: $newTermText)
                 .autocorrectionDisabled()
+            TextField("Sometimes heard as (optional)", text: $newTermAliases)
+                .autocorrectionDisabled()
             Button("Add") {
-                TranscriptionTerminology.addTerm(newTermText)
+                let canonical = newTermText.trimmingCharacters(in: .whitespaces)
+                guard !canonical.isEmpty else { return }
+                TranscriptionTerminology.addTerm(canonical)
+                let aliases = newTermAliases
+                    .components(separatedBy: ",")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                if !aliases.isEmpty {
+                    TranscriptionTerminology.updateTerm(
+                        originalCanonical: canonical,
+                        newCanonical: canonical,
+                        aliases: aliases
+                    )
+                }
                 reload()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The exact spelling transcriptions should use, e.g. a name, company, or acronym.")
+            Text("The exact spelling transcriptions should use, e.g. a name, company, or acronym. Optionally list what the transcriber mishears instead, separated by commas.")
         }
         .alert(
             "Import finished",
@@ -382,7 +399,7 @@ private struct TerminologyEditSheet: View {
                 Section {
                     TextField("Correct spelling", text: $canonicalText)
                         .autocorrectionDisabled()
-                    TextField("Misheard as (comma-separated)", text: $aliasesText)
+                    TextField("Sometimes heard as", text: $aliasesText)
                         .autocorrectionDisabled()
                 } footer: {
                     Text("Every listed mishearing is replaced by the correct spelling in new transcriptions.")
