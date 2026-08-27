@@ -6,6 +6,12 @@ struct RecordingView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    /// `true` when this is the permanent content of the Record tab rather
+    /// than a sheet (`ContentView`'s "New Recording" flow) — finishing
+    /// resets back to `setupView` instead of dismissing a sheet that isn't
+    /// there.
+    var embedded: Bool = false
+
     var recorder: AudioRecorderManager { AudioRecorderManager.shared }
 
     @State private var recordingName = ""
@@ -42,12 +48,17 @@ struct RecordingView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        if hasStarted && !hasStopped {
-                            recorder.cancelRecording()
+                // Embebida en el tab, "Cancel" solo tiene sentido mientras
+                // graba de verdad — antes de eso no hay nada que cancelar
+                // ni una hoja que cerrar.
+                if !embedded || (hasStarted && !hasStopped) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            if hasStarted && !hasStopped {
+                                recorder.cancelRecording()
+                            }
+                            finish()
                         }
-                        dismiss()
                     }
                 }
             }
@@ -68,9 +79,23 @@ struct RecordingView: View {
             .onChange(of: recorder.isRecording) { _, isRecording in
                 // Recording stopped externally (Live Activity button or Shortcut intent)
                 if !isRecording && hasStarted && !hasStopped {
-                    dismiss()
+                    finish()
                 }
             }
+        }
+    }
+
+    /// Vuelve al estado inicial (tab persistente) o cierra la hoja (uso
+    /// modal desde `ContentView`) — ver `embedded`.
+    private func finish() {
+        if embedded {
+            hasStarted = false
+            hasStopped = false
+            stoppedFileURL = nil
+            recordingName = ""
+            isTranscribing = false
+        } else {
+            dismiss()
         }
     }
 
@@ -252,7 +277,7 @@ struct RecordingView: View {
 
         modelContext.insert(transcription)
         try? modelContext.save()
-        dismiss()
+        finish()
     }
 
     private var languageHint: String {
@@ -295,7 +320,7 @@ struct RecordingView: View {
                 try modelContext.save()
 
                 isTranscribing = false
-                dismiss()
+                finish()
             } catch {
                 isTranscribing = false
                 errorMessage = "Transcription failed: \(error.localizedDescription)"

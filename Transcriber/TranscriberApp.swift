@@ -82,8 +82,15 @@ struct TranscriberApp: App {
         Task { @MainActor in
             let recorder = AudioRecorderManager.shared
             guard !recorder.isRecording else { return }
-            guard await recorder.requestPermission() else { return }
-            try? recorder.startRecording(title: title)
+            guard await recorder.requestPermission() else {
+                NSLog("translocalai://record: microphone permission denied")
+                return
+            }
+            do {
+                try recorder.startRecording(title: title)
+            } catch {
+                NSLog("translocalai://record: failed to start recording — \(error)")
+            }
         }
     }
 
