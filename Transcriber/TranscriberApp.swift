@@ -64,8 +64,27 @@ struct TranscriberApp: App {
                 .onAppear {
                     importPendingTranscriptions()
                 }
+                .onOpenURL { url in
+                    handleIncomingURL(url)
+                }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    /// Puente con Sidenotes: `translocalai://record?title=<evento>` arranca
+    /// la grabación con el mismo camino que `StartRecordingIntent` (permiso +
+    /// `AudioRecorderManager.startRecording`), sin pasar por Shortcuts.
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == "translocalai", url.host == "record" else { return }
+        let title = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "title" })?.value ?? "Shortcut Recording"
+
+        Task { @MainActor in
+            let recorder = AudioRecorderManager.shared
+            guard !recorder.isRecording else { return }
+            guard await recorder.requestPermission() else { return }
+            try? recorder.startRecording(title: title)
+        }
     }
 
     private static func registerBackgroundTask() {
