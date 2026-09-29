@@ -477,7 +477,17 @@ struct TranscriptionDetailView: View {
             let notes = try await MeetingNotesService.generate(
                 from: transcription.transcriptionText,
                 title: transcription.title,
-                instructions: customPrompt
+                instructions: customPrompt,
+                onProgress: { progress in
+                    Task { @MainActor in
+                        switch progress {
+                        case .extracting(let part, let total):
+                            progressMessage = "Analyzing part \(part) of \(total) on this device..."
+                        case .consolidating:
+                            progressMessage = "Organizing notes from all parts..."
+                        }
+                    }
+                }
             )
             generatedNotes = notes
             transcription.meetingNotes = notes
