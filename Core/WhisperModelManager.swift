@@ -82,6 +82,13 @@ enum WhisperModelCatalog: Sendable {
             modelId: "openai_whisper-large-v3-v20240930_626MB",
             supportedLanguages: [],
             estimatedSizeMB: 626
+        ),
+        WhisperModelManager.ModelDescriptor(
+            identifier: "whisper-small-216mb",
+            displayName: "Whisper Small",
+            modelId: "openai_whisper-small_216MB",
+            supportedLanguages: [],
+            estimatedSizeMB: 216
         )
     ]
 

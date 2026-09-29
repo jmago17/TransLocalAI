@@ -20,6 +20,7 @@ struct ImportAudioView: View {
     @State private var showFilePicker = false
     @State private var selectedLanguage = "en-US"
     @State private var selectedEngine: EnginePreference = .auto
+    @State private var selectedModelIdentifier = WhisperModelCatalog.defaultModelIdentifier
     @State private var useAutoDetect = true
     @State private var isDetectingLanguage = false
     @State private var isTranscribing = false
@@ -144,11 +145,6 @@ struct ImportAudioView: View {
                             Text("Multilingual").tag("multilingual")
                         }
                         .pickerStyle(.segmented)
-                        .onChange(of: selectedLanguage) {
-                            if selectedLanguage == "multilingual" {
-                                selectedEngine = .whisper
-                            }
-                        }
                     } else {
                         Text("Language will be automatically detected")
                             .font(.caption)
@@ -158,23 +154,11 @@ struct ImportAudioView: View {
 
                 Divider()
 
-                // Engine selector
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Engine")
-                        .font(.headline)
-
-                    Picker("Engine", selection: $selectedEngine) {
-                        ForEach(EnginePreference.allCases) { engine in
-                            Text(engine.rawValue).tag(engine)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .disabled(selectedLanguage == "multilingual")
-
-                    Text(engineDescription)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                TranscriptionModelPicker(
+                    engine: $selectedEngine,
+                    modelIdentifier: $selectedModelIdentifier,
+                    language: useAutoDetect ? "auto" : selectedLanguage
+                )
             }
             .padding(.horizontal)
             
@@ -261,19 +245,6 @@ struct ImportAudioView: View {
         }
     }
     
-    private var engineDescription: String {
-        if selectedLanguage == "multilingual" {
-            return String(localized: "Multilingual mode requires WhisperKit for per-segment language detection.")
-        }
-        switch selectedEngine {
-        case .auto:
-            return String(localized: "Apple Speech for most languages; WhisperKit for Euskara.")
-        case .apple:
-            return String(localized: "Apple SpeechAnalyzer: fast, on-device transcription.")
-        case .whisper:
-            return String(localized: "WhisperKit: open-source model, runs on-device.")
-        }
-    }
 
     private func checkPermissions() async {
         hasPermission = await withCheckedContinuation { continuation in
@@ -371,7 +342,7 @@ struct ImportAudioView: View {
                     isDetectingLanguage = true
                     updateLiveActivity(phase: "Detecting language...", progress: 0)
                     do {
-                        languageToUse = try await hybridService.detectLanguage(audioURL: audioURL)
+                        languageToUse = try await hybridService.detectLanguage(audioURL: audioURL, modelIdentifier: selectedModelIdentifier)
                     } catch {
                         languageToUse = selectedLanguage
                     }
@@ -391,7 +362,7 @@ struct ImportAudioView: View {
                     whisperDownloadProgress = 0
                     updateLiveActivity(phase: "Downloading model...", progress: 0)
                     defer { isPreparingWhisperModel = false }
-                    try await hybridService.prepareModelIfNeeded(language: languageToUse, engine: selectedEngine) { progress in
+                    try await hybridService.prepareModelIfNeeded(language: languageToUse, engine: selectedEngine, modelIdentifier: selectedModelIdentifier) { progress in
                         Task { @MainActor in
                             self.whisperDownloadProgress = progress
                             self.updateLiveActivity(phase: "Downloading model... \(Int(progress * 100))%", progress: progress * 0.3)
@@ -424,7 +395,8 @@ struct ImportAudioView: View {
                 let result = try await hybridService.transcribe(
                     audioURL: audioURL,
                     language: languageToUse,
-                    engine: selectedEngine
+                    engine: selectedEngine,
+                    modelIdentifier: selectedModelIdentifier
                 ) { fraction in
                     Task { @MainActor in
                         let mapped = 0.3 + min(max(fraction, 0), 1) * 0.65

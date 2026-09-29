@@ -26,6 +26,12 @@ protocol ModelPreparingTranscriptionEngine: TranscriptionEngine {
     func prepareModel(for language: String, progress: (@Sendable (Double) -> Void)?) async throws
 }
 
+/// Per-request selection, without changing the engine's shared/default configuration.
+protocol ModelSelectingTranscriptionEngine: ModelPreparingTranscriptionEngine {
+    func prepareModel(for language: String, modelIdentifier: String?, progress: (@Sendable (Double) -> Void)?) async throws
+    func transcribe(audioURL: URL, language: String, modelIdentifier: String?, progress: (@Sendable (Double) -> Void)?) async throws -> TranscriptionResult
+}
+
 // MARK: - Tipos compartidos
 enum TranscriptionEngineError: Error, LocalizedError {
     case unimplemented
@@ -120,7 +126,7 @@ final class AppleSpeechEngine: TranscriptionEngine {
 }
 
 // MARK: - WhisperKit Engine (default)
-final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
+final class WhisperKitEngine: ModelSelectingTranscriptionEngine {
     private let modelManager: WhisperModelManager
 
 #if canImport(WhisperKit)
@@ -132,20 +138,31 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
     }
 
     func prepareModel(for language: String, progress: (@Sendable (Double) -> Void)?) async throws {
+        try await prepareModel(for: language, modelIdentifier: nil, progress: progress)
+    }
+
+    func prepareModel(for language: String, modelIdentifier: String?, progress: (@Sendable (Double) -> Void)?) async throws {
 #if canImport(WhisperKit)
-        let normalized = normalize(language)
-        let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
-        _ = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: progress)
+        let identifier: String
+        if let modelIdentifier { identifier = modelIdentifier }
+        else { identifier = await modelManager.modelIdentifier(for: normalize(language)) }
+        _ = try await modelManager.ensureModelAvailable(modelIdentifier: identifier, progress: progress)
 #else
         throw TranscriptionEngineError.unimplemented
 #endif
     }
 
     func detectLanguage(audioURL: URL) async throws -> String {
+        try await detectLanguage(audioURL: audioURL, modelIdentifier: nil)
+    }
+
+    func detectLanguage(audioURL: URL, modelIdentifier: String?) async throws -> String {
 #if canImport(WhisperKit)
         let defaultLanguage = "eu-ES"
-        let modelIdentifier = await modelManager.modelIdentifier(for: defaultLanguage)
-        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
+        let identifier: String
+        if let modelIdentifier { identifier = modelIdentifier }
+        else { identifier = await modelManager.modelIdentifier(for: defaultLanguage) }
+        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: identifier, progress: nil)
         let session = try await sessionCache.session(modelId: modelId, language: nil)
         return try await session.detectLanguage(audioURL: audioURL) ?? defaultLanguage
 #else
@@ -158,12 +175,23 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
         language: String,
         progress: (@Sendable (Double) -> Void)?
     ) async throws -> TranscriptionResult {
+        try await transcribe(audioURL: audioURL, language: language, modelIdentifier: nil, progress: progress)
+    }
+
+    func transcribe(
+        audioURL: URL,
+        language: String,
+        modelIdentifier: String?,
+        progress: (@Sendable (Double) -> Void)?
+    ) async throws -> TranscriptionResult {
 #if canImport(WhisperKit)
         let isMultilingual = language == "multilingual"
         let normalized = isMultilingual ? "eu-ES" : normalize(language)
         let sessionLanguage: String? = isMultilingual ? nil : normalized
-        let modelIdentifier = await modelManager.modelIdentifier(for: normalized)
-        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
+        let identifier: String
+        if let modelIdentifier { identifier = modelIdentifier }
+        else { identifier = await modelManager.modelIdentifier(for: normalized) }
+        let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: identifier, progress: nil)
         let session = try await sessionCache.session(modelId: modelId, language: sessionLanguage)
         let text = try await session.transcribe(audioURL: audioURL, progress: progress)
         let audioFile = try? AVAudioFile(forReading: audioURL)
@@ -380,11 +408,17 @@ final class HybridTranscriptionService: @unchecked Sendable {
         self.init(appleEngine: AppleSpeechEngine(), whisperEngine: WhisperKitEngine())
     }
 
-    func detectLanguage(audioURL: URL, preferApple: Bool = false) async throws -> String {
+    func detectLanguage(audioURL: URL, preferApple: Bool = false, modelIdentifier: String? = nil) async throws -> String {
         if preferApple, let appleLang = try? await appleEngine.detectLanguage(audioURL: audioURL) {
             return normalize(appleLang)
         }
-        if let whisperLang = try? await whisperEngine.detectLanguage(audioURL: audioURL) {
+        let whisperLang: String?
+        if let selecting = whisperEngine as? WhisperKitEngine {
+            whisperLang = try? await selecting.detectLanguage(audioURL: audioURL, modelIdentifier: modelIdentifier)
+        } else {
+            whisperLang = try? await whisperEngine.detectLanguage(audioURL: audioURL)
+        }
+        if let whisperLang {
             return normalize(whisperLang)
         }
         // Fallback to Apple if WhisperKit detection failed
@@ -394,17 +428,12 @@ final class HybridTranscriptionService: @unchecked Sendable {
         return "eu-ES"
     }
 
-    func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, progress: (@Sendable (Double) -> Void)?) async throws {
-        if language == "multilingual" {
-            if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
-                try await preparer.prepareModel(for: "eu-ES", progress: progress)
-            }
-            return
-        }
-        let normalized = normalize(language)
-        let shouldUseWhisper = engine == .whisper || normalized == "eu-ES"
-        guard shouldUseWhisper else { return }
-        if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
+    func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, modelIdentifier: String? = nil, progress: (@Sendable (Double) -> Void)?) async throws {
+        guard engineKind(for: language, engine: engine) == .whisper else { return }
+        let normalized = language == "multilingual" ? "eu-ES" : normalize(language)
+        if let preparer = whisperEngine as? ModelSelectingTranscriptionEngine {
+            try await preparer.prepareModel(for: normalized, modelIdentifier: modelIdentifier, progress: progress)
+        } else if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
             try await preparer.prepareModel(for: normalized, progress: progress)
         }
     }
@@ -422,10 +451,11 @@ final class HybridTranscriptionService: @unchecked Sendable {
         audioURL: URL,
         language: String,
         engine: EnginePreference = .auto,
+        modelIdentifier: String? = nil,
         progress: (@Sendable (Double) -> Void)? = nil
     ) async throws -> TranscriptionResult {
         let result = try await transcribeWithSelectedEngine(
-            audioURL: audioURL, language: language, engine: engine, progress: progress
+            audioURL: audioURL, language: language, engine: engine, modelIdentifier: modelIdentifier, progress: progress
         )
         // Feedback loop: terms that actually appeared gain ranking weight for
         // the next transcription's contextual vocabulary / prompt.
@@ -437,25 +467,32 @@ final class HybridTranscriptionService: @unchecked Sendable {
         audioURL: URL,
         language: String,
         engine: EnginePreference,
+        modelIdentifier: String?,
         progress: (@Sendable (Double) -> Void)?
     ) async throws -> TranscriptionResult {
+        func useWhisper(_ language: String) async throws -> TranscriptionResult {
+            if let selecting = whisperEngine as? ModelSelectingTranscriptionEngine {
+                return try await selecting.transcribe(audioURL: audioURL, language: language, modelIdentifier: modelIdentifier, progress: progress)
+            }
+            return try await whisperEngine.transcribe(audioURL: audioURL, language: language, progress: progress)
+        }
         if language == "multilingual" {
-            return try await whisperEngine.transcribe(audioURL: audioURL, language: "multilingual", progress: progress)
+            return try await useWhisper("multilingual")
         }
         let normalized = normalize(language)
         switch engine {
         case .apple:
             return try await appleEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         case .whisper:
-            return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
+            return try await useWhisper(normalized)
         case .auto:
             if normalized == "eu-ES" {
-                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
+                return try await useWhisper(normalized)
             }
             do {
                 return try await appleEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
             } catch TranscriptionEngineError.unsupportedLanguage {
-                return try await whisperEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
+                return try await useWhisper(normalized)
             }
         }
     }

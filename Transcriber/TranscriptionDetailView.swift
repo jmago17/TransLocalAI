@@ -18,6 +18,8 @@ struct TranscriptionDetailView: View {
     @State private var isTranscribing = false
     @State private var transcriptionError: String?
     @State private var retranscribeLanguage = "multilingual"
+    @State private var retranscribeEngine: EnginePreference = .auto
+    @State private var retranscribeModelIdentifier = WhisperModelCatalog.defaultModelIdentifier
 
     @State private var isGeneratingNotes = false
     @State private var generatedNotes: String?
@@ -209,6 +211,12 @@ struct TranscriptionDetailView: View {
                                 }
                                 .pickerStyle(.segmented)
                             }
+
+                            TranscriptionModelPicker(
+                                engine: $retranscribeEngine,
+                                modelIdentifier: $retranscribeModelIdentifier,
+                                language: retranscribeLanguage
+                            )
 
                             Button(action: transcribeAudio) {
                                 Label(
@@ -412,11 +420,13 @@ struct TranscriptionDetailView: View {
         Task { @MainActor in
             let hybridService = HybridTranscriptionService()
             do {
-                try await hybridService.prepareModelIfNeeded(language: retranscribeLanguage) { _ in }
+                try await hybridService.prepareModelIfNeeded(language: retranscribeLanguage, engine: retranscribeEngine, modelIdentifier: retranscribeModelIdentifier) { _ in }
 
                 let result = try await hybridService.transcribe(
                     audioURL: audioURL,
-                    language: retranscribeLanguage
+                    language: retranscribeLanguage,
+                    engine: retranscribeEngine,
+                    modelIdentifier: retranscribeModelIdentifier
                 )
 
                 transcription.transcriptionText = result.text

@@ -23,6 +23,8 @@ struct RecordingView: View {
     @State private var isTranscribing = false
     @State private var hasPermission: Bool?
     @State private var selectedLanguage = "multilingual"
+    @State private var selectedEngine: EnginePreference = .auto
+    @State private var selectedModelIdentifier = WhisperModelCatalog.defaultModelIdentifier
 
     private let hybridService = HybridTranscriptionService()
 
@@ -208,6 +210,12 @@ struct RecordingView: View {
                     .foregroundStyle(.secondary)
             }
 
+            TranscriptionModelPicker(
+                engine: $selectedEngine,
+                modelIdentifier: $selectedModelIdentifier,
+                language: selectedLanguage
+            )
+
             Spacer()
 
             Button(action: { transcribeRecording(url: url) }) {
@@ -300,11 +308,13 @@ struct RecordingView: View {
 
         Task {
             do {
-                try await hybridService.prepareModelIfNeeded(language: selectedLanguage) { _ in }
+                try await hybridService.prepareModelIfNeeded(language: selectedLanguage, engine: selectedEngine, modelIdentifier: selectedModelIdentifier) { _ in }
 
                 let result = try await hybridService.transcribe(
                     audioURL: url,
-                    language: selectedLanguage
+                    language: selectedLanguage,
+                    engine: selectedEngine,
+                    modelIdentifier: selectedModelIdentifier
                 )
 
                 let transcription = Transcription(
