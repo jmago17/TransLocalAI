@@ -150,6 +150,8 @@ enum TranscriptionVocabulary {
         let word: String
         let count: Int
         let suggestion: String?
+        /// Why this token was offered; never implies an automatic correction.
+        let hint: String
         /// The transcript line (or a window of it) around the first occurrence.
         let snippet: String
         /// The `[mm:ss]` timestamp of the line where the word first appears, so
@@ -157,26 +159,32 @@ enum TranscriptionVocabulary {
         let timestamp: String?
     }
 
-    /// Capitalized words used mid-sentence that match neither a vocabulary
-    /// spelling nor a known variant — the usual shape of a misheard name.
-    /// Words close to a vocabulary term carry it as a suggestion.
+    /// Mid-sentence unknown names remain candidates. Lowercase tokens require
+    /// an explicit, unambiguous user alias OR a unique, one-edit vocabulary
+    /// match corroborated by the transcript (repetition or the canonical term
+    /// appearing elsewhere). No dictionary of ordinary words is guessed at.
     nonisolated static func suspiciousTerms(in text: String, terms vocabulary: [String]) -> [SuspiciousTerm] {
         guard let expression = try? NSRegularExpression(pattern: wordPattern) else { return [] }
         let entries = vocabulary.map(parse(line:)).filter { !$0.canonical.isEmpty }
-        let knownKeys = Set(entries.map { normalize($0.canonical) })
-            .union(entries.flatMap(\.variants).map(normalize))
-        let canonicals = entries.map { (term: $0.canonical, normalized: normalize($0.canonical)) }
+        let canonicals = entries.map { (term: $0.canonical, key: normalize($0.canonical)) }
+        let knownKeys = Set(canonicals.map(\.key))
+        var aliases: [String: Set<String>] = [:]
+        for entry in entries {
+            for variant in entry.variants where !variant.contains(where: \.isWhitespace) {
+                aliases[normalize(variant), default: []].insert(entry.canonical)
+            }
+        }
 
         let source = text as NSString
-        var found: [String: (display: String, count: Int, snippet: String, timestamp: String?)] = [:]
+        typealias Occurrence = (word: String, range: NSRange, capitalized: Bool, sentenceStart: Bool)
+        var occurrences: [String: [Occurrence]] = [:]
         for match in expression.matches(in: text, range: NSRange(location: 0, length: source.length)) {
             let word = source.substring(with: match.range)
-            guard word.count >= 4, let first = word.first, first.isUppercase,
-                  !word.dropFirst().contains(where: \.isUppercase)
-            else { continue }
-
-            // Skip words in sentence-start position — capitalization proves
-            // nothing there. Timestamps ("[00:19] Word") count as starts too.
+            let key = normalize(word)
+            guard word.count >= 4, !key.isEmpty else { continue }
+            let first = word.first!
+            let capitalized = first.isUppercase && !word.dropFirst().contains(where: \.isUppercase)
+            // A timestamp closing bracket and line breaks also mark starts.
             var lookback = match.range.location - 1
             var previous: Character?
             while lookback >= 0 {
@@ -185,39 +193,70 @@ enum TranscriptionVocabulary {
                 previous = character
                 break
             }
-            if previous == nil || ".!?\n]…»\"”".contains(previous!) { continue }
+            let sentenceStart = previous == nil || ".!?\n]…»\"”".contains(previous!)
+            occurrences[key, default: []].append((word, match.range, capitalized, sentenceStart))
+        }
 
-            let key = normalize(word)
-            guard !key.isEmpty, !knownKeys.contains(key) else { continue }
-            if found[key] == nil {
-                found[key] = (word, 1, snippet(around: match.range, in: source), timestamp(around: match.range, in: source))
+        var found: [SuspiciousTerm] = []
+        for (key, hits) in occurrences where !knownKeys.contains(key) {
+            let aliasTargets = aliases[key] ?? []
+            // An ambiguous alias must not be presented as a confident match.
+            let alias = aliasTargets.count == 1 ? aliasTargets.first : nil
+            let nearest = uniqueCloseVocabularyTerm(for: key, among: canonicals)
+            let corroborated = hits.count >= 2 || (nearest.map { occurrences[normalize($0)] != nil } ?? false)
+            let midSentenceName = hits.first { $0.capitalized && !$0.sentenceStart }
+            let lowercase = hits.first { !$0.capitalized && $0.word.first?.isLowercase == true }
+            // Repeated sentence-start words alone prove nothing (e.g. "Today").
+            // Only offer one if it is independently supported by a close name
+            // already present elsewhere in the transcript.
+            let repeatedStartName: Occurrence? = {
+                guard hits.count >= 2, let nearest, nearest.first?.isUppercase == true,
+                      occurrences[normalize(nearest)] != nil else { return nil }
+                return hits.first { $0.capitalized && $0.sentenceStart }
+            }()
+            guard let first = midSentenceName ?? (alias != nil ? hits.first : nil)
+                ?? (lowercase != nil && nearest != nil && corroborated ? lowercase : nil)
+                ?? repeatedStartName else { continue }
+            let suggestion = alias ?? nearest
+            let hint: String
+            if alias != nil {
+                hint = "Matches a variant you added"
+            } else if first.capitalized && !first.sentenceStart {
+                hint = "Unrecognized name in the middle of a sentence"
+            } else if hits.count >= 2 && (nearest.map { occurrences[normalize($0)] == nil } ?? false) {
+                hint = "Repeated spelling close to your vocabulary"
             } else {
-                found[key]?.count += 1
+                hint = "Close to a vocabulary term also used here"
             }
+            found.append(SuspiciousTerm(
+                word: first.word, count: hits.count, suggestion: suggestion, hint: hint,
+                snippet: snippet(around: first.range, in: source),
+                timestamp: timestamp(around: first.range, in: source)
+            ))
         }
-
-        return found.values.map { entry -> SuspiciousTerm in
-            let key = normalize(entry.display)
-            let limit = key.count >= 8 ? 3 : 2
-            let nearest = canonicals
-                .map { (term: $0.term, distance: editDistance($0.normalized, key, stoppingAfter: limit)) }
-                .filter { $0.distance <= limit }
-                .min { $0.distance < $1.distance }
-            return SuspiciousTerm(
-                word: entry.display,
-                count: entry.count,
-                suggestion: nearest?.term,
-                snippet: entry.snippet,
-                timestamp: entry.timestamp
-            )
-        }
-        .sorted { lhs, rhs in
+        return found.sorted { lhs, rhs in
             if (lhs.suggestion != nil) != (rhs.suggestion != nil) { return lhs.suggestion != nil }
             if lhs.count != rhs.count { return lhs.count > rhs.count }
             return lhs.word < rhs.word
+        }.prefix(25).map(\.self)
+    }
+
+    /// Lowercase suggestions must be uniquely plausible, not merely the
+    /// closest of several near-identical vocabulary entries. This stricter
+    /// threshold is intentionally independent of automatic correction.
+    nonisolated private static func uniqueCloseVocabularyTerm(
+        for key: String, among canonicals: [(term: String, key: String)]
+    ) -> String? {
+        guard key.count >= 7 else { return nil }
+        let matches = canonicals.filter { candidate in
+            guard candidate.key.count >= 7,
+                  abs(candidate.key.count - key.count) <= 1,
+                  commonPrefixLength(candidate.key, key) >= 3
+                    || commonSuffixLength(candidate.key, key) >= 4
+            else { return false }
+            return editDistance(candidate.key, key, stoppingAfter: 1) == 1
         }
-        .prefix(25)
-        .map(\.self)
+        return matches.count == 1 ? matches[0].term : nil
     }
 
     /// The `[mm:ss]` / `[h:mm:ss]` marker at the start of the transcript line

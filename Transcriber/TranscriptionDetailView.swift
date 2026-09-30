@@ -14,6 +14,7 @@ import UIKit
 struct TranscriptionDetailView: View {
     @Bindable var transcription: Transcription
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isEditing = false
     @State private var isTranscribing = false
     @State private var transcriptionError: String?
@@ -25,6 +26,7 @@ struct TranscriptionDetailView: View {
     @State private var generatedNotes: String?
     @State private var showNotes = false
     @State private var showPromptCustomization = false
+    @State private var showRetranscriptionOptions = false
     @State private var progressMessage = "Generating notes..."
     @State private var showCorrectionReview = false
     @State private var vocabularyFixCount: Int?
@@ -39,256 +41,105 @@ struct TranscriptionDetailView: View {
 
     @State private var customPrompt: String = ""
 
+    // Imported recordings sometimes append an epoch to the visible title. Keep the
+    // original title intact for editing, sharing, persistence and downstream services.
+    private var displayTitle: String {
+        let title = transcription.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = title.split(separator: " ")
+        if title.hasPrefix("Recording "), let last = parts.last,
+           (10...13).contains(last.count), last.allSatisfy(\.isNumber) {
+            return String(title.dropLast(last.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return title.isEmpty ? String(localized: "Untitled Transcription") : title
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                // Generate Meeting Notes Section - AT THE TOP
-                if #available(iOS 26, macOS 26, *) {
-                    VStack(spacing: 12) {
-                        Button {
-                            isGeneratingNotes = true
-                            generatedNotes = nil
-                            progressMessage = "Generating notes..."
-                            showNotes = true
-                            Task {
-                                await generateMeetingNotes()
-                            }
-                        } label: {
-                            Label(isGeneratingNotes ? "Generating Notes…" : "Generate Meeting Notes", systemImage: "sparkles")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .disabled(transcription.transcriptionText.isEmpty || isGeneratingNotes)
-
-                        if !transcription.meetingNotes.isEmpty {
-                            Button {
-                                generatedNotes = transcription.meetingNotes
-                                showNotes = true
-                            } label: {
-                                Label("View Saved Meeting Notes", systemImage: "doc.text.fill")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-
-                        Button {
-                            showCorrectionReview = true
-                        } label: {
-                            Label("AI Review", systemImage: "text.badge.checkmark")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
-                        .disabled(transcription.transcriptionText.isEmpty)
-
-                        HStack(spacing: 12) {
-                            Button(action: applyVocabulary) {
-                                Label(
-                                    vocabularyFixCount.map { $0 == 0 ? "No Changes" : "\($0) Fixed" }
-                                        ?? "Fix Names",
-                                    systemImage: vocabularyFixCount == nil ? "character.magnify" : "checkmark"
-                                )
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                            .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
-
-                            Button {
-                                showSuspiciousTerms = true
-                            } label: {
-                                Label("Suspicious", systemImage: "questionmark.text.page")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.large)
-                            .disabled(transcription.transcriptionText.isEmpty)
-                        }
-
-                        Button {
-                            withAnimation {
-                                showPromptCustomization.toggle()
-                            }
-                        } label: {
-                            HStack {
-                                Text("Customize Prompt")
-                                    .font(.subheadline)
-                                Spacer()
-                                Image(systemName: showPromptCustomization ? "chevron.up" : "chevron.down")
-                            }
-                            .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-
-                        if showPromptCustomization {
-                            VStack(alignment: .leading, spacing: 8) {
-                                TextEditor(text: $customPrompt)
-                                    .frame(minHeight: 150)
-                                    .padding(8)
-                                    .background(Color(.secondarySystemBackground))
-                                    .cornerRadius(8)
-                                    .font(.caption)
-
-                                Button("Restore Default") {
-                                    customPrompt = defaultPrompt
-                                }
-                                .font(.caption)
-                                .buttonStyle(.bordered)
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-
-                // Metadata section
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Label(
-                            transcription.language == "multilingual" ? "Multilingual" : transcription.language,
-                            systemImage: "globe"
-                        )
-                        if transcription.languageWasAutoDetected {
-                            Label("Auto-detected", systemImage: "wand.and.stars")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Label(formatDuration(transcription.duration), systemImage: "clock")
-                    }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                    Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-                // Title
-                if isEditing {
-                    TextField("Title", text: $transcription.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .textFieldStyle(.roundedBorder)
-                } else {
-                    Text(transcription.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                }
-
-                Divider()
-
-                // Transcribe / Retranscribe actions when audio file exists
-                if transcription.audioFileURL != nil {
-                    if isTranscribing {
-                        VStack(spacing: 12) {
-                            TranscribingAnimation(size: CGSize(width: 150, height: 66))
-                            Text("Transcribing...")
-                                .font(.headline)
-                            Text("This may take a few moments")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(12)
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 10) {
+                    if isEditing {
+                        TextField("Title", text: $transcription.title)
+                            .font(.title2.weight(.semibold))
+                            .textFieldStyle(.roundedBorder)
                     } else {
-                        VStack(spacing: 12) {
-                            // Language picker
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("Language")
-                                    .font(.headline)
+                        Text(displayTitle)
+                            .font(.title2.weight(.semibold))
+                            .accessibilityAddTraits(.isHeader)
+                    }
 
-                                Picker("Language", selection: $retranscribeLanguage) {
-                                    Text("Multilingual").tag("multilingual")
-                                    Text("Euskara").tag("eu-ES")
-                                    Text("Español").tag("es-ES")
-                                    Text("English").tag("en-US")
-                                }
-                                .pickerStyle(.segmented)
+                    ViewThatFits(in: .horizontal) {
+                        metadataRow
+                        VStack(alignment: .leading, spacing: 6) {
+                            metadataRowWithoutDate
+                            Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+
+                if #available(iOS 26, macOS 26, *) {
+                    notesActions
+                }
+
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Transcript")
+                            .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 12)
+                        if resolvedAudioURL != nil && !transcription.transcriptionText.isEmpty {
+                            Button {
+                                locateWord = nil
+                                showPlayer = true
+                            } label: {
+                                Label("Play with Transcript", systemImage: "play.circle.fill")
+                                    .labelStyle(.titleAndIcon)
                             }
-
-                            TranscriptionModelPicker(
-                                engine: $retranscribeEngine,
-                                modelIdentifier: $retranscribeModelIdentifier,
-                                language: retranscribeLanguage
-                            )
-
-                            Button(action: transcribeAudio) {
-                                Label(
-                                    transcription.transcriptionText.isEmpty ? "Transcribe Now" : "Retranscribe",
-                                    systemImage: transcription.transcriptionText.isEmpty ? "text.bubble" : "arrow.counterclockwise"
-                                )
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-
-                            if !transcription.transcriptionText.isEmpty {
-                                Button {
-                                    locateWord = nil
-                                    showPlayer = true
-                                } label: {
-                                    Label("Play with Transcript", systemImage: "play.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.large)
-                            }
-
-                            if let audioURL = resolvedAudioURL {
-                                ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
-                                    Label("Share Audio", systemImage: "square.and.arrow.up")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.large)
-                            }
-
-                            if let error = transcriptionError {
-                                Text(error)
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
-                                    .multilineTextAlignment(.center)
-                            }
+                            .buttonStyle(.bordered)
+                            .tint(.orange)
+                            .accessibilityHint("Opens the audio player with synchronized transcript")
                         }
                     }
-                }
 
-                // Transcription text
-                if isEditing {
-                    TextEditor(text: $transcription.transcriptionText)
-                        .frame(minHeight: 300)
-                        .padding(8)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(12)
-                } else if !transcription.transcriptionText.isEmpty {
-                    #if os(iOS)
-                    SelectableTranscriptView(text: transcription.transcriptionText) { selected in
-                        replaceCandidate = selected
-                        replacementText = ""
-                        showReplaceDialog = true
+                    if isEditing {
+                        TextEditor(text: $transcription.transcriptionText)
+                            .frame(minHeight: 300)
+                            .padding(8)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .accessibilityLabel("Transcript text")
+                    } else if !transcription.transcriptionText.isEmpty {
+                        #if os(iOS)
+                        SelectableTranscriptView(text: transcription.transcriptionText) { selected in
+                            replaceCandidate = selected
+                            replacementText = ""
+                            showReplaceDialog = true
+                        }
+                        #else
+                        Text(transcription.transcriptionText)
+                            .textSelection(.enabled)
+                            .font(.body)
+                        #endif
+                    } else {
+                        Text("No transcript yet")
+                            .foregroundStyle(.secondary)
                     }
-                    #else
-                    Text(transcription.transcriptionText)
-                        .textSelection(.enabled)
-                        .font(.body)
-                    #endif
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
+                if transcription.audioFileURL != nil {
+                    retranscriptionSection
+                }
             }
-            .padding()
+            .frame(maxWidth: 860, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
         }
         .liquidCrystalScreen()
         .onAppear {
-            if customPrompt.isEmpty {
-                customPrompt = defaultPrompt
-            }
+            if customPrompt.isEmpty { customPrompt = defaultPrompt }
         }
         .navigationTitle("Transcription")
 #if os(iOS)
@@ -296,21 +147,53 @@ struct TranscriptionDetailView: View {
 #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                HStack {
+                Menu {
+                    if #available(iOS 26, macOS 26, *) {
+                        Button {
+                            showCorrectionReview = true
+                        } label: {
+                            Label("AI Review", systemImage: "text.badge.checkmark")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button(action: applyVocabulary) {
+                            Label(vocabularyFixCount.map { $0 == 0 ? String(localized: "No Changes") :
+                                String(localized: "\($0) Fixed") } ?? String(localized: "Fix Names"),
+                                  systemImage: "character.magnify")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
+
+                        Button {
+                            showSuspiciousTerms = true
+                        } label: {
+                            Label("Suspicious Terms", systemImage: "questionmark.text.page")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button {
+                            showPromptCustomization = true
+                        } label: {
+                            Label("Customize Prompt", systemImage: "text.badge.plus")
+                        }
+                        Divider()
+                    }
                     if let audioURL = resolvedAudioURL {
                         ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
-                            Image(systemName: "waveform.circle")
+                            Label("Share Audio", systemImage: "waveform")
                         }
                     }
                     if !transcription.transcriptionText.isEmpty {
                         ShareLink(item: transcription.transcriptionText) {
-                            Image(systemName: "square.and.arrow.up")
+                            Label("Share Transcript", systemImage: "square.and.arrow.up")
                         }
                     }
-                    Button(isEditing ? "Done" : "Edit") {
-                        isEditing.toggle()
-                    }
+                } label: {
+                    Label("More Actions", systemImage: "ellipsis.circle")
                 }
+                .accessibilityLabel("More transcription actions")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button(isEditing ? "Done" : "Edit") { isEditing.toggle() }
             }
         }
         .sheet(isPresented: $showNotes) {
@@ -405,6 +288,142 @@ struct TranscriptionDetailView: View {
         } message: {
             Text("Replaces every occurrence and adds it to your names list, so future transcriptions get it right.")
         }
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: 14) {
+            metadataRowWithoutDate
+            Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+    }
+
+    private var metadataRowWithoutDate: some View {
+        HStack(spacing: 14) {
+            Label(transcription.language == "multilingual" ? String(localized: "Multilingual") : transcription.language,
+                  systemImage: "globe")
+            if transcription.languageWasAutoDetected {
+                Label("Auto-detected", systemImage: "wand.and.stars")
+            }
+            Label(formatDuration(transcription.duration), systemImage: "clock")
+        }
+    }
+
+    @available(iOS 26, macOS 26, *)
+    private var notesActions: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if horizontalSizeClass == .compact {
+                VStack(alignment: .leading, spacing: 12) { notesButton; savedNotesButton }
+            } else {
+                HStack(spacing: 12) { notesButton; savedNotesButton }
+            }
+            if showPromptCustomization {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Customize Prompt").font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Button("Done") { showPromptCustomization = false }
+                    }
+                    TextEditor(text: $customPrompt)
+                        .frame(minHeight: 150)
+                        .padding(8)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(8)
+                        .accessibilityLabel("Custom meeting notes prompt")
+                    Button("Restore Default") { customPrompt = defaultPrompt }
+                        .font(.subheadline)
+                }
+                .padding()
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+    }
+
+    @available(iOS 26, macOS 26, *)
+    private var notesButton: some View {
+        Button {
+            isGeneratingNotes = true
+            generatedNotes = nil
+            progressMessage = "Generating notes..."
+            showNotes = true
+            Task { await generateMeetingNotes() }
+        } label: {
+            Label(isGeneratingNotes ? "Generating Notes…" : "Generate Meeting Notes", systemImage: "sparkles")
+                .frame(maxWidth: 300)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.orange)
+        .controlSize(.large)
+        .disabled(transcription.transcriptionText.isEmpty || isGeneratingNotes)
+    }
+
+    @available(iOS 26, macOS 26, *)
+    @ViewBuilder private var savedNotesButton: some View {
+        if !transcription.meetingNotes.isEmpty {
+            Button {
+                generatedNotes = transcription.meetingNotes
+                showNotes = true
+            } label: {
+                Label("Saved Notes", systemImage: "doc.text")
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
+    }
+
+    private var retranscriptionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if isTranscribing {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Transcribing...").font(.subheadline)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if let error = transcriptionError {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+        if transcription.transcriptionText.isEmpty {
+            Button(action: transcribeAudio) {
+                Label("Transcribe Now", systemImage: "text.bubble")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+            .disabled(isTranscribing)
+        }
+        DisclosureGroup(transcription.transcriptionText.isEmpty ? "Transcription options" : "Retranscription options",
+                            isExpanded: $showRetranscriptionOptions) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Picker("Language", selection: $retranscribeLanguage) {
+                        Text("Multilingual").tag("multilingual")
+                        Text("Euskara").tag("eu-ES")
+                        Text("Español").tag("es-ES")
+                        Text("English").tag("en-US")
+                    }
+                    .pickerStyle(.segmented)
+
+                    TranscriptionModelPicker(
+                        engine: $retranscribeEngine,
+                        modelIdentifier: $retranscribeModelIdentifier,
+                        language: retranscribeLanguage
+                    )
+
+                    Button(action: transcribeAudio) {
+                        Label(transcription.transcriptionText.isEmpty ? "Transcribe Now" : "Retranscribe",
+                              systemImage: "arrow.counterclockwise")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isTranscribing)
+                }
+                .padding(.top, 12)
+            }
+            .tint(.orange)
+            .accessibilityHint("Shows language, model and transcription controls")
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var resolvedAudioURL: URL? {

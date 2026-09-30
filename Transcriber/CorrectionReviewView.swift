@@ -20,14 +20,11 @@ struct CorrectionReviewView: View {
     @State private var errorMessage: String?
     @State private var selectedFilter: String? = nil
     @State private var analysisTask: Task<Void, Never>?
+    @State private var analyzedText = ""
 
     private let filters = [
         ("All", nil as String?),
         ("Mishearing", "mishearing" as String?),
-        ("Grammar", "grammar" as String?),
-        ("Punctuation", "punctuation" as String?),
-        ("Formatting", "formatting" as String?),
-        ("Filler", "fillerWord" as String?),
         ("Unclear", "unclear" as String?),
     ]
 
@@ -107,9 +104,9 @@ struct CorrectionReviewView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
-            Text("No corrections found")
+            Text("No clear transcription errors proposed")
                 .font(.headline)
-            Text("The transcription looks good!")
+            Text("This text-only review does not verify the audio. Check uncertain words while listening.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -119,7 +116,7 @@ struct CorrectionReviewView: View {
     private var correctionListView: some View {
         VStack(spacing: 0) {
             // Summary bar
-            Text("\(corrections.count) corrections found")
+            Text("\(corrections.count) possible transcription errors · compare with the audio")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -166,17 +163,14 @@ struct CorrectionReviewView: View {
 
             // Bottom bar
             HStack {
-                Button("Accept All") {
-                    for correction in corrections where correction.status == .pending {
-                        correction.status = .accepted
-                    }
-                }
-                .buttonStyle(.bordered)
+                Text("Review suggestions one by one")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
                 Button("Apply \(acceptedCount) Accepted") {
-                    applyCorrections()
+                    guard applyCorrections() else { return }
                     dismiss()
                 }
                 .buttonStyle(.borderedProminent)
@@ -200,9 +194,21 @@ struct CorrectionReviewView: View {
 
                 Spacer()
 
-                Text("Confidence: \(correction.confidence)/10")
+                Text("AI estimate: \(correction.confidence)/10")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+            }
+
+            if let offset = correction.characterOffset {
+                let start = analyzedText.index(analyzedText.startIndex, offsetBy: max(0, offset - 60), limitedBy: analyzedText.endIndex) ?? analyzedText.startIndex
+                let end = analyzedText.index(analyzedText.startIndex, offsetBy: min(analyzedText.count, offset + correction.originalText.count + 60), limitedBy: analyzedText.endIndex) ?? analyzedText.endIndex
+                if start < end {
+                    Text(String(analyzedText[start..<end]).replacingOccurrences(of: "\n", with: " "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .accessibilityLabel("Transcript context")
+                }
             }
 
             // Original → Suggested
@@ -239,7 +245,7 @@ struct CorrectionReviewView: View {
                 .font(.subheadline)
             }
 
-            // Accept / Reject buttons
+            // An unclear passage needs a user-supplied correction, not the AI's guess.
             HStack {
                 Button {
                     correction.status = correction.status == .accepted ? .pending : .accepted
@@ -249,6 +255,8 @@ struct CorrectionReviewView: View {
                 }
                 .buttonStyle(.bordered)
                 .tint(correction.status == .accepted ? .green : .gray)
+                .disabled(correction.category == "unclear" &&
+                          (correction.userOverride?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true))
 
                 Button {
                     correction.status = correction.status == .rejected ? .pending : .rejected
@@ -284,11 +292,13 @@ struct CorrectionReviewView: View {
         isAnalyzing = true
         errorMessage = nil
         corrections = []
+        analyzedText = transcription.transcriptionText
+        let snapshot = analyzedText
 
         analysisTask = Task {
             do {
                 let results = try await AICorrectionService.analyzeTranscription(
-                    text: transcription.transcriptionText,
+                    text: snapshot,
                     language: transcription.language
                 ) { completed, total in
                     Task { @MainActor in
@@ -305,26 +315,34 @@ struct CorrectionReviewView: View {
         }
     }
 
-    /// Apply accepted corrections in reverse order so indices stay valid.
-    private func applyCorrections() {
-        let accepted = corrections
-            .filter { $0.status == .accepted && $0.rangeInText != nil }
-            .sorted { lhs, rhs in
-                // Sort by position in text, reverse order (end-to-start)
-                guard let l = lhs.rangeInText, let r = rhs.rangeInText else { return false }
-                return l.lowerBound > r.lowerBound
+    /// Apply only the exact occurrence analyzed, never a new first match.
+    /// Keep the sheet open if the transcript changed since the review started.
+    @discardableResult
+    private func applyCorrections() -> Bool {
+        guard transcription.transcriptionText == analyzedText else {
+            errorMessage = String(localized: "The transcript changed since this review. Run the analysis again before applying corrections.")
+            return false
+        }
+        let accepted = corrections.filter { $0.status == .accepted }
+        let ordered = accepted.sorted { ($0.characterOffset ?? -1) > ($1.characterOffset ?? -1) }
+        var text = analyzedText
+        for correction in ordered {
+            guard let offset = correction.characterOffset, offset >= 0,
+                  let start = text.index(text.startIndex, offsetBy: offset, limitedBy: text.endIndex),
+                  let end = text.index(start, offsetBy: correction.originalText.count, limitedBy: text.endIndex),
+                  String(text[start..<end]) == correction.originalText else {
+                errorMessage = String(localized: "A proposed correction no longer matches the transcript. Nothing was changed.")
+                return false
             }
-
-        var text = transcription.transcriptionText
-        for correction in accepted {
-            // Re-find the range in case prior edits shifted things (shouldn't happen with reverse order, but safe)
-            if let range = text.range(of: correction.originalText) {
-                text.replaceSubrange(range, with: correction.effectiveReplacement)
-            } else if let range = text.range(of: correction.originalText, options: .caseInsensitive) {
-                text.replaceSubrange(range, with: correction.effectiveReplacement)
+            if correction.category == "unclear" &&
+                (correction.userOverride?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) {
+                errorMessage = String(localized: "Enter your correction for each unclear passage before applying.")
+                return false
             }
+            text.replaceSubrange(start..<end, with: correction.effectiveReplacement)
         }
         transcription.transcriptionText = text
+        return true
     }
 }
 #endif

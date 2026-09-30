@@ -24,7 +24,10 @@ enum CorrectionCategory: String, Sendable {
 @available(iOS 26, macOS 26, *)
 @Generable
 struct SingleCorrection: Sendable {
-    @Guide(description: "The exact original text that needs correction")
+    @Guide(description: "Zero-based Swift String character offset of this exact occurrence within the supplied chunk; not the full transcript")
+    var startOffset: Int
+
+    @Guide(description: "The exact single original word at startOffset, copied character-for-character")
     var originalText: String
 
     @Guide(description: "The suggested replacement text")
@@ -67,7 +70,8 @@ final class TranscriptionCorrection: Identifiable {
     var confidence: Int
     var status: CorrectionStatus = .pending
     var userOverride: String? // For unclear items where user provides custom text
-    var rangeInText: Range<String.Index>? // Position in the full transcription text
+    var rangeInText: Range<String.Index>? // Exact occurrence in the original full transcription
+    var characterOffset: Int? // Zero-based Swift Character offset in original full transcription
 
     init(originalText: String, suggestedText: String, category: String, reason: String, confidence: Int) {
         self.originalText = originalText

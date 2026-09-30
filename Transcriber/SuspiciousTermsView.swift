@@ -1,9 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Lists words in a transcript that look misheard (capitalized mid-sentence,
-/// unknown to the vocabulary) and offers one-tap replacement. Every fix is
-/// saved as a vocabulary alias so future transcriptions get it right.
+/// Offers review-only candidates: unknown mid-sentence names and conservatively
+/// supported lowercase mishearings. Nothing changes until the user chooses a fix.
 struct SuspiciousTermsView: View {
     @Bindable var transcription: Transcription
     /// Called with the word when the user wants to see it in context; the
@@ -23,7 +22,7 @@ struct SuspiciousTermsView: View {
                     ContentUnavailableView(
                         "Nothing suspicious",
                         systemImage: "checkmark.seal.fill",
-                        description: Text("Every name in this transcript matches your vocabulary or looks ordinary.")
+                        description: Text("No unknown mid-sentence names or supported lowercase variants found.")
                     )
                 } else {
                     List {
@@ -38,7 +37,7 @@ struct SuspiciousTermsView: View {
                                 .buttonStyle(.plain)
                             }
                         } footer: {
-                            Text("Tap a word to replace it everywhere. Fixes are added to your names list, so the next transcription gets them right automatically.")
+                            Text("Review each candidate before replacing it. Only your confirmed fixes are saved to your vocabulary.")
                         }
                     }
                     .scrollContentBackground(.hidden)
@@ -105,6 +104,10 @@ struct SuspiciousTermsView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(4)
             }
+
+            Text(suspect.hint)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
 
             if let suggestion = suspect.suggestion {
                 Label("Did you mean \(suggestion)?", systemImage: "arrow.turn.down.right")
