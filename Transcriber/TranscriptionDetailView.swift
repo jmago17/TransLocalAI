@@ -36,6 +36,11 @@ struct TranscriptionDetailView: View {
     @State private var showReplaceDialog = false
     @State private var showPlayer = false
     @State private var locateWord: String?
+    /// iPad only: the trailing inspector starts closed so the transcript owns
+    /// the whole width, and the toolbar brings it back.
+    @State private var showInspector = false
+    @State private var didFoldSidebar = false
+    @Environment(\.sidebarVisibility) private var sidebarVisibility
 
     private let defaultPrompt = MeetingNotesService.shortcutPrompt
 
@@ -54,147 +59,17 @@ struct TranscriptionDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 10) {
-                    if isEditing {
-                        TextField("Title", text: $transcription.title)
-                            .font(.title2.weight(.semibold))
-                            .textFieldStyle(.roundedBorder)
-                    } else {
-                        Text(displayTitle)
-                            .font(.title2.weight(.semibold))
-                            .accessibilityAddTraits(.isHeader)
-                    }
-
-                    ViewThatFits(in: .horizontal) {
-                        metadataRow
-                        VStack(alignment: .leading, spacing: 6) {
-                            metadataRowWithoutDate
-                            Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    }
-                }
-
-                if #available(iOS 26, macOS 26, *) {
-                    notesActions
-                }
-
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("Transcript")
-                            .font(.headline)
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer(minLength: 12)
-                        if resolvedAudioURL != nil && !transcription.transcriptionText.isEmpty {
-                            Button {
-                                locateWord = nil
-                                showPlayer = true
-                            } label: {
-                                Label("Play with Transcript", systemImage: "play.circle.fill")
-                                    .labelStyle(.titleAndIcon)
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.orange)
-                            .accessibilityHint("Opens the audio player with synchronized transcript")
-                        }
-                    }
-
-                    if isEditing {
-                        TextEditor(text: $transcription.transcriptionText)
-                            .frame(minHeight: 300)
-                            .padding(8)
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(12)
-                            .accessibilityLabel("Transcript text")
-                    } else if !transcription.transcriptionText.isEmpty {
-                        #if os(iOS)
-                        SelectableTranscriptView(text: transcription.transcriptionText) { selected in
-                            replaceCandidate = selected
-                            replacementText = ""
-                            showReplaceDialog = true
-                        }
-                        #else
-                        Text(transcription.transcriptionText)
-                            .textSelection(.enabled)
-                            .font(.body)
-                        #endif
-                    } else {
-                        Text("No transcript yet")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if transcription.audioFileURL != nil {
-                    retranscriptionSection
-                }
+        Group {
+            // iPad (and Mac) get the reading layout; the phone keeps its single
+            // scrolling column. Sheets, alerts and state are shared.
+            if horizontalSizeClass == .regular {
+                padDetail
+            } else {
+                compactDetail
             }
-            .frame(maxWidth: 860, alignment: .leading)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 24)
         }
-        .liquidCrystalScreen()
         .onAppear {
             if customPrompt.isEmpty { customPrompt = defaultPrompt }
-        }
-        .navigationTitle("Transcription")
-#if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-#endif
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    if #available(iOS 26, macOS 26, *) {
-                        Button {
-                            showCorrectionReview = true
-                        } label: {
-                            Label("AI Review", systemImage: "text.badge.checkmark")
-                        }
-                        .disabled(transcription.transcriptionText.isEmpty)
-
-                        Button(action: applyVocabulary) {
-                            Label(vocabularyFixCount.map { $0 == 0 ? String(localized: "No Changes") :
-                                String(localized: "\($0) Fixed") } ?? String(localized: "Fix Names"),
-                                  systemImage: "character.magnify")
-                        }
-                        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
-
-                        Button {
-                            showSuspiciousTerms = true
-                        } label: {
-                            Label("Suspicious Terms", systemImage: "questionmark.text.page")
-                        }
-                        .disabled(transcription.transcriptionText.isEmpty)
-
-                        Button {
-                            showPromptCustomization = true
-                        } label: {
-                            Label("Customize Prompt", systemImage: "text.badge.plus")
-                        }
-                        Divider()
-                    }
-                    if let audioURL = resolvedAudioURL {
-                        ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
-                            Label("Share Audio", systemImage: "waveform")
-                        }
-                    }
-                    if !transcription.transcriptionText.isEmpty {
-                        ShareLink(item: transcription.transcriptionText) {
-                            Label("Share Transcript", systemImage: "square.and.arrow.up")
-                        }
-                    }
-                } label: {
-                    Label("More Actions", systemImage: "ellipsis.circle")
-                }
-                .accessibilityLabel("More transcription actions")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button(isEditing ? "Done" : "Edit") { isEditing.toggle() }
-            }
         }
         .sheet(isPresented: $showNotes) {
             NavigationStack {
@@ -290,6 +165,476 @@ struct TranscriptionDetailView: View {
         }
     }
 
+    // MARK: - Compact layout (iPhone)
+
+    private var compactDetail: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 10) {
+                    if isEditing {
+                        TextField("Title", text: $transcription.title)
+                            .font(.title2.weight(.semibold))
+                            .textFieldStyle(.roundedBorder)
+                    } else {
+                        Text(displayTitle)
+                            .font(.title2.weight(.semibold))
+                            .accessibilityAddTraits(.isHeader)
+                    }
+
+                    ViewThatFits(in: .horizontal) {
+                        metadataRow
+                        VStack(alignment: .leading, spacing: 6) {
+                            metadataRowWithoutDate
+                            Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+
+                if #available(iOS 26, macOS 26, *) {
+                    notesActions
+                }
+
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Transcript")
+                            .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 12)
+                        if resolvedAudioURL != nil && !transcription.transcriptionText.isEmpty {
+                            Button {
+                                locateWord = nil
+                                showPlayer = true
+                            } label: {
+                                Label("Play with Transcript", systemImage: "play.circle.fill")
+                                    .labelStyle(.titleAndIcon)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.orange)
+                            .accessibilityHint("Opens the audio player with synchronized transcript")
+                        }
+                    }
+
+                    if isEditing {
+                        TextEditor(text: $transcription.transcriptionText)
+                            .frame(minHeight: 300)
+                            .padding(8)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .accessibilityLabel("Transcript text")
+                    } else if !transcription.transcriptionText.isEmpty {
+                        #if os(iOS)
+                        SelectableTranscriptView(text: transcription.transcriptionText) { selected in
+                            replaceCandidate = selected
+                            replacementText = ""
+                            showReplaceDialog = true
+                        }
+                        #else
+                        Text(transcription.transcriptionText)
+                            .textSelection(.enabled)
+                            .font(.body)
+                        #endif
+                    } else {
+                        Text("No transcript yet")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                if transcription.audioFileURL != nil {
+                    retranscriptionSection
+                }
+            }
+            .frame(maxWidth: 860, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
+        }
+        .liquidCrystalScreen()
+        .navigationTitle("Transcription")
+#if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+#endif
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    if #available(iOS 26, macOS 26, *) {
+                        Button {
+                            showCorrectionReview = true
+                        } label: {
+                            Label("AI Review", systemImage: "text.badge.checkmark")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button(action: applyVocabulary) {
+                            Label(fixNamesTitle, systemImage: "character.magnify")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
+
+                        Button {
+                            showSuspiciousTerms = true
+                        } label: {
+                            Label("Suspicious Terms", systemImage: "questionmark.text.page")
+                        }
+                        .disabled(transcription.transcriptionText.isEmpty)
+
+                        Button {
+                            showPromptCustomization = true
+                        } label: {
+                            Label("Customize Prompt", systemImage: "text.badge.plus")
+                        }
+                        Divider()
+                    }
+                    if let audioURL = resolvedAudioURL {
+                        ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
+                            Label("Share Audio", systemImage: "waveform")
+                        }
+                    }
+                    if !transcription.transcriptionText.isEmpty {
+                        ShareLink(item: transcription.transcriptionText) {
+                            Label("Share Transcript", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                } label: {
+                    Label("More Actions", systemImage: "ellipsis.circle")
+                }
+                .accessibilityLabel("More transcription actions")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button(isEditing ? "Done" : "Edit") { isEditing.toggle() }
+            }
+        }
+    }
+
+    // MARK: - iPad layout
+
+    /// The transcript is the page: a single reading column with the player
+    /// floating over the bottom edge, every action as an icon in the toolbar,
+    /// and the rest (notes, information, retranscription) in an inspector that
+    /// can be shown and hidden.
+    private var padDetail: some View {
+        Group {
+            if isEditing {
+                padEditor
+            } else {
+                TranscriptReaderPane(
+                    text: transcription.transcriptionText,
+                    audioURL: resolvedAudioURL,
+                    onReplaceAndSave: { selected in
+                        replaceCandidate = selected
+                        replacementText = ""
+                        showReplaceDialog = true
+                    },
+                    header: { padDocumentHeader }
+                )
+            }
+        }
+        .liquidCrystalScreen()
+        .inspector(isPresented: $showInspector) {
+            detailInspector
+                .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
+        }
+        .navigationTitle(displayTitle)
+#if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+#endif
+        .toolbar { padToolbar }
+    }
+
+    private var padEditor: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                TextField("Title", text: $transcription.title)
+                    .font(.title2.weight(.semibold))
+                    .textFieldStyle(.roundedBorder)
+                TextEditor(text: $transcription.transcriptionText)
+                    .frame(minHeight: 400)
+                    .padding(8)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(LiquidCrystal.Radius.control)
+                    .accessibilityLabel("Transcript text")
+            }
+            .frame(maxWidth: TranscriptReader.readingWidth, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(24)
+        }
+    }
+
+    /// Masthead of the reading column: the title, then the same metadata the
+    /// phone shows, as badges.
+    private var padDocumentHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(displayTitle)
+                .font(.largeTitle.weight(.bold))
+                .accessibilityAddTraits(.isHeader)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: LiquidCrystal.Layout.badgeSpacing) {
+                    primaryBadges
+                    secondaryBadges
+                }
+                VStack(alignment: .leading, spacing: LiquidCrystal.Layout.badgeSpacing) {
+                    HStack(spacing: LiquidCrystal.Layout.badgeSpacing) { primaryBadges }
+                    HStack(spacing: LiquidCrystal.Layout.badgeSpacing) { secondaryBadges }
+                }
+            }
+
+            Divider()
+        }
+    }
+
+    @ViewBuilder private var primaryBadges: some View {
+        CrystalBadge(
+            text: transcription.timestamp.formatted(date: .abbreviated, time: .shortened),
+            systemImage: "calendar"
+        )
+        CrystalBadge(text: formatDuration(transcription.duration), systemImage: "clock")
+    }
+
+    @ViewBuilder private var secondaryBadges: some View {
+        CrystalBadge(text: languageText, systemImage: "globe")
+        if transcription.languageWasAutoDetected {
+            CrystalBadge(text: String(localized: "Auto-detected"), systemImage: "wand.and.stars")
+        }
+        if let engineText {
+            CrystalBadge(
+                text: engineText,
+                systemImage: "cpu",
+                tone: transcription.engineUsed == "whisper" ? .feature : .neutral
+            )
+        }
+        if !transcription.meetingNotes.isEmpty {
+            CrystalBadge(text: String(localized: "Saved Notes"), systemImage: "doc.text", tone: .accent)
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var padToolbar: some ToolbarContent {
+        if #available(iOS 26, macOS 26, *) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    showCorrectionReview = true
+                } label: {
+                    Label("AI Review", systemImage: "text.badge.checkmark")
+                }
+                .disabled(transcription.transcriptionText.isEmpty)
+                .help("AI Review")
+
+                fixNamesButton
+
+                Button {
+                    showSuspiciousTerms = true
+                } label: {
+                    Label("Suspicious Terms", systemImage: "questionmark.text.page")
+                }
+                .disabled(transcription.transcriptionText.isEmpty)
+                .help("Suspicious Terms")
+            }
+        }
+        ToolbarItem(placement: .primaryAction) { shareMenu }
+        ToolbarItem(placement: .primaryAction) {
+            Button(isEditing ? "Done" : "Edit") { isEditing.toggle() }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Button(action: toggleInspector) {
+                Label(
+                    showInspector ? "Hide Inspector" : "Show Inspector",
+                    systemImage: "sidebar.trailing"
+                )
+            }
+            .help(showInspector ? "Hide Inspector" : "Show Inspector")
+        }
+    }
+
+    /// Opening the inspector between the library and the transcript would leave
+    /// the reading column squeezed from both sides, so the library folds away
+    /// with it — and comes back when the inspector does, unless the reader had
+    /// already put it away.
+    private func toggleInspector() {
+        showInspector.toggle()
+        guard let sidebarVisibility else { return }
+        if showInspector {
+            didFoldSidebar = sidebarVisibility.wrappedValue != .detailOnly
+            sidebarVisibility.wrappedValue = .detailOnly
+        } else if didFoldSidebar {
+            sidebarVisibility.wrappedValue = .automatic
+            didFoldSidebar = false
+        }
+    }
+
+    /// The count of applied fixes is the only feedback this action gives, so it
+    /// takes over the button's label while it lasts.
+    @ViewBuilder private var fixNamesButton: some View {
+        Button(action: applyVocabulary) {
+            if vocabularyFixCount == nil {
+                Label(fixNamesTitle, systemImage: "character.magnify")
+            } else {
+                Label(fixNamesTitle, systemImage: "character.magnify")
+                    .labelStyle(.titleAndIcon)
+            }
+        }
+        .disabled(transcription.transcriptionText.isEmpty || vocabularyFixCount != nil)
+        .help("Fix Names")
+    }
+
+    private var shareMenu: some View {
+        Menu {
+            if let audioURL = resolvedAudioURL {
+                ShareLink(item: audioURL, preview: SharePreview(transcription.title, image: Image(systemName: "waveform"))) {
+                    Label("Share Audio", systemImage: "waveform")
+                }
+            }
+            if !transcription.transcriptionText.isEmpty {
+                ShareLink(item: transcription.transcriptionText) {
+                    Label("Share Transcript", systemImage: "square.and.arrow.up")
+                }
+            }
+        } label: {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        .disabled(resolvedAudioURL == nil && transcription.transcriptionText.isEmpty)
+        .help("Share")
+    }
+
+    // MARK: - Inspector
+
+    private var detailInspector: some View {
+        Form {
+            if #available(iOS 26, macOS 26, *) {
+                notesInspectorSection
+            }
+            informationSection
+            if transcription.audioFileURL != nil {
+                retranscriptionInspectorSection
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .liquidCrystalScreen()
+    }
+
+    @available(iOS 26, macOS 26, *)
+    private var notesInspectorSection: some View {
+        Section("Meeting Notes") {
+            Button(action: startNotesGeneration) {
+                Label(isGeneratingNotes ? "Generating Notes…" : "Generate Meeting Notes", systemImage: "sparkles")
+            }
+            .disabled(transcription.transcriptionText.isEmpty || isGeneratingNotes)
+
+            if !transcription.meetingNotes.isEmpty {
+                Button {
+                    generatedNotes = transcription.meetingNotes
+                    showNotes = true
+                } label: {
+                    Label("Saved Notes", systemImage: "doc.text")
+                }
+            }
+
+            DisclosureGroup(isExpanded: $showPromptCustomization) {
+                TextEditor(text: $customPrompt)
+                    .frame(minHeight: 140)
+                    .padding(8)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(LiquidCrystal.Radius.control)
+                    .accessibilityLabel("Custom meeting notes prompt")
+                Button("Restore Default") { customPrompt = defaultPrompt }
+                    .font(.subheadline)
+            } label: {
+                Label("Customize Prompt", systemImage: "text.badge.plus")
+            }
+        }
+    }
+
+    private var informationSection: some View {
+        Section("Information") {
+            LabeledContent("Date") {
+                Text(transcription.timestamp, format: Date.FormatStyle(date: .abbreviated, time: .shortened))
+            }
+            LabeledContent("Duration") { Text(formatDuration(transcription.duration)) }
+            LabeledContent("Language") { Text(languageText) }
+            if transcription.languageWasAutoDetected {
+                Label("Auto-detected", systemImage: "wand.and.stars")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let engineText {
+                LabeledContent("Engine") { Text(engineText) }
+            }
+            LabeledContent("Words") { Text(wordCount.formatted()) }
+        }
+    }
+
+    private var retranscriptionInspectorSection: some View {
+        Section {
+            if isTranscribing {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Transcribing...").font(.subheadline)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if let error = transcriptionError {
+                Text(error).font(.caption).foregroundStyle(.red)
+            }
+
+            Picker("Language", selection: $retranscribeLanguage) {
+                Text("Multilingual").tag("multilingual")
+                Text("Euskara").tag("eu-ES")
+                Text("Español").tag("es-ES")
+                Text("English").tag("en-US")
+            }
+            .pickerStyle(.segmented)
+
+            TranscriptionModelPicker(
+                engine: $retranscribeEngine,
+                modelIdentifier: $retranscribeModelIdentifier,
+                language: retranscribeLanguage
+            )
+
+            Button(action: transcribeAudio) {
+                Label(transcription.transcriptionText.isEmpty ? String(localized: "Transcribe Now") : String(localized: "Retranscribe"),
+                      systemImage: "arrow.counterclockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+            .disabled(isTranscribing)
+        } header: {
+            Text(transcription.transcriptionText.isEmpty ? String(localized: "Transcribe") : String(localized: "Retranscribe"))
+        }
+    }
+
+    // MARK: - Shared values
+
+    /// Stored languages are BCP 47 codes; the masthead and the inspector read
+    /// better with the name the reader's own locale uses for them.
+    private var languageText: String {
+        guard transcription.language != "multilingual" else {
+            return String(localized: "Multilingual")
+        }
+        return Locale.current.localizedString(forIdentifier: transcription.language)
+            ?? transcription.language
+    }
+
+    /// `nil` until something has actually transcribed this recording.
+    private var engineText: String? {
+        switch transcription.engineUsed {
+        case "whisper": return "WhisperKit"
+        case "apple": return "Apple Speech"
+        default: return nil
+        }
+    }
+
+    private var wordCount: Int {
+        transcription.transcriptionText.split(whereSeparator: \.isWhitespace).count
+    }
+
+    private var fixNamesTitle: String {
+        vocabularyFixCount.map {
+            $0 == 0 ? String(localized: "No Changes") : String(localized: "\($0) Fixed")
+        } ?? String(localized: "Fix Names")
+    }
+
     private var metadataRow: some View {
         HStack(spacing: 14) {
             metadataRowWithoutDate
@@ -341,14 +686,17 @@ struct TranscriptionDetailView: View {
     }
 
     @available(iOS 26, macOS 26, *)
+    private func startNotesGeneration() {
+        isGeneratingNotes = true
+        generatedNotes = nil
+        progressMessage = "Generating notes..."
+        showNotes = true
+        Task { await generateMeetingNotes() }
+    }
+
+    @available(iOS 26, macOS 26, *)
     private var notesButton: some View {
-        Button {
-            isGeneratingNotes = true
-            generatedNotes = nil
-            progressMessage = "Generating notes..."
-            showNotes = true
-            Task { await generateMeetingNotes() }
-        } label: {
+        Button(action: startNotesGeneration) {
             Label(isGeneratingNotes ? "Generating Notes…" : "Generate Meeting Notes", systemImage: "sparkles")
                 .frame(maxWidth: 300)
         }

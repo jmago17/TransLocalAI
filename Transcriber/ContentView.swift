@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var showRecordView = false
     @State private var searchText = ""
     @State private var selection: Set<UUID> = []
+    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
 #if os(iOS)
     @State private var editMode: EditMode = .inactive
 #endif
@@ -39,7 +40,7 @@ struct ContentView: View {
     }
 
     private var splitLayout: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             library
         } detail: {
             ContentUnavailableView(
@@ -49,6 +50,9 @@ struct ContentView: View {
             )
             .liquidCrystalScreen()
         }
+        // The detail can fold the list away when it needs the width, e.g. to
+        // avoid squeezing a transcript between the list and its inspector.
+        .environment(\.sidebarVisibility, $columnVisibility)
     }
 
     // MARK: - Library
@@ -442,6 +446,13 @@ struct TranscriptionRowView: View {
             return "\(seconds)s"
         }
     }
+}
+
+/// Lets the detail column fold the library away and bring it back. Only the
+/// split layout provides it; anywhere else it stays `nil` and the detail simply
+/// leaves the sidebar alone.
+extension EnvironmentValues {
+    @Entry var sidebarVisibility: Binding<NavigationSplitViewVisibility>?
 }
 
 #Preview {
