@@ -127,17 +127,35 @@ enum TranscriptionVocabulary {
               let expression = try? NSRegularExpression(pattern: wordPattern)
         else { return corrected }
 
-        let matches = expression.matches(in: corrected, range: NSRange(corrected.startIndex..., in: corrected))
-        for match in matches.reversed() {
-            guard let range = Range(match.range, in: corrected) else { continue }
-            let recognized = String(corrected[range])
-            let normalizedRecognized = normalize(recognized)
-            guard let replacement = bestReplacement(for: normalizedRecognized, from: singleTerms),
-                  replacement != recognized
-            else { continue }
-            corrected.replaceSubrange(range, with: replacement)
+        let source = corrected as NSString
+        let matches = expression.matches(in: corrected, range: NSRange(location: 0, length: source.length))
+        // Cache within this call only: vocabulary edits and locale changes must
+        // take effect on the next correction. Cache unchanged tokens as well.
+        var replacements: [String: String] = [:]
+        var result = ""
+        result.reserveCapacity(corrected.utf8.count)
+        var cursor = 0
+        for match in matches {
+            // Preserve the original UTF-16 range validation for Unicode tokens.
+            guard Range(match.range, in: corrected) != nil else { continue }
+            let recognized = source.substring(with: match.range)
+            let replacement: String
+            if let cached = replacements[recognized] {
+                replacement = cached
+            } else {
+                replacement = bestReplacement(for: normalize(recognized), from: singleTerms) ?? recognized
+                replacements[recognized] = replacement
+            }
+            // Append from the immutable source, so replacements with different
+            // Unicode lengths cannot shift the ranges of later words.
+            guard replacement != recognized else { continue }
+            result += source.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
+            result += replacement
+            cursor = NSMaxRange(match.range)
         }
-        return corrected
+        guard cursor > 0 else { return corrected }
+        result += source.substring(from: cursor)
+        return result
     }
 
     /// Word tokens may contain internal apostrophes/periods/hyphens, but must

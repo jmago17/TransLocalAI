@@ -11,17 +11,13 @@ final class AudioFileManager: Sendable {
 
     // MARK: - Directory Resolution
 
-    private var localAudioDirectory: URL {
+    var audioDirectory: URL {
         let root = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let directory = root.appendingPathComponent(audioDirectoryName, isDirectory: true)
         if !fileManager.fileExists(atPath: directory.path) {
             try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         }
         return directory
-    }
-
-    var audioDirectory: URL {
-        localAudioDirectory
     }
 
     // MARK: - Save
@@ -54,26 +50,14 @@ final class AudioFileManager: Sendable {
 
     /// Returns the local URL for an audio file when it exists.
     func audioURL(for filename: String) -> URL? {
-        let localURL = localAudioDirectory.appendingPathComponent(filename)
+        let localURL = audioDirectory.appendingPathComponent(filename)
         return fileManager.fileExists(atPath: localURL.path) ? localURL : nil
-    }
-
-    // MARK: - Download Status
-
-    /// Whether the audio file is fully downloaded locally.
-    func isDownloaded(filename: String) -> Bool {
-        audioURL(for: filename) != nil
-    }
-
-    /// Kept for callers that previously needed materialization; local files are already ready.
-    func startDownloading(filename: String) throws {
-        _ = audioURL(for: filename)
     }
 
     // MARK: - Delete
 
     func deleteAudio(filename: String) {
-        let localURL = localAudioDirectory.appendingPathComponent(filename)
+        let localURL = audioDirectory.appendingPathComponent(filename)
         try? fileManager.removeItem(at: localURL)
     }
 }
