@@ -15,6 +15,8 @@
 		A9A1C0033B00000100000003 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
 		A9A1C0073B00000300000007 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = A9A1C0023B00000100000002 /* WhisperKit */; };
 		A9B0E0012F0B000100000001 /* TranscriberWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A9B0E0002F0B000100000001 /* TranscriberWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DA1000000000000000000001 /* Voz in Frameworks */ = {isa = PBXBuildFile; productRef = DA1000000000000000000003 /* Voz */; };
+		DA1000000000000000000002 /* Voz in Frameworks */ = {isa = PBXBuildFile; productRef = DA1000000000000000000004 /* Voz */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -184,6 +186,7 @@
 			files = (
 				70B5913D47178698C7018FF4 /* Cocoa.framework in Frameworks */,
 				7C9E6FF3D63DD890545999A9 /* WhisperKit in Frameworks */,
+                DA1000000000000000000002 /* Voz in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +205,7 @@
 				A92826672EF74C58001B6365 /* FoundationModels.framework in Frameworks */,
 				A92826692EF74C61001B6365 /* Foundation.framework in Frameworks */,
 				A9A1C0033B00000100000003 /* WhisperKit in Frameworks */,
+                DA1000000000000000000001 /* Voz in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +326,7 @@
 			);
 			name = Transcriber;
 			packageProductDependencies = (
+                DA1000000000000000000003 /* Voz */,
 				A9A1C0023B00000100000002 /* WhisperKit */,
 			);
 			productName = Transcriber;
@@ -408,6 +413,7 @@
 			);
 			name = TranscriberMac;
 			packageProductDependencies = (
+                DA1000000000000000000004 /* Voz */,
 				73E25B997776152071AB30BA /* WhisperKit */,
 			);
 			productName = TranscriberMac;
@@ -454,6 +460,7 @@
 			mainGroup = A950DEC92EF038E100CF2226;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+                DA1000000000000000000005 /* desert-ant-core */,
 				A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1174,6 +1181,11 @@
 				kind = branch;
 			};
 		};
+        DA1000000000000000000005 /* desert-ant-core */ = {
+            isa = XCRemoteSwiftPackageReference;
+            repositoryURL = "https://github.com/Desert-Ant-Labs/desert-ant-core";
+            requirement = { kind = exactVersion; version = 4.2.3; };
+        };
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1187,6 +1199,16 @@
 			package = A9A1C0013B00000100000001 /* XCRemoteSwiftPackageReference "WhisperKit" */;
 			productName = WhisperKit;
 		};
+        DA1000000000000000000003 /* Voz */ = {
+            isa = XCSwiftPackageProductDependency;
+            package = DA1000000000000000000005 /* desert-ant-core */;
+            productName = Voz;
+        };
+        DA1000000000000000000004 /* Voz */ = {
+            isa = XCSwiftPackageProductDependency;
+            package = DA1000000000000000000005 /* desert-ant-core */;
+            productName = Voz;
+        };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A950DECA2EF038E100CF2226 /* Project object */;

@@ -49,7 +49,7 @@ struct StopRecordingIntent: AppIntent {
                 language: result.language,
                 duration: result.duration,
                 audioFileURL: fileURL.lastPathComponent,
-                engineUsed: result.engineUsed == .appleSpeech ? "apple" : "whisper"
+                engineUsed: result.engineUsed.persistedValue
             )
 
             modelContext.insert(transcription)

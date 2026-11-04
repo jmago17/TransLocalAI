@@ -24,8 +24,8 @@ struct ImportAudioView: View {
     @State private var useAutoDetect = true
     @State private var isDetectingLanguage = false
     @State private var isTranscribing = false
-    @State private var isPreparingWhisperModel = false
-    @State private var whisperDownloadProgress: Double = 0
+    @State private var isPreparingModel = false
+    @State private var modelDownloadProgress: Double = 0
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var selectedFileURL: URL?
@@ -143,8 +143,11 @@ struct ImportAudioView: View {
                             Text("Spanish (Spain)").tag("es-ES")
                             Text("Basque (Euskara)").tag("eu-ES")
                             Text("Multilingual").tag("multilingual")
+                            ForEach(VozLanguagePolicy.supported.subtracting(["en", "es"]).sorted(), id: \.self) { code in
+                                Text(Locale.current.localizedString(forLanguageCode: code) ?? code).tag(code)
+                            }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
                     } else {
                         Text("Language will be automatically detected")
                             .font(.caption)
@@ -212,7 +215,7 @@ struct ImportAudioView: View {
     private var transcribingView: some View {
         VStack(spacing: 30) {
             TranscribingAnimation(
-                progress: isDetectingLanguage || isPreparingWhisperModel ? nil : overallProgress
+                progress: isDetectingLanguage || isPreparingModel ? nil : overallProgress
             )
 
             if isDetectingLanguage {
@@ -223,11 +226,11 @@ struct ImportAudioView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-            } else if isPreparingWhisperModel {
-                Text("Downloading Whisper model...")
+            } else if isPreparingModel {
+                Text(selectedEngine == .voz && VozLanguagePolicy.supports(selectedLanguage) ? "Preparing Voz model..." : "Preparing Whisper model...")
                     .font(.headline)
 
-                ProgressView(value: whisperDownloadProgress)
+                ProgressView(value: modelDownloadProgress)
                     .frame(maxWidth: 220)
 
                 Text("This is a one-time download and will be reused offline")
@@ -334,6 +337,9 @@ struct ImportAudioView: View {
 
         transcriptionTask = Task {
             do {
+                if selectedEngine == .voz && useAutoDetect && selectedLanguage != "multilingual" {
+                    try VozLanguagePolicy.validate("auto")
+                }
                 var languageToUse = selectedLanguage
                 let isMultilingual = selectedLanguage == "multilingual"
 
@@ -357,15 +363,15 @@ struct ImportAudioView: View {
 
                 try Task.checkCancellation()
 
-                if hybridService.engineKind(for: languageToUse, engine: selectedEngine) == .whisper {
-                    isPreparingWhisperModel = true
-                    whisperDownloadProgress = 0
-                    updateLiveActivity(phase: "Downloading model...", progress: 0)
-                    defer { isPreparingWhisperModel = false }
+                if hybridService.engineKind(for: languageToUse, engine: selectedEngine) != .appleSpeech {
+                    isPreparingModel = true
+                    modelDownloadProgress = 0
+                    updateLiveActivity(phase: "Preparing model...", progress: 0)
+                    defer { isPreparingModel = false }
                     try await hybridService.prepareModelIfNeeded(language: languageToUse, engine: selectedEngine, modelIdentifier: selectedModelIdentifier) { progress in
                         Task { @MainActor in
-                            self.whisperDownloadProgress = progress
-                            self.updateLiveActivity(phase: "Downloading model... \(Int(progress * 100))%", progress: progress * 0.3)
+                            self.modelDownloadProgress = progress
+                            self.updateLiveActivity(phase: "Preparing model... \(Int(progress * 100))%", progress: progress * 0.3)
                         }
                     }
                 }
@@ -406,6 +412,7 @@ struct ImportAudioView: View {
                     }
                 }
                 heartbeat.cancel()
+                try Task.checkCancellation()
                 let transcriptionText = result.text
                 let duration = result.duration
 
@@ -432,7 +439,7 @@ struct ImportAudioView: View {
                     languageWasAutoDetected: useAutoDetect && !isMultilingual,
                     duration: duration,
                     audioFileURL: audioURL.lastPathComponent,
-                    engineUsed: (result.engineUsed == .appleSpeech ? "apple" : "whisper")
+                    engineUsed: (result.engineUsed.persistedValue)
                 )
 
                 modelContext.insert(transcription)

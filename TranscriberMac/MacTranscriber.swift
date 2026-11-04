@@ -2,10 +2,18 @@ import Foundation
 
 @MainActor
 enum MacTranscriber {
-    static func transcribe(audioURL: URL) async throws -> String {
-        let service = HybridTranscriptionService()
-        let language = try await service.detectLanguage(audioURL: audioURL, preferApple: true)
-        try await service.prepareModelIfNeeded(language: language, engine: .auto, progress: nil)
-        return try await service.transcribe(audioURL: audioURL, language: language, engine: .auto).text
+    private static let service = HybridTranscriptionService()
+
+    static func transcribe(audioURL: URL, language: String = "auto", engine: EnginePreference = .auto,
+                           progress: (@Sendable (Double) -> Void)? = nil) async throws -> String {
+        if engine == .voz && language == "auto" { try VozLanguagePolicy.validate(language) }
+        let selectedLanguage: String
+        if language == "auto" {
+            selectedLanguage = try await service.detectLanguage(audioURL: audioURL, preferApple: true)
+        } else {
+            selectedLanguage = language
+        }
+        try await service.prepareModelIfNeeded(language: selectedLanguage, engine: engine, progress: progress)
+        return try await service.transcribe(audioURL: audioURL, language: selectedLanguage, engine: engine, progress: progress).text
     }
 }

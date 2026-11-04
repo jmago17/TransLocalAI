@@ -8,7 +8,7 @@ struct TranscriptionModelPicker: View {
 
     private var isMultilingual: Bool { language == "multilingual" }
     private var whisperMayRun: Bool {
-        isMultilingual || engine == .whisper || engine == .auto
+        isMultilingual || engine == .whisper || engine == .auto || (engine == .voz && VozLanguagePolicy.base(language) == "eu")
     }
 
     var body: some View {
@@ -17,8 +17,13 @@ struct TranscriptionModelPicker: View {
                 Text("Auto").tag(EnginePreference.auto)
                 Text("Apple").tag(EnginePreference.apple)
                 Text("WhisperKit").tag(EnginePreference.whisper)
+                if VozLanguagePolicy.supports(language) {
+                    Text("Voz").tag(EnginePreference.voz)
+                } else if engine == .voz {
+                    Text("Voz · unavailable for this language").tag(EnginePreference.voz)
+                }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
             .disabled(isMultilingual)
 
             if isMultilingual {
@@ -29,6 +34,14 @@ struct TranscriptionModelPicker: View {
                 Text("Auto uses Apple for supported languages and WhisperKit for Euskara or unsupported languages.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if engine == .voz {
+                VozInformationView()
+            }
+            if !VozLanguagePolicy.supports(language) {
+                Text("Voz requires an explicit supported language. Euskara and multilingual requests use WhisperKit, including a previous Voz selection. Other unsupported or automatic language requests cannot use Voz.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
 
             if whisperMayRun {

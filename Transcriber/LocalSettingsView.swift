@@ -21,6 +21,7 @@ struct LocalSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Voz · optional") { VozInformationView() }
                 Section {
                     HStack {
                         Label(cloudSync.state.title, systemImage: cloudSync.state.systemImage)

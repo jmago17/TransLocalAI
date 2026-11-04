@@ -21,6 +21,9 @@ struct RecordingView: View {
     @State private var hasStopped = false
     @State private var stoppedFileURL: URL?
     @State private var isTranscribing = false
+    @State private var isPreparingModel = false
+    @State private var preparationProgress = 0.0
+    @State private var transcriptionTask: Task<Void, Never>?
     @State private var hasPermission: Bool?
     @State private var selectedLanguage = "multilingual"
     @State private var selectedEngine: EnginePreference = .auto
@@ -56,10 +59,12 @@ struct RecordingView: View {
                 if !embedded || (hasStarted && !hasStopped) {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
-                            if hasStarted && !hasStopped {
-                                recorder.cancelRecording()
+                            if isTranscribing {
+                                transcriptionTask?.cancel()
+                            } else {
+                                if hasStarted && !hasStopped { recorder.cancelRecording() }
+                                finish()
                             }
-                            finish()
                         }
                     }
                 }
@@ -90,6 +95,7 @@ struct RecordingView: View {
     /// Vuelve al estado inicial (tab persistente) o cierra la hoja (uso
     /// modal desde `ContentView`) — ver `embedded`.
     private func finish() {
+        transcriptionTask?.cancel()
         if embedded {
             hasStarted = false
             hasStopped = false
@@ -202,8 +208,11 @@ struct RecordingView: View {
                     Text("Euskara").tag("eu-ES")
                     Text("Español").tag("es-ES")
                     Text("English").tag("en-US")
+                    ForEach(VozLanguagePolicy.supported.subtracting(["en", "es"]).sorted(), id: \.self) { code in
+                        Text(Locale.current.localizedString(forLanguageCode: code) ?? code).tag(code)
+                    }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
 
                 Text(languageHint)
                     .font(.caption)
@@ -238,10 +247,12 @@ struct RecordingView: View {
         VStack(spacing: 24) {
             TranscribingAnimation()
 
-            Text("Transcribing...")
+            Text(isPreparingModel ? "Preparing \(hybridService.engineKind(for: selectedLanguage, engine: selectedEngine).displayName) model..." : "Transcribing...")
                 .font(.headline)
 
-            Text("This may take a few moments")
+            if isPreparingModel { ProgressView(value: preparationProgress) }
+            Button("Cancel transcription") { transcriptionTask?.cancel() }
+            Text("This may take a few moments. Voz's initial load can take 10–30 seconds; cancellation may wait for the current SDK operation.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -306,9 +317,16 @@ struct RecordingView: View {
     private func transcribeRecording(url: URL) {
         isTranscribing = true
 
-        Task {
+        transcriptionTask = Task {
+            defer { isPreparingModel = false; isTranscribing = false; transcriptionTask = nil }
             do {
-                try await hybridService.prepareModelIfNeeded(language: selectedLanguage, engine: selectedEngine, modelIdentifier: selectedModelIdentifier) { _ in }
+                isPreparingModel = hybridService.engineKind(for: selectedLanguage, engine: selectedEngine) != .appleSpeech
+                preparationProgress = 0
+                try await hybridService.prepareModelIfNeeded(language: selectedLanguage, engine: selectedEngine, modelIdentifier: selectedModelIdentifier) { value in
+                    Task { @MainActor in preparationProgress = value }
+                }
+                isPreparingModel = false
+                try Task.checkCancellation()
 
                 let result = try await hybridService.transcribe(
                     audioURL: url,
@@ -317,13 +335,14 @@ struct RecordingView: View {
                     modelIdentifier: selectedModelIdentifier
                 )
 
+                try Task.checkCancellation()
                 let transcription = Transcription(
                     title: recorder.recordingTitle,
                     transcriptionText: result.text,
                     language: result.language,
                     duration: result.duration,
                     audioFileURL: url.lastPathComponent,
-                    engineUsed: result.engineUsed == .appleSpeech ? "apple" : "whisper"
+                    engineUsed: result.engineUsed.persistedValue
                 )
 
                 modelContext.insert(transcription)
@@ -331,6 +350,8 @@ struct RecordingView: View {
 
                 isTranscribing = false
                 finish()
+            } catch is CancellationError {
+                // Keep the recording available for another attempt.
             } catch {
                 isTranscribing = false
                 errorMessage = "Transcription failed: \(error.localizedDescription)"

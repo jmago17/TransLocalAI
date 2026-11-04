@@ -111,7 +111,7 @@ struct TranscribeAndSaveIntent: AppIntent {
                 languageWasAutoDetected: autoDetect,
                 duration: duration,
                 audioFileURL: savedAudioURL.lastPathComponent,
-                engineUsed: (result.engineUsed == .appleSpeech ? "apple" : "whisper")
+                engineUsed: (result.engineUsed.persistedValue)
             )
             
             modelContext.insert(transcription)

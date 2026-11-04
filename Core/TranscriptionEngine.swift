@@ -61,7 +61,23 @@ struct TranscriptionResult {
     let duration: TimeInterval
     let engineUsed: EngineKind
 
-    enum EngineKind { case appleSpeech, whisper }
+    enum EngineKind {
+        case appleSpeech, whisper, voz
+        var displayName: String {
+            switch self {
+            case .appleSpeech: return "Apple Speech"
+            case .whisper: return "WhisperKit"
+            case .voz: return "Voz"
+            }
+        }
+        var persistedValue: String {
+            switch self {
+            case .appleSpeech: return "apple"
+            case .whisper: return "whisper"
+            case .voz: return "voz"
+            }
+        }
+    }
 }
 
 // MARK: - Apple Speech Engine (optional, user-selected)
@@ -389,6 +405,7 @@ enum EnginePreference: String, CaseIterable, Identifiable {
     case auto = "Auto"
     case apple = "Apple"
     case whisper = "WhisperKit"
+    case voz = "Voz"
 
     var id: String { rawValue }
 }
@@ -397,10 +414,12 @@ enum EnginePreference: String, CaseIterable, Identifiable {
 final class HybridTranscriptionService: @unchecked Sendable {
     private let appleEngine: TranscriptionEngine
     private let whisperEngine: TranscriptionEngine
+    private let vozEngine: TranscriptionEngine
 
-    init(appleEngine: TranscriptionEngine, whisperEngine: TranscriptionEngine) {
+    init(appleEngine: TranscriptionEngine, whisperEngine: TranscriptionEngine, vozEngine: TranscriptionEngine = VozTranscriptionEngine.shared) {
         self.appleEngine = appleEngine
         self.whisperEngine = whisperEngine
+        self.vozEngine = vozEngine
     }
 
     @MainActor
@@ -429,8 +448,15 @@ final class HybridTranscriptionService: @unchecked Sendable {
     }
 
     func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, modelIdentifier: String? = nil, progress: (@Sendable (Double) -> Void)?) async throws {
+        if engineKind(for: language, engine: engine) == .voz {
+            try VozLanguagePolicy.validate(language)
+            if let preparer = vozEngine as? ModelPreparingTranscriptionEngine {
+                try await preparer.prepareModel(for: language, progress: progress)
+            }
+            return
+        }
         guard engineKind(for: language, engine: engine) == .whisper else { return }
-        let normalized = language == "multilingual" ? "eu-ES" : normalize(language)
+        let normalized = language == "multilingual" || (engine == .voz && VozLanguagePolicy.base(language) == "eu") ? "eu-ES" : normalize(language)
         if let preparer = whisperEngine as? ModelSelectingTranscriptionEngine {
             try await preparer.prepareModel(for: normalized, modelIdentifier: modelIdentifier, progress: progress)
         } else if let preparer = whisperEngine as? ModelPreparingTranscriptionEngine {
@@ -439,8 +465,9 @@ final class HybridTranscriptionService: @unchecked Sendable {
     }
 
     func engineKind(for language: String, engine: EnginePreference = .auto) -> TranscriptionResult.EngineKind {
-        if language == "multilingual" { return .whisper }
+        if language == "multilingual" || (engine == .voz && VozLanguagePolicy.base(language) == "eu") { return .whisper }
         switch engine {
+        case .voz: return .voz
         case .apple: return .appleSpeech
         case .whisper: return .whisper
         case .auto: return normalize(language) == "eu-ES" ? .whisper : .appleSpeech
@@ -457,6 +484,7 @@ final class HybridTranscriptionService: @unchecked Sendable {
         let result = try await transcribeWithSelectedEngine(
             audioURL: audioURL, language: language, engine: engine, modelIdentifier: modelIdentifier, progress: progress
         )
+        try Task.checkCancellation()
         // Feedback loop: terms that actually appeared gain ranking weight for
         // the next transcription's contextual vocabulary / prompt.
         await MainActor.run { TranscriptionTerminology.recordRecognitions(in: result.text) }
@@ -479,8 +507,14 @@ final class HybridTranscriptionService: @unchecked Sendable {
         if language == "multilingual" {
             return try await useWhisper("multilingual")
         }
+        if engine == .voz && VozLanguagePolicy.base(language) == "eu" {
+            return try await useWhisper("eu-ES")
+        }
         let normalized = normalize(language)
         switch engine {
+        case .voz:
+            try VozLanguagePolicy.validate(language)
+            return try await vozEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         case .apple:
             return try await appleEngine.transcribe(audioURL: audioURL, language: normalized, progress: progress)
         case .whisper:

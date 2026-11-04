@@ -25,6 +25,7 @@ struct MacSettingsView: View {
                 Text("One name or company per line. To fix a word the transcriber keeps getting wrong, write the correct spelling, =, then what it hears: Iñaki = Yankee, Ianki. Synced with iCloud and used by Apple Speech and WhisperKit.")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            Section("Voz · optional") { VozInformationView() }
             Section("Models") {
                 LabeledContent("Automatic", value: "Apple Speech")
                 LabeledContent("Euskara / multilingual", value: "Whisper Large v3 (626 MB)")

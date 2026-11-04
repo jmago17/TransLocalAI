@@ -17,6 +17,9 @@ struct TranscriptionDetailView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isEditing = false
     @State private var isTranscribing = false
+    @State private var isPreparingModel = false
+    @State private var preparationProgress = 0.0
+    @State private var transcriptionTask: Task<Void, Never>?
     @State private var transcriptionError: String?
     @State private var retranscribeLanguage = "multilingual"
     @State private var retranscribeEngine: EnginePreference = .auto
@@ -568,8 +571,10 @@ struct TranscriptionDetailView: View {
         Section {
             if isTranscribing {
                 HStack(spacing: 12) {
-                    ProgressView()
-                    Text("Transcribing...").font(.subheadline)
+                    if isPreparingModel { ProgressView(value: preparationProgress).frame(width: 80) }
+                    else { ProgressView() }
+                    Text(isPreparingModel ? "Preparing model..." : "Transcribing...").font(.subheadline)
+                    Button("Cancel") { transcriptionTask?.cancel() }
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -582,8 +587,11 @@ struct TranscriptionDetailView: View {
                 Text("Euskara").tag("eu-ES")
                 Text("Español").tag("es-ES")
                 Text("English").tag("en-US")
+                ForEach(VozLanguagePolicy.supported.subtracting(["en", "es"]).sorted(), id: \.self) { code in
+                    Text(Locale.current.localizedString(forLanguageCode: code) ?? code).tag(code)
+                }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
 
             TranscriptionModelPicker(
                 engine: $retranscribeEngine,
@@ -619,6 +627,7 @@ struct TranscriptionDetailView: View {
     /// `nil` until something has actually transcribed this recording.
     private var engineText: String? {
         switch transcription.engineUsed {
+        case "voz": return "Voz"
         case "whisper": return "WhisperKit"
         case "apple": return "Apple Speech"
         default: return nil
@@ -725,8 +734,10 @@ struct TranscriptionDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             if isTranscribing {
                 HStack(spacing: 12) {
-                    ProgressView()
-                    Text("Transcribing...").font(.subheadline)
+                    if isPreparingModel { ProgressView(value: preparationProgress).frame(width: 80) }
+                    else { ProgressView() }
+                    Text(isPreparingModel ? "Preparing model..." : "Transcribing...").font(.subheadline)
+                    Button("Cancel") { transcriptionTask?.cancel() }
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -749,8 +760,11 @@ struct TranscriptionDetailView: View {
                         Text("Euskara").tag("eu-ES")
                         Text("Español").tag("es-ES")
                         Text("English").tag("en-US")
+                        ForEach(VozLanguagePolicy.supported.subtracting(["en", "es"]).sorted(), id: \.self) { code in
+                            Text(Locale.current.localizedString(forLanguageCode: code) ?? code).tag(code)
+                        }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
 
                     TranscriptionModelPicker(
                         engine: $retranscribeEngine,
@@ -783,24 +797,37 @@ struct TranscriptionDetailView: View {
         guard let audioURL = resolvedAudioURL else { return }
         isTranscribing = true
         transcriptionError = nil
+        let requestLanguage = retranscribeLanguage
+        let requestEngine = retranscribeEngine
+        let requestModel = retranscribeModelIdentifier
 
-        Task { @MainActor in
+        transcriptionTask = Task { @MainActor in
+            defer { isPreparingModel = false; isTranscribing = false; transcriptionTask = nil }
             let hybridService = HybridTranscriptionService()
             do {
-                try await hybridService.prepareModelIfNeeded(language: retranscribeLanguage, engine: retranscribeEngine, modelIdentifier: retranscribeModelIdentifier) { _ in }
+                isPreparingModel = hybridService.engineKind(for: requestLanguage, engine: requestEngine) != .appleSpeech
+                preparationProgress = 0
+                try await hybridService.prepareModelIfNeeded(language: requestLanguage, engine: requestEngine, modelIdentifier: requestModel) { value in
+                    Task { @MainActor in preparationProgress = value }
+                }
+                isPreparingModel = false
+                try Task.checkCancellation()
 
                 let result = try await hybridService.transcribe(
                     audioURL: audioURL,
-                    language: retranscribeLanguage,
-                    engine: retranscribeEngine,
-                    modelIdentifier: retranscribeModelIdentifier
+                    language: requestLanguage,
+                    engine: requestEngine,
+                    modelIdentifier: requestModel
                 )
 
+                try Task.checkCancellation()
                 transcription.transcriptionText = result.text
                 transcription.language = result.language
                 transcription.duration = result.duration
-                transcription.engineUsed = result.engineUsed == .appleSpeech ? "apple" : "whisper"
+                transcription.engineUsed = result.engineUsed.persistedValue
                 isTranscribing = false
+            } catch is CancellationError {
+                // Preserve the previous transcript.
             } catch {
                 isTranscribing = false
                 transcriptionError = "Transcription failed: \(error.localizedDescription)"

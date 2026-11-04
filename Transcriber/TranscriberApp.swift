@@ -18,10 +18,25 @@ struct TranscriberApp: App {
     /// Called when the BG task expires — ImportAudioView sets this to cancel the transcription.
     @MainActor static var onBGTaskExpiration: (() -> Void)?
 
+    // Hosted unit tests must not import/delete pending files or open the real CloudKit store.
+    private static var isRunningUnitTests: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+        #else
+        return false
+        #endif
+    }
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Transcription.self,
         ])
+        if Self.isRunningUnitTests {
+            return try! ModelContainer(for: schema, configurations: [
+                ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+            ])
+        }
         // Transcripts and meeting notes sync through the private CloudKit
         // database. Audio files stay local — only the text travels.
         let modelConfiguration = ModelConfiguration(
@@ -54,19 +69,24 @@ struct TranscriberApp: App {
     }()
 
     init() {
+        guard !Self.isRunningUnitTests else { return }
         Self.registerBackgroundTask()
         TranscriptionVocabulary.startSync()
     }
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            if Self.isRunningUnitTests {
+                Color.clear
+            } else {
+                RootTabView()
                 .onAppear {
                     importPendingTranscriptions()
                 }
                 .onOpenURL { url in
                     handleIncomingURL(url)
                 }
+            }
         }
         .modelContainer(sharedModelContainer)
     }

@@ -423,6 +423,8 @@ struct TranscriptionRowView: View {
 
     private var engineBadge: CrystalBadge? {
         switch transcription.engineUsed.lowercased() {
+        case "voz":
+            return CrystalBadge(text: "Voz", tone: .feature)
         case "apple":
             return CrystalBadge(text: "Apple", tone: .accent)
         case "whisper":

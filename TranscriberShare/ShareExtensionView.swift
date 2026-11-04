@@ -50,7 +50,7 @@ struct ShareExtensionView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            Text("The audio is not sent to another computer or service.")
+            Text("This extension uses Apple Speech or WhisperKit. Voz is available only in the main app; engine selections from the main app do not apply here. The audio is not sent to another computer or service.")
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
         }
