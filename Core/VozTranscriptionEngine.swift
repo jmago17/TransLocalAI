@@ -66,14 +66,15 @@ actor VozTranscriptionEngine: ModelPreparingTranscriptionEngine {
         }
         // SDK inference is not immediately cancellable; never publish a cancelled result.
         try Task.checkCancellation()
-        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
-        let formatted = VozTranscriptFormatter.format(
+        let vocabulary = await MainActor.run { TranscriptionTerminology.activeVocabularyLines }
+        let rendered = VozTranscriptFormatter.render(
             words: result.words.map { .init(text: $0.text, start: $0.start, end: $0.end) },
-            fallback: result.text
+            fallback: result.text,
+            correct: { TranscriptionVocabulary.correcting($0, terms: vocabulary) }
         )
-        let corrected = TranscriptionVocabulary.correcting(formatted, terms: vocabulary)
-        return TranscriptionResult(text: corrected, language: language,
-                                   duration: result.duration, engineUsed: .voz)
+        return TranscriptionResult(text: rendered.text, language: language,
+                                   duration: result.duration, engineUsed: .voz,
+                                   segmentTimings: rendered.timings)
     }
 }
 
@@ -83,24 +84,26 @@ nonisolated enum VozTranscriptFormatter {
         let start: Double
         let end: Double
     }
-    static func format(words: [Word], fallback: String) -> String {
-        var lines: [String] = []
+    /// Groups words into lines: breaks at sentence ends, at pauses of 1.5 s
+    /// or more, and before a line passes `TranscriptSegments.maxSegmentSeconds`
+    /// (Voz has real word times, so no proportional guessing is needed).
+    static func segments(words: [Word]) -> [TranscriptSegments.Segment] {
+        var segments: [TranscriptSegments.Segment] = []
         var text = ""
         var start = 0.0
         var end = 0.0
         func flush() {
             guard !text.isEmpty else { return }
-            let seconds = Int(max(0, start.isFinite ? start : 0))
-            let stamp = seconds >= 3600
-                ? String(format: "%d:%02d:%02d", seconds / 3600, (seconds % 3600) / 60, seconds % 60)
-                : String(format: "%02d:%02d", seconds / 60, seconds % 60)
-            lines.append("[\(stamp)] \(text)")
+            let safeStart = max(0, start.isFinite ? start : 0)
+            segments.append(.init(start: safeStart, end: max(safeStart, end.isFinite ? end : safeStart), text: text))
             text = ""
         }
         for word in words {
             let piece = word.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !piece.isEmpty else { continue }
-            if !text.isEmpty && (word.start - end >= 1.5 || word.start - start >= 20 || text.count >= 240) { flush() }
+            if !text.isEmpty && (word.start - end >= 1.5
+                || word.end - start > TranscriptSegments.maxSegmentSeconds
+                || text.count >= 240) { flush() }
             if text.isEmpty { start = word.start }
             let closes = piece.first.map { ",.;:!?%)]}»”".contains($0) } ?? false
             let opens = text.last.map { "([{«¿¡“".contains($0) } ?? false
@@ -110,10 +113,23 @@ nonisolated enum VozTranscriptFormatter {
             if piece.last.map({ ".!?".contains($0) }) == true { flush() }
         }
         flush()
-        if lines.isEmpty {
-            let trimmed = fallback.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? "" : "[00:00] \(trimmed)"
+        return segments
+    }
+
+    static func format(words: [Word], fallback: String) -> String {
+        render(words: words, fallback: fallback).text
+    }
+
+    static func render(
+        words: [Word],
+        fallback: String,
+        correct: (String) -> String = { $0 }
+    ) -> (text: String, timings: [TranscriptSegments.Timing]) {
+        let rendered = TranscriptSegments.render(segments(words: words), correct: correct)
+        if rendered.text.isEmpty {
+            let trimmed = correct(fallback.trimmingCharacters(in: .whitespacesAndNewlines))
+            return (trimmed.isEmpty ? "" : "[00:00] \(trimmed)", [])
         }
-        return lines.joined(separator: "\n")
+        return rendered
     }
 }

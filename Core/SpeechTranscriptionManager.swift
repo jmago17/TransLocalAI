@@ -128,7 +128,7 @@ class SpeechTranscriptionManager {
             self.transcriptionProgress = 1.0
         }
 
-        return TranscriptionVocabulary.correcting(result)
+        return TranscriptionVocabulary.correcting(result, terms: TranscriptionTerminology.activeVocabularyLines)
     }
 
     /// The audio time range covered by a transcriber result. Prefers the

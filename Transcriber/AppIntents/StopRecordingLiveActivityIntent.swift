@@ -17,8 +17,7 @@ struct StopRecordingLiveActivityIntent: AppIntent {
             return .result()
         }
 
-        let audioFile = try? AVAudioFile(forReading: fileURL)
-        let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
+        let duration = RecordingRecovery.audioDuration(url: fileURL)
 
         let schema = Schema([Transcription.self])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -26,14 +25,17 @@ struct StopRecordingLiveActivityIntent: AppIntent {
             let transcription = Transcription(
                 title: title,
                 transcriptionText: "",
-                language: "en-US",
+                language: "multilingual",
                 duration: duration,
                 audioFileURL: fileURL.lastPathComponent,
                 engineUsed: ""
             )
             container.mainContext.insert(transcription)
-            try? container.mainContext.save()
+            if (try? container.mainContext.save()) != nil {
+                PendingRecordings.remove(fileName: fileURL.lastPathComponent)
+            }
         }
+        // If saving failed the pending mark stays and the app recovers it.
 
         return .result()
     }

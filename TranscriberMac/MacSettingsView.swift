@@ -5,7 +5,7 @@ import FoundationModels
 
 struct MacSettingsView: View {
     @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
-    private var privateCloudComputeEnabled = true
+    private var privateCloudComputeEnabled = false
     @State private var vocabulary = TranscriptionVocabulary.terms.joined(separator: "\n")
 
     var body: some View {

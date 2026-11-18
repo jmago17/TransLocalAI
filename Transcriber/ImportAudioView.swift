@@ -441,6 +441,7 @@ struct ImportAudioView: View {
                     audioFileURL: audioURL.lastPathComponent,
                     engineUsed: (result.engineUsed.persistedValue)
                 )
+                transcription.segmentTimings = TranscriptSegments.encode(result.segmentTimings)
 
                 modelContext.insert(transcription)
                 try modelContext.save()

@@ -2,6 +2,9 @@ import Foundation
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
+#if os(macOS)
+import Security
+#endif
 
 enum MeetingNotesError: LocalizedError {
     case unavailable(String)
@@ -40,24 +43,39 @@ enum MeetingNotesService {
 
     nonisolated static var prefersPrivateCloudCompute: Bool {
         let defaults = UserDefaults.standard
-        guard defaults.object(forKey: privateCloudComputePreferenceKey) != nil else { return true }
+        // Off unless the user opts in: PCC sends the transcript off the device.
+        guard defaults.object(forKey: privateCloudComputePreferenceKey) != nil else { return false }
         return defaults.bool(forKey: privateCloudComputePreferenceKey)
     }
 
+    nonisolated static let privateCloudComputeEntitlement = "com.apple.developer.private-cloud-compute"
+
+    /// Info.plist opt-in for targets whose entitlements file declares PCC.
+    /// iOS has no public API to read the running process's entitlements.
+    nonisolated static let privateCloudComputeInfoKey = "TLPrivateCloudComputeEntitled"
+
     /// PCC's `respond` traps with a fatal error — it does not throw — when the
-    /// process lacks com.apple.developer.private-cloud-compute (and `isAvailable`
-    /// still returns true, so it can't be used as the guard). Check the embedded
-    /// provisioning profile before ever touching the PCC session.
+    /// process lacks the entitlement (and `isAvailable` still returns true, so
+    /// it can't be used as the guard). Never assume it: a missing profile
+    /// (simulator, TestFlight, App Store) proves nothing.
     nonisolated static let hasPrivateCloudComputeEntitlement: Bool = {
-        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
-              let data = try? Data(contentsOf: url),
-              let profile = String(data: data, encoding: .isoLatin1)
-        else {
-            // No embedded profile (simulator / App Store): signing already
-            // validated the entitlements, so the API is safe to attempt.
-            return true
+        #if os(macOS)
+        // The signed binary is the source of truth; unsigned builds get false.
+        guard let task = SecTaskCreateFromSelf(nil) else { return false }
+        let value = SecTaskCopyValueForEntitlement(task, privateCloudComputeEntitlement as CFString, nil)
+        return (value as? Bool) == true
+        #else
+        guard Bundle.main.object(forInfoDictionaryKey: privateCloudComputeInfoKey) as? Bool == true else {
+            return false
         }
-        return profile.contains("com.apple.developer.private-cloud-compute")
+        // Development builds carry a profile: it must grant the entitlement too.
+        if let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+           let data = try? Data(contentsOf: url),
+           let profile = String(data: data, encoding: .isoLatin1) {
+            return profile.contains(privateCloudComputeEntitlement)
+        }
+        return true
+        #endif
     }()
 
     nonisolated static var willUsePrivateCloudCompute: Bool {

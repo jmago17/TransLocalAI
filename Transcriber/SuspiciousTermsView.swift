@@ -147,7 +147,7 @@ struct SuspiciousTermsView: View {
     private func refresh() {
         suspects = TranscriptionVocabulary.suspiciousTerms(
             in: transcription.transcriptionText,
-            terms: TranscriptionVocabulary.terms
+            terms: TranscriptionTerminology.activeVocabularyLines
         )
     }
 
@@ -166,10 +166,12 @@ struct SuspiciousTermsView: View {
         editingTerm = nil
         guard !canonical.isEmpty else { return }
 
-        TranscriptionTerminology.recordCorrection(canonical: canonical, variant: term.word)
-        transcription.transcriptionText = TranscriptionVocabulary.correcting(
-            transcription.transcriptionText,
-            terms: ["\(canonical): \(term.word)"]
+        guard canonical != term.word else { return }
+        if TranscriptionVocabulary.canRememberAlias(canonical: canonical, variant: term.word) {
+            TranscriptionTerminology.recordCorrection(canonical: canonical, variant: term.word)
+        }
+        transcription.transcriptionText = TranscriptionVocabulary.replacingLiteral(
+            term.word, with: canonical, in: transcription.transcriptionText
         )
         try? modelContext.save()
         refresh()

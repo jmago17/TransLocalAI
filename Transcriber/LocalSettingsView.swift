@@ -5,7 +5,7 @@ import FoundationModels
 
 struct LocalSettingsView: View {
     @AppStorage(MeetingNotesService.privateCloudComputePreferenceKey)
-    private var privateCloudComputeEnabled = true
+    private var privateCloudComputeEnabled = false
     @State private var whisperProfile = WhisperDecodingSupport.Profile.current
     @State private var showBulkEditor = false
     @State private var termCount = TranscriptionVocabulary.terms.count

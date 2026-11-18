@@ -154,6 +154,20 @@ enum TranscriptionTerminology {
         return result
     }
 
+    /// Vocabulary lines whose term the user has not disabled (or deleted, for
+    /// a shipped default). Automatic correction, suspicious-word detection and
+    /// AI review must use these, not `TranscriptionVocabulary.terms`.
+    static var activeVocabularyLines: [String] {
+        let disabled = Set(loadStats().filter { $0.value.state == .disabled }.keys)
+        let lines = TranscriptionVocabulary.terms
+        guard !disabled.isEmpty else { return lines }
+        return lines.filter { !disabled.contains(normalize(parseLine($0).canonical)) }
+    }
+
+    static var activeCanonicalTerms: [String] {
+        activeVocabularyLines.map { parseLine($0).canonical }
+    }
+
     /// The ranked subset supplied to engines — highest score first, disabled
     /// terms excluded.
     static func rankedTerms(limit: Int) -> [String] {

@@ -28,57 +28,45 @@ struct StopRecordingIntent: AppIntent {
             throw RecordingIntentError.recordingFailed("Failed to save recording file.")
         }
 
-        if transcribeAfterStopping {
-            let hybridService = HybridTranscriptionService()
+        // Save the audio-only entry before anything that can take minutes or
+        // fail (model download, transcription): the recording must reach the
+        // library even if the intent is cut off.
+        let schema = Schema([Transcription.self])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        let modelContext = modelContainer.mainContext
 
-            try await hybridService.prepareModelIfNeeded(language: "multilingual") { _ in }
+        let transcription = Transcription(
+            title: title,
+            transcriptionText: "",
+            language: "multilingual",
+            duration: RecordingRecovery.audioDuration(url: fileURL),
+            audioFileURL: fileURL.lastPathComponent,
+            engineUsed: ""
+        )
+        modelContext.insert(transcription)
+        try modelContext.save()
+        PendingRecordings.remove(fileName: fileURL.lastPathComponent)
 
-            let result = try await hybridService.transcribe(
-                audioURL: fileURL,
-                language: "multilingual"
-            )
-
-            let schema = Schema([Transcription.self])
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            let modelContext = modelContainer.mainContext
-
-            let transcription = Transcription(
-                title: title,
-                transcriptionText: result.text,
-                language: result.language,
-                duration: result.duration,
-                audioFileURL: fileURL.lastPathComponent,
-                engineUsed: result.engineUsed.persistedValue
-            )
-
-            modelContext.insert(transcription)
-            try modelContext.save()
-
-            return .result(dialog: "Recording '\(title)' stopped and transcribed successfully.")
-        } else {
-            let schema = Schema([Transcription.self])
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            let modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            let modelContext = modelContainer.mainContext
-
-            let audioFile = try? AVAudioFile(forReading: fileURL)
-            let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
-
-            let transcription = Transcription(
-                title: title,
-                transcriptionText: "",
-                language: "en-US",
-                duration: duration,
-                audioFileURL: fileURL.lastPathComponent,
-                engineUsed: ""
-            )
-
-            modelContext.insert(transcription)
-            try modelContext.save()
-
+        guard transcribeAfterStopping else {
             return .result(dialog: "Recording '\(title)' saved.")
         }
+
+        let hybridService = HybridTranscriptionService()
+        do {
+            try await hybridService.prepareModelIfNeeded(language: "multilingual") { _ in }
+            let result = try await hybridService.transcribe(audioURL: fileURL, language: "multilingual")
+            transcription.transcriptionText = result.text
+            transcription.language = result.language
+            transcription.duration = result.duration
+            transcription.engineUsed = result.engineUsed.persistedValue
+            transcription.segmentTimings = TranscriptSegments.encode(result.segmentTimings)
+            try modelContext.save()
+        } catch {
+            return .result(dialog: "Recording '\(title)' saved, but transcription failed: \(error.localizedDescription). You can transcribe it from the library.")
+        }
+
+        return .result(dialog: "Recording '\(title)' stopped and transcribed successfully.")
     }
 }
 

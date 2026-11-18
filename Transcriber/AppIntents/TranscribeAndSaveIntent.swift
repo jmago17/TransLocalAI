@@ -113,6 +113,7 @@ struct TranscribeAndSaveIntent: AppIntent {
                 audioFileURL: savedAudioURL.lastPathComponent,
                 engineUsed: (result.engineUsed.persistedValue)
             )
+            transcription.segmentTimings = TranscriptSegments.encode(result.segmentTimings)
             
             modelContext.insert(transcription)
             try modelContext.save()

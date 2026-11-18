@@ -299,6 +299,7 @@ struct TranscriptionDetailView: View {
                             Label("Share Transcript", systemImage: "square.and.arrow.up")
                         }
                     }
+                    subtitleShareLinks
                 } label: {
                     Label("More Actions", systemImage: "ellipsis.circle")
                 }
@@ -481,6 +482,19 @@ struct TranscriptionDetailView: View {
         .help("Fix Names")
     }
 
+    /// SRT / WebVTT export; hidden when the transcript has no timestamps.
+    @ViewBuilder
+    private var subtitleShareLinks: some View {
+        if SubtitleExport.isAvailable(for: transcription) {
+            ForEach(SubtitleExport.Format.allCases, id: \.self) { format in
+                let export = SubtitleExport(transcription: transcription, format: format)
+                ShareLink(item: export, preview: SharePreview(export.fileName, image: Image(systemName: "captions.bubble"))) {
+                    Label(format.label, systemImage: "captions.bubble")
+                }
+            }
+        }
+    }
+
     private var shareMenu: some View {
         Menu {
             if let audioURL = resolvedAudioURL {
@@ -493,6 +507,7 @@ struct TranscriptionDetailView: View {
                     Label("Share Transcript", systemImage: "square.and.arrow.up")
                 }
             }
+            subtitleShareLinks
         } label: {
             Label("Share", systemImage: "square.and.arrow.up")
         }
@@ -825,6 +840,7 @@ struct TranscriptionDetailView: View {
                 transcription.language = result.language
                 transcription.duration = result.duration
                 transcription.engineUsed = result.engineUsed.persistedValue
+                transcription.segmentTimings = TranscriptSegments.encode(result.segmentTimings)
                 isTranscribing = false
             } catch is CancellationError {
                 // Preserve the previous transcript.
@@ -892,17 +908,18 @@ struct TranscriptionDetailView: View {
         isGeneratingNotes = false
     }
 
-    /// Applies a selection-driven fix everywhere in the transcript and stores
-    /// it as a vocabulary alias for future transcriptions.
+    /// Replaces every whole-word occurrence of the selection, literally, and
+    /// remembers single-word fixes as vocabulary aliases for future transcripts.
     private func applyManualReplacement() {
         let variant = replaceCandidate
         let canonical = replacementText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !canonical.isEmpty, !variant.isEmpty, canonical != variant else { return }
 
-        TranscriptionTerminology.recordCorrection(canonical: canonical, variant: variant)
-        transcription.transcriptionText = TranscriptionVocabulary.correcting(
-            transcription.transcriptionText,
-            terms: ["\(canonical): \(variant)"]
+        if TranscriptionVocabulary.canRememberAlias(canonical: canonical, variant: variant) {
+            TranscriptionTerminology.recordCorrection(canonical: canonical, variant: variant)
+        }
+        transcription.transcriptionText = TranscriptionVocabulary.replacingLiteral(
+            variant, with: canonical, in: transcription.transcriptionText
         )
         try? modelContext.save()
     }
@@ -911,7 +928,9 @@ struct TranscriptionDetailView: View {
     /// existing transcript, so terms added after transcribing can fix it too.
     private func applyVocabulary() {
         let original = transcription.transcriptionText
-        let corrected = TranscriptionVocabulary.correcting(original)
+        let corrected = TranscriptionVocabulary.correcting(
+            original, terms: TranscriptionTerminology.activeVocabularyLines
+        )
         if corrected != original {
             transcription.transcriptionText = corrected
             try? modelContext.save()

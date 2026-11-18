@@ -25,6 +25,11 @@ final class Transcription {
     var audioFileURL: String? // Store filename of audio file (resolved via AudioFileManager)
     var engineUsed: String = ""
     var meetingNotes: String = ""
+    /// JSON `[TranscriptSegments.Timing]`: precise start/end of each
+    /// `[mm:ss]` line as the engine produced it, for SRT/VTT export. Optional
+    /// (CloudKit-compatible); `nil` for engines without segment times and for
+    /// transcripts saved before it existed — export then estimates ends.
+    var segmentTimings: Data?
 
     init(
         timestamp: Date = Date(),

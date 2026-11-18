@@ -73,13 +73,6 @@ enum TranscriptionVocabulary {
         terms.map { Self.parse(line: $0).canonical }
     }
 
-    /// Applies the canonical spelling of short vocabulary terms after recognition.
-    /// Fuzzy replacement is deliberately limited to close, long-word matches;
-    /// aliases declared as "Canonical = heard1, heard2" are replaced verbatim.
-    static func correcting(_ text: String) -> String {
-        correcting(text, terms: terms)
-    }
-
     /// Splits a vocabulary line into its canonical spelling and the misheard
     /// variants the user wants replaced (comma-separated). Accepts either
     /// ":" (what the UI now shows) or "=" (legacy lines already synced to
@@ -96,6 +89,11 @@ enum TranscriptionVocabulary {
         return (canonical, variants)
     }
 
+    /// Applies the canonical spelling of vocabulary terms after recognition.
+    /// Fuzzy replacement is deliberately limited to close, long-word matches;
+    /// aliases declared as "Canonical = heard1, heard2" are replaced verbatim.
+    /// Callers pass `TranscriptionTerminology.activeVocabularyLines`, so terms
+    /// the user disabled never rewrite a transcript.
     nonisolated static func correcting(_ text: String, terms vocabulary: [String]) -> String {
         guard !text.isEmpty else { return text }
         var corrected = text
@@ -139,12 +137,19 @@ enum TranscriptionVocabulary {
             // Preserve the original UTF-16 range validation for Unicode tokens.
             guard Range(match.range, in: corrected) != nil else { continue }
             let recognized = source.substring(with: match.range)
+            // A capital letter mid-sentence is evidence of a name; a lowercase
+            // or sentence-initial token may just be an ordinary word.
+            let nameLike = recognized.first?.isUppercase == true
+                && !startsSentence(at: match.range.location, in: source)
+            let cacheKey = (nameLike ? "N" : "w") + recognized
             let replacement: String
-            if let cached = replacements[recognized] {
+            if let cached = replacements[cacheKey] {
                 replacement = cached
             } else {
-                replacement = bestReplacement(for: normalize(recognized), from: singleTerms) ?? recognized
-                replacements[recognized] = replacement
+                replacement = bestReplacement(
+                    for: normalize(recognized), from: singleTerms, nameLike: nameLike
+                ) ?? recognized
+                replacements[cacheKey] = replacement
             }
             // Append from the immutable source, so replacements with different
             // Unicode lengths cannot shift the ranges of later words.
@@ -162,6 +167,45 @@ enum TranscriptionVocabulary {
     /// not swallow trailing punctuation ("danobat." → token "danobat"), or a
     /// replacement would delete the sentence's period.
     nonisolated private static let wordPattern = #"[\p{L}\p{N}](?:[\p{L}\p{N}]|['’.-](?=[\p{L}\p{N}]))*"#
+
+    /// UTF-16 units that end a sentence or line, including a `[mm:ss]` marker's
+    /// closing bracket. Same set the suspicious-word scan uses.
+    nonisolated private static let sentenceBoundaries: Set<unichar> = Set(".!?\n\r]…»\"”".utf16)
+
+    nonisolated private static func startsSentence(at location: Int, in source: NSString) -> Bool {
+        var index = location - 1
+        while index >= 0 {
+            let unit = source.character(at: index)
+            if unit == 0x20 || unit == 0x09 { index -= 1; continue }
+            return sentenceBoundaries.contains(unit)
+        }
+        return true
+    }
+
+    /// Replaces each whole-word, case-insensitive occurrence of `selection`
+    /// with `replacement`, literally. For user edits driven by a selection: the
+    /// selection is never parsed as a vocabulary line, so commas or colons in
+    /// it cannot split it into unrelated aliases, and no fuzzy pass runs.
+    nonisolated static func replacingLiteral(_ selection: String, with replacement: String, in text: String) -> String {
+        guard !selection.isEmpty else { return text }
+        let pattern = "(?<![\\p{L}\\p{N}])\(NSRegularExpression.escapedPattern(for: selection))(?![\\p{L}\\p{N}])"
+        guard let expression = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { return text }
+        return expression.stringByReplacingMatches(
+            in: text,
+            range: NSRange(location: 0, length: (text as NSString).length),
+            withTemplate: NSRegularExpression.escapedTemplate(for: replacement)
+        )
+    }
+
+    /// Whether a manual fix may be remembered as a vocabulary alias: a stored
+    /// line is "Canonical: variant1, variant2", so neither side may contain the
+    /// separators (or a line break), or it would be re-parsed as other aliases.
+    nonisolated static func canRememberAlias(canonical: String, variant: String) -> Bool {
+        let forbidden = CharacterSet(charactersIn: ",:=").union(.newlines)
+        return [canonical, variant].allSatisfy { value in
+            !value.isEmpty && value.rangeOfCharacter(from: forbidden) == nil
+        }
+    }
 
     struct SuspiciousTerm: Identifiable, Equatable {
         var id: String { word }
@@ -397,18 +441,33 @@ enum TranscriptionVocabulary {
             .lowercased()
     }
 
+    /// Capitalized terms ("Borja", "Peña", "Mas") collide with ordinary words
+    /// ("borra", "pena", "más") once case and diacritics are folded. When the
+    /// recognized token does not look like a name, short terms are left alone
+    /// and fuzzy matching needs a long term.
+    nonisolated static let minimumLengthForWordExactMatch = 5
+    nonisolated static let minimumLengthForWordFuzzyMatch = 7
+
     nonisolated private static func bestReplacement(
         for recognized: String,
-        from candidates: [(term: String, normalized: String)]
+        from candidates: [(term: String, normalized: String)],
+        nameLike: Bool
     ) -> String? {
-        if let exact = candidates.first(where: { $0.normalized == recognized }) {
+        func guarded(_ term: String) -> Bool {
+            !nameLike && term.first?.isUppercase == true
+        }
+        if let exact = candidates.first(where: {
+            $0.normalized == recognized
+                && (!guarded($0.term) || $0.normalized.count >= minimumLengthForWordExactMatch)
+        }) {
             return exact.term
         }
 
         var best: (term: String, distance: Int)?
         for candidate in candidates {
             let limit = candidate.normalized.count >= 8 ? 2 : 1
-            guard candidate.normalized.count >= 5,
+            let minimumLength = guarded(candidate.term) ? minimumLengthForWordFuzzyMatch : 5
+            guard candidate.normalized.count >= minimumLength,
                   abs(candidate.normalized.count - recognized.count) <= limit,
                   commonPrefixLength(candidate.normalized, recognized) >= 2
                     || commonSuffixLength(candidate.normalized, recognized) >= max(3, candidate.normalized.count / 2)

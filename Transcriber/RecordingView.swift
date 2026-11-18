@@ -20,6 +20,10 @@ struct RecordingView: View {
     @State private var errorMessage = ""
     @State private var hasStopped = false
     @State private var stoppedFileURL: URL?
+    /// Library entry created the moment recording stops, so the audio is in
+    /// the library even if the user never taps Save/Transcribe or the app
+    /// dies on this screen. "Transcribe Now" fills it in.
+    @State private var savedTranscription: Transcription?
     @State private var isTranscribing = false
     @State private var isPreparingModel = false
     @State private var preparationProgress = 0.0
@@ -58,7 +62,9 @@ struct RecordingView: View {
                 // ni una hoja que cerrar.
                 if !embedded || (hasStarted && !hasStopped) {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
+                        // After Stop the audio is already in the library, so
+                        // closing keeps it — say so instead of "Cancel".
+                        Button(hasStopped && !isTranscribing ? "Done" : "Cancel") {
                             if isTranscribing {
                                 transcriptionTask?.cancel()
                             } else {
@@ -100,6 +106,7 @@ struct RecordingView: View {
             hasStarted = false
             hasStopped = false
             stoppedFileURL = nil
+            savedTranscription = nil
             recordingName = ""
             isTranscribing = false
         } else {
@@ -149,14 +156,33 @@ struct RecordingView: View {
             // Recording indicator
             HStack(spacing: 8) {
                 Circle()
-                    .fill(.red)
+                    .fill(recorder.isPaused ? .orange : .red)
                     .frame(width: 12, height: 12)
-                    .opacity(recorder.isRecording ? 1 : 0.3)
+                    .opacity(recorder.isRecording && !recorder.isPaused ? 1 : 0.3)
                     .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: recorder.isRecording)
 
-                Text("Recording")
+                Text(recorder.isPaused ? "Paused" : "Recording")
                     .font(.headline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(recorder.isPaused ? .orange : .red)
+            }
+
+            if recorder.isPaused {
+                VStack(spacing: 8) {
+                    Text("Another app or a call interrupted the microphone. What was recorded so far is safe.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        if !recorder.resumeRecording() {
+                            errorMessage = String(localized: "The microphone is still in use by another app. Try again when it is free.")
+                            showError = true
+                        }
+                    } label: {
+                        Label("Resume Recording", systemImage: "record.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                }
             }
 
             // Elapsed time
@@ -275,27 +301,32 @@ struct RecordingView: View {
     }
 
     private func stopRecording() {
-        if let url = recorder.stopRecording() {
-            stoppedFileURL = url
-            hasStopped = true
-        }
-    }
-
-    private func saveAudioOnly(url: URL) {
-        let duration = audioDuration(url: url)
-        let title = recorder.recordingTitle
-
+        guard let url = recorder.stopRecording() else { return }
         let transcription = Transcription(
-            title: title,
+            title: recorder.recordingTitle,
             transcriptionText: "",
             language: selectedLanguage,
-            duration: duration,
+            duration: audioDuration(url: url),
             audioFileURL: url.lastPathComponent,
             engineUsed: ""
         )
-
         modelContext.insert(transcription)
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+            PendingRecordings.remove(fileName: url.lastPathComponent)
+        } catch {
+            // The pending mark stays, so recovery retries on next launch.
+        }
+        savedTranscription = transcription
+        stoppedFileURL = url
+        hasStopped = true
+    }
+
+    private func saveAudioOnly(url: URL) {
+        if let savedTranscription {
+            savedTranscription.language = selectedLanguage
+            try? modelContext.save()
+        }
         finish()
     }
 
@@ -336,16 +367,25 @@ struct RecordingView: View {
                 )
 
                 try Task.checkCancellation()
-                let transcription = Transcription(
-                    title: recorder.recordingTitle,
-                    transcriptionText: result.text,
-                    language: result.language,
-                    duration: result.duration,
-                    audioFileURL: url.lastPathComponent,
-                    engineUsed: result.engineUsed.persistedValue
-                )
-
-                modelContext.insert(transcription)
+                let transcription: Transcription
+                if let savedTranscription {
+                    transcription = savedTranscription
+                } else {
+                    transcription = Transcription(
+                        title: recorder.recordingTitle,
+                        transcriptionText: "",
+                        language: result.language,
+                        duration: result.duration,
+                        audioFileURL: url.lastPathComponent,
+                        engineUsed: ""
+                    )
+                    modelContext.insert(transcription)
+                }
+                transcription.transcriptionText = result.text
+                transcription.language = result.language
+                transcription.duration = result.duration
+                transcription.engineUsed = result.engineUsed.persistedValue
+                transcription.segmentTimings = TranscriptSegments.encode(result.segmentTimings)
                 try modelContext.save()
 
                 isTranscribing = false
@@ -361,9 +401,7 @@ struct RecordingView: View {
     }
 
     private func audioDuration(url: URL) -> TimeInterval {
-        guard let file = try? AVAudioFile(forReading: url) else { return 0 }
-        let sampleRate = file.fileFormat.sampleRate
-        return sampleRate > 0 ? Double(file.length) / sampleRate : 0
+        RecordingRecovery.audioDuration(url: url)
     }
 }
 

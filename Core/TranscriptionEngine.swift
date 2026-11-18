@@ -60,6 +60,8 @@ struct TranscriptionResult {
     let language: String
     let duration: TimeInterval
     let engineUsed: EngineKind
+    /// Start/end of each transcript line, when the engine provides them.
+    var segmentTimings: [TranscriptSegments.Timing] = []
 
     enum EngineKind {
         case appleSpeech, whisper, voz
@@ -209,10 +211,11 @@ final class WhisperKitEngine: ModelSelectingTranscriptionEngine {
         else { identifier = await modelManager.modelIdentifier(for: normalized) }
         let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: identifier, progress: nil)
         let session = try await sessionCache.session(modelId: modelId, language: sessionLanguage)
-        let text = try await session.transcribe(audioURL: audioURL, progress: progress)
+        let output = try await session.transcribe(audioURL: audioURL, progress: progress)
         let audioFile = try? AVAudioFile(forReading: audioURL)
         let duration = audioFile.map { Double($0.length) / $0.fileFormat.sampleRate } ?? 0
-        return TranscriptionResult(text: text, language: language, duration: duration, engineUsed: .whisper)
+        return TranscriptionResult(text: output.text, language: language, duration: duration,
+                                   engineUsed: .whisper, segmentTimings: output.timings)
 #else
         throw TranscriptionEngineError.unimplemented
 #endif
@@ -237,7 +240,16 @@ private actor WhisperKitSessionCache {
         if let existing = cache[key] {
             return existing
         }
-        let session = try await WhisperKitSession(modelId: modelId, language: language)
+        let session: WhisperKitSession
+        do {
+            session = try await WhisperKitSession(modelId: modelId, language: language)
+        } catch {
+            // A folder that passed the file check but will not load is
+            // corrupt: drop it from the verified list so the next attempt
+            // downloads again instead of failing forever.
+            WhisperLocalModels.forget(path: modelId)
+            throw error
+        }
         cache[key] = session
         return session
     }
@@ -275,7 +287,7 @@ private final class WhisperKitSession {
         return code
     }
 
-    func transcribe(audioURL: URL, progress progressHandler: (@Sendable (Double) -> Void)? = nil) async throws -> String {
+    func transcribe(audioURL: URL, progress progressHandler: (@Sendable (Double) -> Void)? = nil) async throws -> (text: String, timings: [TranscriptSegments.Timing]) {
         let profile = WhisperDecodingSupport.Profile.current
         var options = WhisperDecodingSupport.makeOptions(language: language, profile: profile)
         // Ranked, token-capped vocabulary prompt — biases terminology without
@@ -359,15 +371,12 @@ private final class WhisperKitSession {
         WhisperDecodingSupport.logMetrics(metrics)
         WhisperDecodingSupport.lastRunMetrics = metrics
 
-        let vocabulary = await MainActor.run { TranscriptionVocabulary.terms }
-        var lines: [String] = []
-        for segment in segments {
-            let text = TranscriptionVocabulary.correcting(segment.text, terms: vocabulary)
-            guard !text.isEmpty else { continue }
-            let stamp = Self.formatTimestamp(segment.start)
-            lines.append("[\(stamp)] \(text)")
-        }
-        return lines.joined(separator: "\n")
+        let vocabulary = await MainActor.run { TranscriptionTerminology.activeVocabularyLines }
+        // T4: drop punctuation-only lines, split >12 s, merge very short ones.
+        return TranscriptSegments.render(
+            segments.map { TranscriptSegments.Segment(start: $0.start, end: $0.end, text: $0.text) },
+            correct: { TranscriptionVocabulary.correcting($0, terms: vocabulary) }
+        )
     }
 
     private static func stripSpecialTokens(_ text: String) -> String {
@@ -379,17 +388,6 @@ private final class WhisperKitSession {
             return ""
         }
         return stripped
-    }
-
-    private static func formatTimestamp(_ seconds: Double) -> String {
-        let total = Int(seconds)
-        let h = total / 3600
-        let m = (total % 3600) / 60
-        let s = total % 60
-        if h > 0 {
-            return String(format: "%d:%02d:%02d", h, m, s)
-        }
-        return String(format: "%02d:%02d", m, s)
     }
 
     func detectLanguage(audioURL: URL) async throws -> String? {

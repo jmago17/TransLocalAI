@@ -18,7 +18,7 @@ struct AICorrectionService {
     ) async throws -> [TranscriptionCorrection] {
         let chunks = splitIntoChunks(text: text, maxSize: 6000)
         var allCorrections: [TranscriptionCorrection] = []
-        let vocabulary = await MainActor.run { TranscriptionVocabulary.canonicalTerms }
+        let vocabulary = await MainActor.run { TranscriptionTerminology.activeCanonicalTerms }
 
         for (index, chunk) in chunks.enumerated() {
             try Task.checkCancellation()

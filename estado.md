@@ -1,0 +1,26 @@
+# TransLocal — estado 2026-10-16
+
+Auditoría entregada con 13 hallazgos según traspaso. Informe: https://chatgpt.com/space/page_e6d0cb26c02481918d8adbce06c67859
+
+Correcciones no autorizadas; no implementadas en esta sesión. Pendiente decisión del usuario sobre los hallazgos. No se ejecutan builds ni se publica código. No hay tarea TransLocal existente en las cuatro listas del warroom; no se crea una nueva sin acción concreta autorizada.
+
+## 2026-11-03 — Voz opcional (implementación autorizada)
+
+- Integrado producto Voz de `desert-ant-core` **4.2.3 exacto** (modelo v0.5.0, ~337 MB) en app iOS y macOS; carga diferida y reutilizable, progreso, cancelación cooperativa, timestamps, vocabulario e historial. Auto y modelos/pins previos de Whisper sin cambios. Selectores de menú, idiomas explícitos admitidos, estado local y aviso de licencia/atribución en ajustes; detalles en `PRIVACY_VOZ.md`.
+- Euskara y multilingüe siguen con Whisper incluso con Voz seleccionado; automático, catalán, gallego y otros idiomas no admitidos se rechazan antes de descargar Voz. Share no incluye Voz y lo explica. Tests deterministas añadidos; arranque de unit tests aislado del almacén CloudKit/importación de pendientes.
+- Verificado: Swift sin archivos vacíos, parse de Swift modificado, `plutil`, `git diff --check`, pins, ejecución local de política de idiomas y formateador extraídos del código real. **No se ha validado compilación/inferencia/UI**: builds iOS/macOS y unit tests salen 74 antes de compilar por caché SwiftPM fuera del sandbox; CoreSimulator también inaccesible. Este Mac tiene Xcode 27.2/Swift 6.4.2 en `/Applications/Xcode.app`, no Xcode-beta.
+- Pendiente: repetir builds/tests fuera del sandbox y probar descarga, cancelación y calidad real con audio consentido. Sin descargar modelos, ejecutar inferencia, subir datos, firmar, instalar en dispositivo físico, commit ni push. Informe y comandos: `/tmp/translocal-voz-20261103/result.md`.
+
+- 2026-11-04: con `import ModelStore` en `VozTranscriptionEngine.swift`, build iOS (Transcriber, con Share/Widgets) y macOS (TranscriberMac) compilan limpios; 6 suites seguras en iPhone 17 Pro: 39 casos pasados, 0 fallos (el 1er intento falló al lanzar el simulador, el 2º pasó).
+- Sin validar: revisión crítica a fondo del diff, inferencia, descarga de 337 MB, licencia en red, UI y dispositivo físico. Informe: `/tmp/translocal-voz-20261103/claude-result.md`.
+
+## 2026-11-17 — Auditoría completa (solo lectura)
+
+- Informe: `docs/auditoria-2026-11-17.md`. 2 críticas en Core (crash PCC en iOS; Whisper sin red no funciona), 1 crítica iOS (interrupciones de audio cortan la grabación), corrupción de texto por vocabulario reproducida ejecutando el código real (con el término por defecto "Borja": borra/forja → Borja).
+- Verificado: build iOS y macOS (este sin firma) con Xcode-beta 27.3; 53/53 tests pasan, pero el run acaba `TEST FAILED` porque `MeetingNotesProbeTests` tumba el runner (fatal PCC).
+- Entorno: el simulador "iPhone 17 Pro" ya no existe (usar `iPhone 17` o `iPhone 18 Pro`); no hay perfil de firma para `com.josumartinez.transcriber.mac`. La auditoría 2026-10-16 está solo en ChatGPT: no se pudo deduplicar.
+- Pendiente: decidir qué hallazgos se arreglan. No se ha tocado código.
+- 2026-11-17 (2ª parte): arreglados C1 (PCC: no asumir entitlement; off por defecto), C3 (vocabulario no toca palabras comunes), C4 (reemplazo manual literal) y C9 (términos desactivados excluidos). 69/70 tests OK + 6 nuevos; el que falla (`onDeviceRespondProbe`) es del simulador, preexistente. Mac y Share compilan. Detalle en `docs/auditoria-2026-11-17.md` § Estado de los arreglos. Sin commit.
+- 2026-11-17 (3ª parte): arreglados I1 (interrupciones: pausa/reanuda, fallos del sistema cierran y conservan el fichero), I2 (grabación en PCM 16 kHz `.caf`, que sobrevive a un `kill -9`, frente al `.m4a`, que queda ilegible; entrada creada al parar; recuperación de grabaciones marcadas al arrancar) e I4 (StopRecordingIntent guarda antes de transcribir). Todos los tests iOS pasan + 4 nuevos. Sin probar en un iPhone real. Añadida al informe la comparación con el informe Quick Subs (T1–T6) y el orden propuesto. Sin commit.
+- 2026-11-17 (4ª parte): arreglados C2 (Whisper resuelve el modelo local antes de ir a Hugging Face; sin red usa la copia en disco; precarga el tokenizer) y P1 (WhisperKit fijado a la revisión `ba09449`, la misma que ya se usaba; subir a v0.16+/v1.x requiere medir). 86 tests iOS OK (+4) y Mac compila. Sin probar en modo avión en un dispositivo real. Quick Subs usa el mismo modelo large-v3 626MB. Sin commit.
+- 2026-11-17 (5ª parte): hechos T4 (limpieza de segmentos: quita líneas de solo puntuación, parte >12 s, fusiona líneas cortas; Whisper, Share y Voz) y T5 (campo `segmentTimings` en `Transcription` + exportación SRT/WebVTT desde el texto editado, con el fin acotado a la duración). 99 tests iOS OK (+13, con validador SRT/VTT); Mac compila. **Pendiente obligatorio antes de TestFlight: desplegar el esquema de CloudKit a Production** (campo nuevo). Sin `wordTimestamps` (los cortes reparten el tiempo por número de caracteres). Sin commit.

@@ -106,4 +106,20 @@ extension MeetingNotesStrategyTests {
         for part in chunks { #expect(level[0].contains(part)) }
         #expect(level[0].hasSuffix("Parte 80"))
     }
+
+    // Regression for audit C1 (2026-11-17): a missing provisioning profile
+    // used to count as "entitled", and PCC's respond traps without it. The
+    // iOS target declares neither the entitlement nor the Info.plist opt-in.
+    @Test func iOSNeverAssumesThePrivateCloudComputeEntitlement() {
+        #if os(iOS)
+        #expect(Bundle.main.object(forInfoDictionaryKey: MeetingNotesService.privateCloudComputeInfoKey) == nil)
+        #expect(!MeetingNotesService.hasPrivateCloudComputeEntitlement)
+        #expect(!MeetingNotesService.willUsePrivateCloudCompute)
+        #endif
+    }
+
+    @Test func privateCloudComputeIsOffUntilTheUserOptsIn() {
+        guard UserDefaults.standard.object(forKey: MeetingNotesService.privateCloudComputePreferenceKey) == nil else { return }
+        #expect(!MeetingNotesService.prefersPrivateCloudCompute)
+    }
 }

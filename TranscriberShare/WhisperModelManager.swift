@@ -42,14 +42,20 @@ actor WhisperModelManager {
         }
         progress?(0)
         #if canImport(WhisperKit)
-        let modelFolderURL = try await WhisperKit.download(
-            variant: descriptor.modelId,
-            progressCallback: { downloadProgress in
-                Task { @MainActor in
-                    progress?(downloadProgress.fractionCompleted)
+        // Local first: only goes to Hugging Face when the model is not
+        // already verified on disk (see `WhisperLocalModels`).
+        let modelFolderURL = try await WhisperLocalModels.resolve(modelId: descriptor.modelId) {
+            let folder = try await WhisperKit.download(
+                variant: descriptor.modelId,
+                progressCallback: { downloadProgress in
+                    Task { @MainActor in
+                        progress?(downloadProgress.fractionCompleted)
+                    }
                 }
-            }
-        )
+            )
+            await WhisperLocalModels.prefetchTokenizer(forModelId: descriptor.modelId)
+            return folder
+        }
         progress?(1)
         return modelFolderURL.path
         #else

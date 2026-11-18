@@ -275,3 +275,101 @@ nonisolated enum WhisperDecodingSupport {
         """)
     }
 }
+
+// MARK: - Offline model resolution
+
+/// Finds the local WhisperKit model folder without touching the network when
+/// possible. `WhisperKit.download` always lists the Hugging Face repo first
+/// and rethrows on failure without looking at the local copy, so used alone
+/// it made Whisper unusable offline and contacted huggingface.co on every
+/// transcription. Shared by the app and the Share extension (each resolves
+/// inside its own sandbox).
+nonisolated enum WhisperLocalModels {
+    /// Every component WhisperKit loads, and the files that make each one
+    /// usable. Hub downloads land file-by-file, so an interrupted download
+    /// can leave some of these missing.
+    static let requiredComponents = ["MelSpectrogram.mlmodelc", "AudioEncoder.mlmodelc", "TextDecoder.mlmodelc"]
+    static let requiredFiles = ["coremldata.bin", "model.mil", "weights/weight.bin"]
+
+    private static let verifiedKey = "whisper.verifiedModelFolders"
+
+    /// Where `WhisperKit.download` puts models when no `downloadBase` is given
+    /// (swift-transformers' HubApi default: Documents/huggingface).
+    static var defaultBase: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("huggingface/models/argmaxinc/whisperkit-coreml", isDirectory: true)
+    }
+
+    static func isComplete(_ folder: URL) -> Bool {
+        let fileManager = FileManager.default
+        return requiredComponents.allSatisfy { component in
+            requiredFiles.allSatisfy { file in
+                fileManager.fileExists(atPath: folder.appendingPathComponent(component).appendingPathComponent(file).path)
+            }
+        }
+    }
+
+    /// Order:
+    /// 1. A folder this process already downloaded and verified → no network.
+    /// 2. Otherwise download (and verify).
+    /// 3. If the download fails (offline, Hub down) but a complete copy sits
+    ///    at the default location — models downloaded before this check
+    ///    existed — use it.
+    static func resolve(
+        modelId: String,
+        base: URL = defaultBase,
+        defaults: UserDefaults = .standard,
+        download: @Sendable () async throws -> URL
+    ) async throws -> URL {
+        if let path = verifiedFolders(defaults)[modelId] {
+            let folder = URL(fileURLWithPath: path, isDirectory: true)
+            if isComplete(folder) { return folder }
+            forget(path: path, defaults: defaults)
+        }
+        do {
+            let folder = try await download()
+            if isComplete(folder) {
+                var all = verifiedFolders(defaults)
+                all[modelId] = folder.path
+                defaults.set(all, forKey: verifiedKey)
+            }
+            return folder
+        } catch {
+            let local = base.appendingPathComponent(modelId, isDirectory: true)
+            if isComplete(local) {
+                logger.info("Model download failed (\(error.localizedDescription, privacy: .public)); using local copy")
+                return local
+            }
+            throw error
+        }
+    }
+
+    /// Called when WhisperKit cannot load a verified folder (corrupted on
+    /// disk): the next attempt downloads again instead of failing forever.
+    static func forget(path: String, defaults: UserDefaults = .standard) {
+        var all = verifiedFolders(defaults)
+        let filtered = all.filter { $0.value != path }
+        guard filtered.count != all.count else { return }
+        all = filtered
+        defaults.set(all, forKey: verifiedKey)
+    }
+
+    private static func verifiedFolders(_ defaults: UserDefaults) -> [String: String] {
+        defaults.dictionary(forKey: verifiedKey) as? [String: String] ?? [:]
+    }
+
+    private static var logger: Logger { WhisperDecodingSupport.logger }
+
+#if canImport(WhisperKit)
+    /// Downloads the tokenizer next to the model so the first transcription
+    /// after an offline download does not need the network either. WhisperKit
+    /// looks for it in the same default Hub location.
+    static func prefetchTokenizer(forModelId modelId: String) async {
+        let variant: ModelVariant? = modelId.contains("large-v3") ? .largev3
+            : modelId.contains("small") ? .small
+            : nil
+        guard let variant else { return }
+        _ = try? await ModelUtilities.loadTokenizer(for: variant)
+    }
+#endif
+}

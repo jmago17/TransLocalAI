@@ -13,13 +13,13 @@ struct RecordingLiveActivity: Widget {
                         Circle()
                             .fill(.red)
                             .frame(width: 10, height: 10)
-                        Text("Recording")
+                        Text(isPaused(context) ? "Paused" : "Recording")
                             .font(.headline)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(isPaused(context) ? .orange : .red)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.attributes.startDate, style: .timer)
+                    elapsed(context)
                         .font(.headline.monospacedDigit())
                         .frame(minWidth: 50)
                 }
@@ -36,7 +36,7 @@ struct RecordingLiveActivity: Widget {
                 Image(systemName: "mic.fill")
                     .foregroundStyle(.red)
             } compactTrailing: {
-                Text(context.attributes.startDate, style: .timer)
+                elapsed(context)
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.red)
                     .frame(minWidth: 40)
@@ -44,6 +44,20 @@ struct RecordingLiveActivity: Widget {
                 Image(systemName: "mic.fill")
                     .foregroundStyle(.red)
             }
+        }
+    }
+
+    private func isPaused(_ context: ActivityViewContext<RecordingActivityAttributes>) -> Bool {
+        context.state.pausedElapsed != nil
+    }
+
+    /// Recorded time: a live timer while capturing, frozen while paused.
+    @ViewBuilder
+    private func elapsed(_ context: ActivityViewContext<RecordingActivityAttributes>) -> some View {
+        if let paused = context.state.pausedElapsed {
+            Text(Duration.seconds(paused), format: .time(pattern: paused >= 3600 ? .hourMinuteSecond : .minuteSecond))
+        } else {
+            Text(context.state.timerStart, style: .timer)
         }
     }
 
@@ -55,11 +69,11 @@ struct RecordingLiveActivity: Widget {
                     Circle()
                         .fill(.red)
                         .frame(width: 10, height: 10)
-                    Text("Recording")
+                    Text(isPaused(context) ? "Paused" : "Recording")
                         .font(.headline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(isPaused(context) ? .orange : .red)
                     Spacer()
-                    Text(context.attributes.startDate, style: .timer)
+                    elapsed(context)
                         .font(.headline.monospacedDigit())
                 }
                 Text(context.attributes.recordingTitle)
