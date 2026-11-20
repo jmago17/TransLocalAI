@@ -42,9 +42,16 @@ nonisolated enum TranscriptSegments {
         return mergeShort(kept.flatMap(splitLong))
     }
 
-    /// False for "", ".", "…", "-" — lines with no letter or digit.
+    /// False for "", ".", "…", "-" — lines with no letter or digit — and for
+    /// lines that are only sound tags Whisper writes over noise or silence:
+    /// "*scoffs*", "[Music]", "(laughs)", "♪". On the 28-minute test meeting
+    /// such tags were the only lines still longer than 12 s (up to 24 s).
+    /// A tag inside real speech is left alone.
     static func hasSpokenContent(_ text: String) -> Bool {
-        text.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
+        let withoutTags = text.replacingOccurrences(
+            of: #"\*[^*]*\*|\[[^\]]*\]|\([^)]*\)|♪"#, with: " ", options: .regularExpression
+        )
+        return withoutTags.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
     }
 
     private static func collapseWhitespace(_ text: String) -> String {

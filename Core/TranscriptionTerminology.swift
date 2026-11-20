@@ -192,9 +192,9 @@ enum TranscriptionTerminology {
         rankedTerms(limit: 60)
     }
 
-    /// Short list for the Whisper initial prompt. Kept small on purpose:
-    /// prompt tokens eat decoding context and a long list increases
-    /// hallucination and prompt-echo risk.
+    /// Short ranked list used as Voz's contextual terms. Whisper no longer
+    /// gets a prompt (see `WhisperDecodingSupport.runPipeline`); the
+    /// evaluation bench still uses this list to reproduce the old one.
     static func whisperPromptTerms() -> [String] {
         rankedTerms(limit: 16)
     }

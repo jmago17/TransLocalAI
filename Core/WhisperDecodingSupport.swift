@@ -263,6 +263,133 @@ nonisolated enum WhisperDecodingSupport {
         }
     }
 
+    // MARK: - Shared pipeline
+
+    /// How many silent stretches to re-decode and how long they must be.
+    struct GapPolicy: Sendable {
+        var minimumGap: Double
+        var maxRetries: Int
+
+        /// The app's policy for a profile.
+        static func app(_ profile: Profile) -> GapPolicy {
+            profile == .maximumCoverage ? GapPolicy(minimumGap: 6, maxRetries: 6) : GapPolicy(minimumGap: 10, maxRetries: 4)
+        }
+
+        /// Tighter cap for the Share extension's memory and time budget.
+        static let shareExtension = GapPolicy(minimumGap: 10, maxRetries: 2)
+    }
+
+    struct PipelineOutput {
+        /// Whisper's segments after gap recovery, before T4 and corrections.
+        var rawSegments: [Segment]
+        /// Segments from the main pass alone, before any gap retry.
+        var primarySegments: [Segment]
+        /// Gaps found after the main pass, and the ones that were retried.
+        var gaps: [ClosedRange<Double>]
+        var retriedGaps: [ClosedRange<Double>]
+        var text: String
+        var timings: [TranscriptSegments.Timing]
+        var metrics: Metrics
+    }
+
+    /// Everything after WhisperKit is loaded: decode, retry long gaps, tidy
+    /// the segments (T4) and apply the vocabulary corrections. The app, the
+    /// Share extension and the evaluation bench all run this same code.
+    /// Stores nothing: callers decide whether to persist the metrics.
+    static func runPipeline(
+        whisper: WhisperKit,
+        audioURL: URL,
+        language: String?,
+        profile: Profile,
+        gapPolicy: GapPolicy,
+        vocabulary: [String],
+        callback: TranscriptionCallback = nil,
+        adjustOptions: ((inout DecodingOptions) -> Void)? = nil   // evaluation bench only
+    ) async throws -> PipelineOutput {
+        var options = makeOptions(language: language, profile: profile)
+        // No vocabulary prompt. Measured on a 28-minute meeting with
+        // large-v3-v20240930 (tools/WhisperBench, 2026-11-18): the main pass
+        // covered 94% of the audio without a prompt, 80% with just "Hello.",
+        // 14% with a natural sentence and 9% with the 16-term glossary, and
+        // ran twice as slow. The vocabulary is applied afterwards instead,
+        // as corrections.
+        adjustOptions?(&options)
+
+        let startedAt = Date()
+        let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options, callback: callback)
+        var segments = segments(from: results.flatMap(\.segments), offset: 0)
+        let primarySegments = segments
+
+        let audioFile = try? AVAudioFile(forReading: audioURL)
+        let totalDuration = audioFile.map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 0
+
+        // Gap recovery: re-decode long uncovered stretches with relaxed
+        // thresholds instead of silently accepting the hole.
+        var retriedGaps = 0
+        var recoveredSegments = 0
+        var gaps: [ClosedRange<Double>] = []
+        var retried: [ClosedRange<Double>] = []
+        if profile != .fast, totalDuration > 0 {
+            gaps = detectGaps(segments: segments, totalDuration: totalDuration, minimumGap: gapPolicy.minimumGap)
+            // Longest first: in time order, short gaps at the start used up
+            // every retry and a 145 s gap at the end was dropped.
+            let worst = gaps.sorted { ($0.upperBound - $0.lowerBound) > ($1.upperBound - $1.lowerBound) }
+            for gap in worst.prefix(gapPolicy.maxRetries) {
+                guard let slice = try? await extractSlice(from: audioURL, range: gap) else { continue }
+                retriedGaps += 1
+                retried.append(gap)
+                if let sliceResults = try? await whisper.transcribe(
+                    audioPath: slice.url.path, decodeOptions: relaxedOptions(language: language)
+                ) {
+                    let before = segments.count
+                    segments = merge(primary: segments, recovered: self.segments(from: sliceResults.flatMap(\.segments), offset: slice.offset))
+                    recoveredSegments += max(0, segments.count - before)
+                }
+                try? FileManager.default.removeItem(at: slice.url)
+            }
+        }
+        segments.sort { $0.start < $1.start }
+
+        let metrics = computeMetrics(
+            segments: segments,
+            totalDuration: totalDuration,
+            processingTime: Date().timeIntervalSince(startedAt),
+            profile: profile,
+            retriedGaps: retriedGaps,
+            recoveredSegments: recoveredSegments
+        )
+        // T4: drop punctuation-only lines, split >12 s, merge very short ones.
+        let rendered = TranscriptSegments.render(
+            segments.map { TranscriptSegments.Segment(start: $0.start, end: $0.end, text: $0.text) },
+            correct: { TranscriptionVocabulary.correcting($0, terms: vocabulary) }
+        )
+        return PipelineOutput(
+            rawSegments: segments, primarySegments: primarySegments, gaps: gaps, retriedGaps: retried,
+            text: rendered.text, timings: rendered.timings, metrics: metrics
+        )
+    }
+
+    /// Callers pass `results.flatMap(\.segments)`: the app has its own
+    /// `TranscriptionResult`, and `WhisperKit.` names the class, not the module.
+    static func segments(from whisperSegments: [TranscriptionSegment], offset: Double) -> [Segment] {
+        whisperSegments.compactMap { segment in
+            let text = stripSpecialTokens(segment.text)
+            guard !text.isEmpty else { return nil }
+            return Segment(start: Double(segment.start) + offset, end: Double(segment.end) + offset, text: text)
+        }
+    }
+
+    static func stripSpecialTokens(_ text: String) -> String {
+        // Remove WhisperKit special tokens like <|startoftranscript|>, <|endoftext|>, <|en|>, etc.
+        let stripped = text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Remove language-change markers generated by Whisper in multilingual mode (e.g. "Speaks in spanish")
+        if stripped.range(of: #"^Speaks in \w+$"#, options: [.regularExpression, .caseInsensitive]) != nil {
+            return ""
+        }
+        return stripped
+    }
+
     static func logMetrics(_ metrics: Metrics) {
         logger.info("""
         Whisper run [\(metrics.profile, privacy: .public)]: \

@@ -23,6 +23,17 @@ struct TranscriptSegmentsTests {
         #expect(tidy.map(\.text) == ["We start with the stations today.", "Then the network."])
     }
 
+    @Test func dropsLinesThatAreOnlySoundTags() {
+        let tidy = TranscriptSegments.tidy([
+            Segment(start: 57.4, end: 81.5, text: "*scoffs*"),         // 24 s, from the test meeting
+            Segment(start: 81.5, end: 103.3, text: " *Sigh* "),
+            Segment(start: 104, end: 105, text: "[Music]"),
+            Segment(start: 106, end: 107, text: "(laughs) ♪"),
+            Segment(start: 110, end: 114, text: "Hello, hello. (laughs) Welcome back.")
+        ])
+        #expect(tidy.map(\.text) == ["Hello, hello. (laughs) Welcome back."])
+    }
+
     @Test func mergesShortLinesAcrossShortPausesOnly() {
         let tidy = TranscriptSegments.tidy([
             Segment(start: 10, end: 11, text: "Okay."),

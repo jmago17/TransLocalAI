@@ -383,93 +383,20 @@ private final class WhisperKitSession {
 
     func transcribe(audioURL: URL) async throws -> (text: String, timings: [TranscriptSegments.Timing]) {
         let profile = WhisperDecodingSupport.Profile.current
-        var options = WhisperDecodingSupport.makeOptions(language: language, profile: profile)
-        // Ranked, token-capped vocabulary prompt — biases terminology without
-        // crowding the decoder's conditioning window like the old full list.
-        let promptTerms = await MainActor.run { TranscriptionTerminology.whisperPromptTerms() }
-        if let tokenizer = whisper.tokenizer,
-           let tokens = WhisperDecodingSupport.promptTokens(tokenizer: tokenizer, terms: promptTerms) {
-            options.promptTokens = tokens
-        }
-
-        let startedAt = Date()
-        let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options)
-        var segments: [WhisperDecodingSupport.Segment] = []
-        for result in results {
-            for segment in result.segments {
-                let text = Self.stripSpecialTokens(segment.text)
-                guard !text.isEmpty else { continue }
-                segments.append(WhisperDecodingSupport.Segment(
-                    start: Double(segment.start), end: Double(segment.end), text: text
-                ))
-            }
-        }
-
-        let audioFile = try? AVAudioFile(forReading: audioURL)
-        let totalDuration = audioFile.map { Double($0.length) / max($0.fileFormat.sampleRate, 1) } ?? 0
-
-        // Gap recovery — capped tighter than in the app: the Share extension
-        // runs under a strict memory/time budget.
-        var retriedGaps = 0
-        var recoveredSegments = 0
-        if profile != .fast, totalDuration > 0 {
-            let gaps = WhisperDecodingSupport.detectGaps(
-                segments: segments, totalDuration: totalDuration, minimumGap: 10
-            )
-            for gap in gaps.prefix(2) {
-                guard let slice = try? await WhisperDecodingSupport.extractSlice(from: audioURL, range: gap)
-                else { continue }
-                retriedGaps += 1
-                let relaxed = WhisperDecodingSupport.relaxedOptions(language: language)
-                if let sliceResults = try? await whisper.transcribe(audioPath: slice.url.path, decodeOptions: relaxed) {
-                    var recovered: [WhisperDecodingSupport.Segment] = []
-                    for result in sliceResults {
-                        for segment in result.segments {
-                            let text = Self.stripSpecialTokens(segment.text)
-                            guard !text.isEmpty else { continue }
-                            recovered.append(WhisperDecodingSupport.Segment(
-                                start: Double(segment.start) + slice.offset,
-                                end: Double(segment.end) + slice.offset,
-                                text: text
-                            ))
-                        }
-                    }
-                    let before = segments.count
-                    segments = WhisperDecodingSupport.merge(primary: segments, recovered: recovered)
-                    recoveredSegments += max(0, segments.count - before)
-                }
-                try? FileManager.default.removeItem(at: slice.url)
-            }
-        }
-        segments.sort { $0.start < $1.start }
-
-        let metrics = WhisperDecodingSupport.computeMetrics(
-            segments: segments,
-            totalDuration: totalDuration,
-            processingTime: Date().timeIntervalSince(startedAt),
-            profile: profile,
-            retriedGaps: retriedGaps,
-            recoveredSegments: recoveredSegments
-        )
-        WhisperDecodingSupport.logMetrics(metrics)
-        WhisperDecodingSupport.lastRunMetrics = metrics
-
         let vocabulary = await MainActor.run { TranscriptionTerminology.activeVocabularyLines }
-        // T4: drop punctuation-only lines, split >12 s, merge very short ones.
-        return TranscriptSegments.render(
-            segments.map { TranscriptSegments.Segment(start: $0.start, end: $0.end, text: $0.text) },
-            correct: { TranscriptionVocabulary.correcting($0, terms: vocabulary) }
+        // Gap recovery is capped tighter than in the app: the Share extension
+        // runs under a strict memory/time budget.
+        let output = try await WhisperDecodingSupport.runPipeline(
+            whisper: whisper,
+            audioURL: audioURL,
+            language: language,
+            profile: profile,
+            gapPolicy: .shareExtension,
+            vocabulary: vocabulary
         )
-    }
-
-    private static func stripSpecialTokens(_ text: String) -> String {
-        let stripped = text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // Remove language-change markers generated by Whisper in multilingual mode (e.g. "Speaks in spanish")
-        if stripped.range(of: #"^Speaks in \w+$"#, options: [.regularExpression, .caseInsensitive]) != nil {
-            return ""
-        }
-        return stripped
+        WhisperDecodingSupport.logMetrics(output.metrics)
+        WhisperDecodingSupport.lastRunMetrics = output.metrics
+        return (output.text, output.timings)
     }
 
     func detectLanguage(audioURL: URL) async throws -> String? {
