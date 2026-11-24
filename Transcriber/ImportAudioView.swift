@@ -350,7 +350,8 @@ struct ImportAudioView: View {
                     do {
                         languageToUse = try await hybridService.detectLanguage(audioURL: audioURL, modelIdentifier: selectedModelIdentifier)
                     } catch {
-                        languageToUse = selectedLanguage
+                        // Not the picker's value: with auto-detect on it is just its default.
+                        languageToUse = "multilingual"
                     }
                     print("Detected language: \(languageToUse)")
                     isDetectingLanguage = false

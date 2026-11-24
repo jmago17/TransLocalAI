@@ -1,5 +1,5 @@
 {
-  "originHash" : "0ec652b87c542c66487fdfdb4c90f223b42dffe22215badb48608be6e8083ae1",
+  "originHash" : "6cfb7a9d23b33df47e755f37bd266423ade2485cef6daeb25d7a4bf96756e728",
   "pins" : [
     {
       "identity" : "desert-ant-core",
@@ -53,6 +53,15 @@
       "state" : {
         "revision" : "573e5c9036c2f136b3a8a071da8e8907322403d0",
         "version" : "1.1.6"
+      }
+    },
+    {
+      "identity" : "thinkingorbs",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/haplollc/ThinkingOrbs",
+      "state" : {
+        "revision" : "e2c07bbdec4db797fb302300ef0159b1806a909f",
+        "version" : "1.1.0"
       }
     },
     {

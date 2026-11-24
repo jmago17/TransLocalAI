@@ -80,7 +80,7 @@ enum WhisperModelCatalog {
     static let defaultModels: [WhisperModelManager.ModelDescriptor] = [
         WhisperModelManager.ModelDescriptor(
             identifier: "whisper-large-v3-20240930-compressed",
-            displayName: "Whisper Large v3 (compressed)",
+            displayName: "Whisper Large v3 Turbo (compressed)",
             modelId: "openai_whisper-large-v3-v20240930_626MB",
             supportedLanguages: [],
             estimatedSizeMB: 626

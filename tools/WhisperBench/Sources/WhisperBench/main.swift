@@ -10,7 +10,7 @@ import WhisperKit
 
 /// Referenced by WhisperDecodingSupport.extractSlice; the app defines it in
 /// TranscriptionEngine.swift, which the bench does not compile.
-enum TranscriptionEngineError: Error { case invalidAudio }
+enum TranscriptionEngineError: Error { case invalidAudio, unsupportedLanguage(String) }
 
 struct BenchError: Error, CustomStringConvertible { let description: String }
 
@@ -41,7 +41,9 @@ let modelBase = expand(env["BENCH_MODEL_BASE"] ?? "~/Library/Caches/TransLocalAI
 let label = env["BENCH_LABEL"] ?? ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
 let outDir = expand(env["BENCH_OUT"] ?? "~/Developer/TransLocalAI-eval").appendingPathComponent(label, isDirectory: true)
 // The app's default for recordings is "multilingual": no fixed language.
-let language = env["BENCH_LANGUAGE"].flatMap { $0.isEmpty || $0 == "multilingual" ? nil : $0 }
+// BENCH_LANGUAGE=detect runs the app's language survey first, as "auto-detect" does.
+let detectFirst = env["BENCH_LANGUAGE"] == "detect"
+var language = env["BENCH_LANGUAGE"].flatMap { $0.isEmpty || $0 == "multilingual" || $0 == "detect" ? nil : $0 }
 let profile = env["BENCH_PROFILE"].flatMap(WhisperDecodingSupport.Profile.init(rawValue:)) ?? .balanced
 
 // Vocabulary: a file in the app's line format ("Canonical: alias, alias"), or
@@ -60,6 +62,20 @@ guard FileManager.default.fileExists(atPath: audioURL.path) else {
 }
 try FileManager.default.createDirectory(at: outDir, withIntermediateDirectories: true)
 try FileManager.default.createDirectory(at: modelBase, withIntermediateDirectories: true)
+
+// BENCH_ENGINE=apple: the engine "Auto" picks for every language but Basque
+// and multilingual. Runs the app's SpeechTranscriptionManager as is (its
+// output skips T4) and writes only the transcript; BENCH_LANGUAGE is a
+// locale such as es-ES.
+if env["BENCH_ENGINE"] == "apple" {
+    let locale = env["BENCH_LANGUAGE"] ?? "es-ES"
+    print("Transcribing \(audioURL.lastPathComponent) [Apple Speech, \(locale)]…")
+    let started = Date()
+    let text = try await SpeechTranscriptionManager().transcribe(audioURL: audioURL, language: locale)
+    try text.write(to: outDir.appendingPathComponent("transcript.txt"), atomically: true, encoding: .utf8)
+    print(String(format: "Done in %.0f s: %@", Date().timeIntervalSince(started), outDir.appendingPathComponent("transcript.txt").path))
+    exit(0)
+}
 
 // MARK: - Model
 
@@ -86,6 +102,13 @@ let whisper = try await WhisperKit(WhisperKitConfig(
     download: false
 ))
 let loadSeconds = Date().timeIntervalSince(loadStart)
+
+if detectFirst {
+    let votes = await WhisperDecodingSupport.surveyLanguages(whisper: whisper, audioURL: audioURL)
+    let verdict = WhisperDecodingSupport.languageVerdict(votes: votes)
+    print("Language survey: \(votes.sorted { $0.value > $1.value }.map { "\($0.key)=\($0.value)" }.joined(separator: " ")) → \(verdict ?? "none")")
+    language = verdict.flatMap { $0 == "multilingual" ? nil : $0 }
+}
 
 // MARK: - Run
 

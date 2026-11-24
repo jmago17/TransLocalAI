@@ -77,6 +77,9 @@ final class ShareAppleSpeechEngine: TranscriptionEngine {
             }
         }
 
+        // No locale recognised anything (or neither model is installed):
+        // that is "unknown", not English.
+        guard bestScore > 0 else { throw TranscriptionEngineError.unsupportedLanguage("undetected") }
         return bestLanguage
     }
 
@@ -291,7 +294,7 @@ final class WhisperKitEngine: ModelPreparingTranscriptionEngine {
         let modelIdentifier = await modelManager.modelIdentifier(for: defaultLanguage)
         let modelId = try await modelManager.ensureModelAvailable(modelIdentifier: modelIdentifier, progress: nil)
         let session = try await sessionCache.session(modelId: modelId, language: nil)
-        return try await session.detectLanguage(audioURL: audioURL) ?? defaultLanguage
+        return try await session.detectLanguage(audioURL: audioURL) ?? "multilingual"
 #else
         throw TranscriptionEngineError.unimplemented
 #endif
@@ -399,9 +402,9 @@ private final class WhisperKitSession {
         return (output.text, output.timings)
     }
 
+    /// A language code, "multilingual" for mixed audio, or nil.
     func detectLanguage(audioURL: URL) async throws -> String? {
-        let result = try await whisper.detectLanguage(audioPath: audioURL.path)
-        return result.language
+        await WhisperDecodingSupport.detectLanguage(whisper: whisper, audioURL: audioURL)
     }
 }
 #endif
@@ -441,7 +444,9 @@ final class HybridTranscriptionService {
         if let appleLang = try? await appleEngine.detectLanguage(audioURL: audioURL) {
             return normalize(appleLang)
         }
-        return "eu-ES"
+        // Nothing could tell: no guessed language. Whisper then detects it
+        // window by window while transcribing.
+        return "multilingual"
     }
 
     func prepareModelIfNeeded(language: String, engine: EnginePreference = .auto, progress: (@Sendable (Double) -> Void)?) async throws {

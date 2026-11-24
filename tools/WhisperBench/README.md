@@ -15,6 +15,9 @@ measures the code the app ships. Not part of any app target.
 | `BENCH_OUT` | `~/Developer/TransLocalAI-eval` (outside git: the transcripts are private) |
 | `BENCH_LABEL` | timestamp; one sub-folder per run |
 | `BENCH_LANGUAGE` | auto (the app's "multilingual") |
+| `BENCH_LANGUAGE=detect` | run the app's language survey first, as auto-detect does |
+| `BENCH_ENGINE=apple` | the app's Apple Speech path instead of Whisper (`BENCH_LANGUAGE` is then a locale, e.g. `es-ES`); writes only `transcript.txt` |
+| `BENCH_MODEL` | `openai_whisper-large-v3-v20240930_626MB` (the app's model, large-v3 turbo) |
 | `BENCH_PROFILE` | `Balanced` (`Fast`, `Maximum coverage`) |
 | `BENCH_VOCABULARY` | the app's built-in defaults; or a file in the app's line format |
 | `BENCH_WATCH` | none; a file of spellings to count (one per line, `#` comments) |

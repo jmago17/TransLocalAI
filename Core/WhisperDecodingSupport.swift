@@ -45,6 +45,9 @@ nonisolated enum WhisperDecodingSupport {
         var options = DecodingOptions()
         options.task = .transcribe
         options.language = language
+        // Without a fixed language WhisperKit does not detect one unless asked:
+        // it prefills <|en|> and "transcribes" everything as English.
+        options.detectLanguage = language == nil
         options.chunkingStrategy = .vad
         options.usePrefillPrompt = true
 
@@ -80,6 +83,9 @@ nonisolated enum WhisperDecodingSupport {
         var options = DecodingOptions()
         options.task = .transcribe
         options.language = language
+        // Without a fixed language WhisperKit does not detect one unless asked:
+        // it prefills <|en|> and "transcribes" everything as English.
+        options.detectLanguage = language == nil
         options.usePrefillPrompt = true
         options.temperatureFallbackCount = 3
         options.compressionRatioThreshold = 2.8
@@ -99,7 +105,66 @@ nonisolated enum WhisperDecodingSupport {
         guard !tokens.isEmpty else { return nil }
         return Array(tokens.prefix(maxTokens))
     }
+
+    // MARK: - Language detection across the whole recording
+
+    /// Detects the language in up to `maxWindows` 30-second windows spread
+    /// over the recording and returns how many windows voted for each.
+    /// `WhisperKit.detectLanguage(audioPath:)` only listens to the first 30 s:
+    /// a meeting that opens with silence, small talk or a phone call in
+    /// another language was labelled by that opening alone.
+    static func surveyLanguages(whisper: WhisperKit, audioURL: URL, maxWindows: Int = 8) async -> [String: Int] {
+        guard let file = try? AVAudioFile(forReading: audioURL) else { return [:] }
+        let duration = Double(file.length) / max(file.fileFormat.sampleRate, 1)
+        var votes: [String: Int] = [:]
+        // Twice as many candidates as votes: the quietest half is discarded,
+        // because Whisper names an arbitrary language for silence.
+        var candidates: [(rms: Float, samples: [Float])] = []
+        for start in surveyWindowStarts(duration: duration, count: surveyWindowCount(duration: duration, maxWindows: maxWindows) * 2) {
+            guard let buffer = try? AudioProcessor.loadAudio(fromPath: audioURL.path, startTime: start, endTime: min(duration, start + 30))
+            else { continue }
+            let samples = AudioProcessor.convertBufferToArray(buffer: buffer)
+            guard samples.count > 16000 else { continue }
+            let rms = (samples.reduce(Float(0)) { $0 + $1 * $1 } / Float(samples.count)).squareRoot()
+            candidates.append((rms, samples))
+        }
+        let keep = max(1, (candidates.count + 1) / 2)
+        for candidate in candidates.sorted(by: { $0.rms > $1.rms }).prefix(keep) {
+            guard let detected = try? await whisper.detectLangauge(audioArray: candidate.samples) else { continue }
+            votes[detected.language, default: 0] += 1
+        }
+        return votes
+    }
+
+    /// A language code, "multilingual" for mixed audio, or nil.
+    static func detectLanguage(whisper: WhisperKit, audioURL: URL) async -> String? {
+        let votes = await surveyLanguages(whisper: whisper, audioURL: audioURL)
+        logger.info("Language survey: \(String(describing: votes), privacy: .public)")
+        return languageVerdict(votes: votes)
+    }
 #endif
+
+    static func surveyWindowCount(duration: Double, maxWindows: Int) -> Int {
+        min(maxWindows, max(1, Int(duration / 45)))
+    }
+
+    /// Evenly spread 30-second window starts covering the whole recording.
+    static func surveyWindowStarts(duration: Double, count: Int, window: Double = 30) -> [Double] {
+        guard duration > window, count > 1 else { return [0] }
+        let step = duration / Double(count)
+        return (0..<count).map { min(max(0, (Double($0) + 0.5) * step - window / 2), duration - window) }
+    }
+
+    /// One language code, or "multilingual" when a second language holds a
+    /// real share of the windows (twice, or once in a recording too short
+    /// to have four windows). `nil` when nothing was detected.
+    static func languageVerdict(votes: [String: Int]) -> String? {
+        let total = votes.values.reduce(0, +)
+        guard total > 0 else { return nil }
+        let ranked = votes.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+        let hasSecondLanguage = ranked.dropFirst().contains { $0.value >= 2 || total < 4 }
+        return hasSecondLanguage ? "multilingual" : ranked[0].key
+    }
 
     // MARK: - Engine-neutral segment
 
@@ -135,15 +200,40 @@ nonisolated enum WhisperDecodingSupport {
         return gaps
     }
 
+    /// Segments as far as they really cover speech. Punctuation-only
+    /// segments ("-" over 23 s) are dropped and a long segment holding a
+    /// word or two is cut down to that word, so the stretch around it counts
+    /// as a gap and gets retried instead of passing as transcribed.
+    static func coveringSpeech(_ segments: [Segment]) -> [Segment] {
+        segments.compactMap { segment in
+            guard TranscriptSegments.hasSpokenContent(segment.text) else { return nil }
+            let duration = segment.end - segment.start
+            let words = Double(segment.text.split(whereSeparator: \.isWhitespace).count)
+            guard duration >= sparseSegmentSeconds, words / duration < sparseWordsPerSecond else { return segment }
+            var trimmed = segment
+            trimmed.end = segment.start + max(2, words)
+            return trimmed
+        }
+    }
+
+    static let sparseSegmentSeconds = 10.0
+    static let sparseWordsPerSecond = 0.3
+
     /// Merges recovered segments into the primary list: keep primary text
     /// wherever both exist (it was decoded with stricter settings), keep
     /// recovered text only where it genuinely fills a hole.
-    static func merge(primary: [Segment], recovered: [Segment]) -> [Segment] {
+    static func merge(primary: [Segment], recovered: [Segment], gap: ClosedRange<Double>? = nil) -> [Segment] {
         guard !recovered.isEmpty else { return primary.sorted { $0.start < $1.start } }
         var result = primary
         for candidate in recovered {
             let trimmed = candidate.text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { continue }
+            // The retry slice is padded on both sides: text decoded in the
+            // padding belongs to the neighbours, which the main pass already has.
+            if let gap {
+                let middle = (candidate.start + candidate.end) / 2
+                guard middle >= gap.lowerBound - 0.5, middle <= gap.upperBound + 0.5 else { continue }
+            }
             let candidateLength = max(candidate.end - candidate.start, 0.1)
             let overlapsPrimary = primary.contains { existing in
                 let overlap = min(existing.end, candidate.end) - max(existing.start, candidate.start)
@@ -161,7 +251,8 @@ nonisolated enum WhisperDecodingSupport {
     /// True when a segment is one short phrase repeated 3+ times — the classic
     /// low-signal Whisper hallucination shape.
     static func isRepetitionLoop(_ text: String) -> Bool {
-        let words = text.split(separator: " ")
+        // Compared without case or punctuation: "-Baina baina baina…" is a loop.
+        let words = text.split(separator: " ").map(TranscriptSegments.loopKey).filter { !$0.isEmpty }
         guard words.count >= 6 else { return false }
         for period in 1...max(1, words.count / 3) {
             let pattern = Array(words.prefix(period))
@@ -272,7 +363,9 @@ nonisolated enum WhisperDecodingSupport {
 
         /// The app's policy for a profile.
         static func app(_ profile: Profile) -> GapPolicy {
-            profile == .maximumCoverage ? GapPolicy(minimumGap: 6, maxRetries: 6) : GapPolicy(minimumGap: 10, maxRetries: 4)
+            // Measured on a 45-minute mixed meeting (2026-11-23): with 4
+            // retries, 12-second gaps holding 30 and 53 words stayed empty.
+            profile == .maximumCoverage ? GapPolicy(minimumGap: 6, maxRetries: 16) : GapPolicy(minimumGap: 10, maxRetries: 10)
         }
 
         /// Tighter cap for the Share extension's memory and time budget.
@@ -317,7 +410,7 @@ nonisolated enum WhisperDecodingSupport {
 
         let startedAt = Date()
         let results = try await whisper.transcribe(audioPath: audioURL.path, decodeOptions: options, callback: callback)
-        var segments = segments(from: results.flatMap(\.segments), offset: 0)
+        var segments = coveringSpeech(segments(from: results.flatMap(\.segments), offset: 0))
         let primarySegments = segments
 
         let audioFile = try? AVAudioFile(forReading: audioURL)
@@ -342,7 +435,11 @@ nonisolated enum WhisperDecodingSupport {
                     audioPath: slice.url.path, decodeOptions: relaxedOptions(language: language)
                 ) {
                     let before = segments.count
-                    segments = merge(primary: segments, recovered: self.segments(from: sliceResults.flatMap(\.segments), offset: slice.offset))
+                    segments = merge(
+                        primary: segments,
+                        recovered: coveringSpeech(self.segments(from: sliceResults.flatMap(\.segments), offset: slice.offset)),
+                        gap: gap
+                    )
                     recoveredSegments += max(0, segments.count - before)
                 }
                 try? FileManager.default.removeItem(at: slice.url)
@@ -383,7 +480,8 @@ nonisolated enum WhisperDecodingSupport {
         // Remove WhisperKit special tokens like <|startoftranscript|>, <|endoftext|>, <|en|>, etc.
         let stripped = text.replacingOccurrences(of: "<\\|[^|]+\\|>", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        // Remove language-change markers generated by Whisper in multilingual mode (e.g. "Speaks in spanish")
+        // "Speaks in spanish": what Whisper writes when it is told the audio is in
+        // one language and hears another (a fixed language on mixed audio).
         if stripped.range(of: #"^Speaks in \w+$"#, options: [.regularExpression, .caseInsensitive]) != nil {
             return ""
         }

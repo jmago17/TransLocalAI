@@ -9,7 +9,8 @@ enum MacTranscriber {
         if engine == .voz && language == "auto" { try VozLanguagePolicy.validate(language) }
         let selectedLanguage: String
         if language == "auto" {
-            selectedLanguage = try await service.detectLanguage(audioURL: audioURL, preferApple: true)
+            // Whisper first: Apple's detector only tells English from Spanish.
+            selectedLanguage = try await service.detectLanguage(audioURL: audioURL)
         } else {
             selectedLanguage = language
         }

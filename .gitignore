@@ -7,3 +7,4 @@ build/
 
 # WhisperBench output, if ever pointed inside the repo
 tools/WhisperBench/out/
+__pycache__/

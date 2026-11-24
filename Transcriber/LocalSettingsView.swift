@@ -64,7 +64,7 @@ struct LocalSettingsView: View {
 
                 Section {
                     LabeledContent("Automatic engine", value: "Apple Speech")
-                    LabeledContent("Euskara / multilingual", value: "Whisper Large v3")
+                    LabeledContent("Euskara / multilingual", value: "Whisper Large v3 Turbo")
                     LabeledContent("Whisper download", value: "About 626 MB")
                     Picker("Whisper coverage", selection: $whisperProfile) {
                         ForEach(WhisperDecodingSupport.Profile.allCases) { profile in

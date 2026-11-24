@@ -184,6 +184,9 @@ class SpeechTranscriptionManager {
             }
         }
 
+        // No locale recognised anything (or neither model is installed):
+        // that is "unknown", not English.
+        guard bestScore > 0 else { throw TranscriptionEngineError.unsupportedLanguage("undetected") }
         return bestLanguage
     }
 

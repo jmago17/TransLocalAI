@@ -463,8 +463,14 @@ enum TranscriptionVocabulary {
             return exact.term
         }
 
+        // Codes with digits are identities, not spellings: "OP10A" one edit
+        // from "OP20A" is another station, not a typo (measured on the bench).
+        // Only exact matches and declared aliases may touch them.
+        let hasDigit: (String) -> Bool = { $0.contains(where: \.isNumber) }
+        guard !hasDigit(recognized) else { return nil }
+
         var best: (term: String, distance: Int)?
-        for candidate in candidates {
+        for candidate in candidates where !hasDigit(candidate.normalized) {
             let limit = candidate.normalized.count >= 8 ? 2 : 1
             let minimumLength = guarded(candidate.term) ? minimumLengthForWordFuzzyMatch : 5
             guard candidate.normalized.count >= minimumLength,

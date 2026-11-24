@@ -9,6 +9,9 @@
 import Testing
 import Foundation
 @testable import Transcriber
+#if canImport(WhisperKit)
+import WhisperKit
+#endif
 
 struct WhisperDecodingSupportTests {
 
@@ -147,5 +150,83 @@ struct TranscriptionTerminologyTests {
         let text = try #require(String(data: data, encoding: .utf8))
         // Everything exported already exists, so importing adds nothing.
         #expect(TranscriptionTerminology.importTerms(from: text) == 0)
+    }
+}
+
+/// Fixes from the 2026-11-23 comparison against Quick Subs.
+struct TranscriptionRobustnessTests {
+
+    private func segment(_ start: Double, _ end: Double, _ text: String) -> WhisperDecodingSupport.Segment {
+        WhisperDecodingSupport.Segment(start: start, end: end, text: text)
+    }
+
+    #if canImport(WhisperKit)
+    /// Without a fixed language WhisperKit prefills <|en|> unless asked to
+    /// detect: "multilingual" used to come out as English.
+    @Test func noFixedLanguageAsksWhisperToDetectIt() {
+        #expect(WhisperDecodingSupport.makeOptions(language: nil, profile: .balanced).detectLanguage)
+        #expect(WhisperDecodingSupport.relaxedOptions(language: nil).detectLanguage)
+        #expect(!WhisperDecodingSupport.makeOptions(language: "es", profile: .balanced).detectLanguage)
+    }
+    #endif
+
+    @Test func languageVerdictNeedsARealSecondLanguage() {
+        #expect(WhisperDecodingSupport.languageVerdict(votes: [:]) == nil)
+        #expect(WhisperDecodingSupport.languageVerdict(votes: ["es": 8]) == "es")
+        // One stray window out of eight is noise, not a second language.
+        #expect(WhisperDecodingSupport.languageVerdict(votes: ["es": 7, "pt": 1]) == "es")
+        #expect(WhisperDecodingSupport.languageVerdict(votes: ["eu": 5, "es": 3]) == "multilingual")
+        #expect(WhisperDecodingSupport.languageVerdict(votes: ["es": 6, "eu": 2]) == "multilingual")
+        // Too short to tell noise from a second language: stay open.
+        #expect(WhisperDecodingSupport.languageVerdict(votes: ["es": 1, "eu": 1]) == "multilingual")
+    }
+
+    @Test func surveyWindowsSpreadOverTheWholeRecording() {
+        let starts = WhisperDecodingSupport.surveyWindowStarts(duration: 2700, count: 8)
+        #expect(starts.count == 8)
+        #expect(starts.first! > 60)             // not just the opening
+        #expect(starts.last! > 2400)
+        #expect(starts.allSatisfy { $0 >= 0 && $0 <= 2670 })
+        #expect(WhisperDecodingSupport.surveyWindowStarts(duration: 20, count: 4) == [0])
+    }
+
+    @Test func emptyAndSparseSegmentsDoNotCountAsCoverage() {
+        let covering = WhisperDecodingSupport.coveringSpeech([
+            segment(0, 5, "Hola, buenos días."),
+            segment(100, 123, "-"),
+            segment(200, 222, "Eta..."),
+        ])
+        #expect(covering.count == 2)
+        #expect(covering[1].end == 202)
+        let gaps = WhisperDecodingSupport.detectGaps(segments: covering, totalDuration: 230)
+        #expect(gaps.count == 2)                // 5–200 and 202–230
+    }
+
+    @Test func recoveredTextInThePaddingIsNotMerged() {
+        let primary = [segment(0, 10, "antes"), segment(40, 50, "después")]
+        let recovered = [segment(10.2, 11.5, "eco del vecino"), segment(20, 25, "lo que faltaba")]
+        let merged = WhisperDecodingSupport.merge(primary: primary, recovered: recovered, gap: 12...38)
+        #expect(merged.map(\.text) == ["antes", "lo que faltaba", "después"])
+    }
+
+    @Test func loopsAreSeenThroughCaseAndPunctuation() {
+        #expect(WhisperDecodingSupport.isRepetitionLoop("-Baina baina baina baina baina baina"))
+    }
+
+    @Test func collapsesDecoderLoopsButNotSpeech() {
+        let loop = "-Baina ez " + Array(repeating: "baina", count: 100).joined(separator: " ")
+        #expect(TranscriptSegments.collapseLoops(loop) == "-Baina ez baina")
+        #expect(TranscriptSegments.collapseLoops("ya lo tienen, ya lo tienen, ya lo tienen, ya lo tienen. Sí.") == "ya lo tienen, Sí.")
+        // Ordinary repetition stays.
+        #expect(TranscriptSegments.collapseLoops("no, no, no, no") == "no, no, no, no")
+        #expect(TranscriptSegments.collapseLoops("ya queda poco, ya queda poco") == "ya queda poco, ya queda poco")
+        #expect(TranscriptSegments.collapseLoops("regular, la verdad que regular") == "regular, la verdad que regular")
+    }
+
+    @Test func sameLineThreeTimesInARowIsKeptOnce() {
+        let repeated = (0..<3).map { TranscriptSegments.Segment(start: Double($0) * 2, end: Double($0) * 2 + 2, text: "It's on the bottom.") }
+        let twice = (0..<2).map { TranscriptSegments.Segment(start: 10 + Double($0) * 2, end: 12 + Double($0) * 2, text: "Vale, vale, adelante.") }
+        let kept = TranscriptSegments.dropRepeatedSegments(repeated + twice)
+        #expect(kept.map(\.text) == ["It's on the bottom.", "Vale, vale, adelante.", "Vale, vale, adelante."])
     }
 }

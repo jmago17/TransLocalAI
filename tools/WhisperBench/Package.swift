@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "WhisperBench",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     dependencies: [
         // Same pinned revision as Transcriber.xcodeproj.
         .package(url: "https://github.com/argmaxinc/WhisperKit", revision: "ba094495e40ff255f30ca4602e2c75994f255df7")

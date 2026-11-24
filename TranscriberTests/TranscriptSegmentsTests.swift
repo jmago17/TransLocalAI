@@ -51,7 +51,8 @@ struct TranscriptSegmentsTests {
     }
 
     @Test func doesNotMergePastTwentyWordsOrTwelveSeconds() {
-        let long = Array(repeating: "word", count: 19).joined(separator: " ")
+        // Distinct words: the same word 19 times is a decoder loop and gets collapsed.
+        let long = (1...19).map { "word\($0)" }.joined(separator: " ")
         let tidy = TranscriptSegments.tidy([
             Segment(start: 0, end: 8, text: long),
             Segment(start: 8.2, end: 9, text: "Okay then."),

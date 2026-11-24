@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import ThinkingOrbs
 #if os(iOS)
 import UIKit
 #endif
@@ -79,8 +80,8 @@ struct TranscriptionDetailView: View {
                 ScrollView {
                     if isGeneratingNotes {
                         VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.5)
+                            ThinkingOrb(.composing)
+                                .accessibilityHidden(true)
                             Text(progressMessage)
                                 .font(.headline)
                             Text("This may take a moment for long transcriptions")
@@ -587,7 +588,7 @@ struct TranscriptionDetailView: View {
             if isTranscribing {
                 HStack(spacing: 12) {
                     if isPreparingModel { ProgressView(value: preparationProgress).frame(width: 80) }
-                    else { ProgressView() }
+                    else { ThinkingOrb(.listening, size: .small).accessibilityHidden(true) }
                     Text(isPreparingModel ? "Preparing model..." : "Transcribing...").font(.subheadline)
                     Button("Cancel") { transcriptionTask?.cancel() }
                 }
@@ -750,7 +751,7 @@ struct TranscriptionDetailView: View {
             if isTranscribing {
                 HStack(spacing: 12) {
                     if isPreparingModel { ProgressView(value: preparationProgress).frame(width: 80) }
-                    else { ProgressView() }
+                    else { ThinkingOrb(.listening, size: .small).accessibilityHidden(true) }
                     Text(isPreparingModel ? "Preparing model..." : "Transcribing...").font(.subheadline)
                     Button("Cancel") { transcriptionTask?.cancel() }
                 }

@@ -88,4 +88,12 @@ struct VocabularyCorrectionTests {
         #expect(!TranscriptionVocabulary.canRememberAlias(canonical: "10:30", variant: "diez y media"))
         #expect(!TranscriptionVocabulary.canRememberAlias(canonical: "A = B", variant: "ab"))
     }
+
+    /// Bench, MTPL meeting: OP10A and OP20s were rewritten to OP20A.
+    @Test func neverFuzzyMatchesCodesWithDigits() {
+        let terms = ["OP10", "OP20A", "AVEVA: Aviva"]
+        let input = "OP10A uses DHCP, OP20s and OP10s are off, see the Aviva log."
+        #expect(TranscriptionVocabulary.correcting(input, terms: terms)
+            == "OP10A uses DHCP, OP20s and OP10s are off, see the AVEVA log.")
+    }
 }

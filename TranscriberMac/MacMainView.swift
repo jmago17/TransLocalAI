@@ -1,4 +1,5 @@
 import SwiftUI
+import ThinkingOrbs
 import UniformTypeIdentifiers
 
 struct MacMainView: View {
@@ -77,7 +78,7 @@ struct MacMainView: View {
                     Button {
                         Task { await generateNotes() }
                     } label: {
-                        if isWorking { ProgressView() } else { Label("Create Notes", systemImage: "sparkles") }
+                        if isWorking { ThinkingOrb(.composing, size: .small).accessibilityLabel("Working…") } else { Label("Create Notes", systemImage: "sparkles") }
                     }
                     .disabled(isWorking || transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

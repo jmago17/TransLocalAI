@@ -28,7 +28,7 @@ struct MacSettingsView: View {
             Section("Voz · optional") { VozInformationView() }
             Section("Models") {
                 LabeledContent("Automatic", value: "Apple Speech")
-                LabeledContent("Euskara / multilingual", value: "Whisper Large v3 (626 MB)")
+                LabeledContent("Euskara / multilingual", value: "Whisper Large v3 Turbo (626 MB)")
             }
             Section("Private Cloud Compute") {
                 Toggle("Enhanced meeting notes", isOn: $privateCloudComputeEnabled)

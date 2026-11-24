@@ -33,13 +33,80 @@ nonisolated enum TranscriptSegments {
 
     /// Drops empty and punctuation-only segments, splits segments longer
     /// than `maxSegmentSeconds`, and merges very short ones into a neighbour.
-    /// Never drops a word: every word of a kept segment survives, in order.
+    /// The only words it drops are hallucination loops (`collapseLoops`,
+    /// `dropRepeatedSegments`); every other word survives, in order.
     static func tidy(_ segments: [Segment]) -> [Segment] {
         let kept = segments
-            .map { Segment(start: $0.start, end: max($0.end, $0.start), text: collapseWhitespace($0.text)) }
+            .map { Segment(start: $0.start, end: max($0.end, $0.start), text: collapseLoops(collapseWhitespace($0.text))) }
             .filter { hasSpokenContent($0.text) }
             .sorted { $0.start < $1.start }
-        return mergeShort(kept.flatMap(splitLong))
+        return mergeShort(dropRepeatedSegments(kept).flatMap(splitLong))
+    }
+
+    // MARK: - Hallucination loops
+
+    /// A word as compared when looking for loops: no case, no punctuation.
+    static func loopKey(_ word: some StringProtocol) -> String {
+        String(String.UnicodeScalarView(word.lowercased().unicodeScalars.filter(CharacterSet.alphanumerics.contains)))
+    }
+
+    static let loopMaxPhraseWords = 6
+    /// One word said six times in a row, or a phrase said four times, is a
+    /// decoder loop; "no, no, no" and "ya queda poco, ya queda poco" are speech.
+    static let loopSingleWordRepeats = 6
+    static let loopPhraseRepeats = 4
+
+    /// Collapses a phrase of up to six words repeated back to back to one
+    /// occurrence: "baina baina baina …" ×100 becomes "baina".
+    static func collapseLoops(_ text: String) -> String {
+        let words = text.split(separator: " ").map(String.init)
+        let keys = words.map(loopKey)
+        var result: [String] = []
+        var index = 0
+        while index < words.count {
+            var skipped = false
+            for period in 1...loopMaxPhraseWords where index + period * 2 <= words.count {
+                let pattern = keys[index..<index + period]
+                guard pattern.contains(where: { !$0.isEmpty }) else { continue }
+                var repeats = 1
+                while index + (repeats + 1) * period <= words.count,
+                      keys[index + repeats * period..<index + (repeats + 1) * period].elementsEqual(pattern) {
+                    repeats += 1
+                }
+                if repeats >= (period == 1 ? loopSingleWordRepeats : loopPhraseRepeats) {
+                    result.append(contentsOf: words[index..<index + period])
+                    index += repeats * period
+                    skipped = true
+                    break
+                }
+            }
+            if !skipped {
+                result.append(words[index])
+                index += 1
+            }
+        }
+        return result.joined(separator: " ")
+    }
+
+    /// The same line three or more times in a row is the loop spread over
+    /// several segments ("It's on the bottom." ×3): keep one.
+    static func dropRepeatedSegments(_ segments: [Segment]) -> [Segment] {
+        var result: [Segment] = []
+        var index = 0
+        while index < segments.count {
+            let key = segments[index].text.split(separator: " ").map(loopKey).filter { !$0.isEmpty }
+            var end = index + 1
+            while end < segments.count,
+                  segments[end].text.split(separator: " ").map(loopKey).filter({ !$0.isEmpty }) == key {
+                end += 1
+            }
+            result.append(segments[index])
+            if end - index < 3 || key.isEmpty {
+                result.append(contentsOf: segments[index + 1..<end])
+            }
+            index = end
+        }
+        return result
     }
 
     /// False for "", ".", "…", "-" — lines with no letter or digit — and for

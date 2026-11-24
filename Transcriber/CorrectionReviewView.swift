@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftData
+import ThinkingOrbs
 
 #if canImport(FoundationModels)
 import FoundationModels
@@ -71,8 +72,8 @@ struct CorrectionReviewView: View {
 
     private var analysisView: some View {
         VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
+            ThinkingOrb(.solving)
+                .accessibilityHidden(true)
             Text("Analyzing transcription...")
                 .font(.headline)
             Text(analysisProgress)
