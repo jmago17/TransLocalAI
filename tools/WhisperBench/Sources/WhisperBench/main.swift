@@ -30,6 +30,23 @@ func readLines(_ path: String?) throws -> [String]? {
 
 // MARK: - Configuration
 
+// BENCH_RETIDY=whisper_segments.txt: run only the segment clean-up (T4) on a
+// previous run's raw segments and print the lines it drops. No model, no audio.
+if let retidy = env["BENCH_RETIDY"], !retidy.isEmpty {
+    let segments: [TranscriptSegments.Segment] = (try readLines(retidy) ?? []).compactMap { line in
+        let parts = line.components(separatedBy: "\t")
+        guard parts.count >= 3, let start = Double(parts[0]), let end = Double(parts[1]) else { return nil }
+        return TranscriptSegments.Segment(start: start, end: end, text: parts[2])
+    }
+    let kept = TranscriptSegments.dropEchoedSegments(segments)
+    let keptStarts = Set(kept.map(\.start))
+    for segment in segments {
+        print("\(keptStarts.contains(segment.start) ? " " : "X") \(TranscriptSegments.stamp(segment.start)) \(segment.text)")
+    }
+    print("\(segments.count - kept.count) of \(segments.count) segments dropped as echoes")
+    exit(0)
+}
+
 guard let audioPath = env["BENCH_AUDIO"], !audioPath.isEmpty else {
     print("Usage: BENCH_AUDIO=/path/to/audio.m4a swift run -c release WhisperBench")
     print("Optional: BENCH_OUT, BENCH_LANGUAGE, BENCH_PROFILE, BENCH_VOCABULARY, BENCH_WATCH, BENCH_MODEL_BASE, BENCH_LABEL")
@@ -364,7 +381,7 @@ To compare later runs against this one, copy `summary.json` to `../baseline.json
 
 // MARK: - Write
 
-let rawDump = output.rawSegments.map { "\(f($0.start, 2))\t\(f($0.end, 2))\t\($0.text)" }.joined(separator: "\n")
+let rawDump = output.rawSegments.map { "\(f($0.start, 2))\t\(f($0.end, 2))\t\($0.text)\t\($0.language ?? "")" }.joined(separator: "\n")
 let encoder = JSONEncoder()
 encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 try report.write(to: outDir.appendingPathComponent("eval_report.md"), atomically: true, encoding: .utf8)

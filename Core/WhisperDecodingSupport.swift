@@ -172,6 +172,78 @@ nonisolated enum WhisperDecodingSupport {
         var start: Double
         var end: Double
         var text: String
+        /// Language Whisper decoded this segment's window in, when known.
+        var language: String? = nil
+    }
+
+    // MARK: - Stray languages
+
+    /// A language holding less than this share of the transcribed time is a
+    /// decoder slip, not a language of the meeting.
+    static let strayLanguageShare = 0.05
+
+    /// Languages that hold a real share of the recording, most spoken first.
+    /// Without a fixed language Whisper picks one per 30-second window, and
+    /// on a Spanish + Basque meeting a few windows came out in English,
+    /// German, Japanese or Russian.
+    static func spokenLanguages(_ segments: [Segment]) -> [String] {
+        var seconds: [String: Double] = [:]
+        for segment in segments {
+            guard let language = segment.language else { continue }
+            seconds[language, default: 0] += max(0, segment.end - segment.start)
+        }
+        let total = seconds.values.reduce(0, +)
+        guard total > 0 else { return [] }
+        let ranked = seconds.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
+        return ranked.enumerated().filter { $0.offset == 0 || $0.element.value / total >= strayLanguageShare }.map(\.element.key)
+    }
+
+    /// Time ranges decoded in a language outside `spoken`; neighbouring stray
+    /// segments (under 2 s apart) form one range.
+    static func strayLanguageRanges(_ segments: [Segment], spoken: [String]) -> [ClosedRange<Double>] {
+        guard !spoken.isEmpty else { return [] }
+        var ranges: [ClosedRange<Double>] = []
+        for segment in segments.sorted(by: { $0.start < $1.start }) {
+            guard let language = segment.language, !spoken.contains(language) else { continue }
+            let end = max(segment.end, segment.start)
+            if let last = ranges.last, segment.start - last.upperBound < 2 {
+                ranges[ranges.count - 1] = last.lowerBound...max(last.upperBound, end)
+            } else {
+                ranges.append(segment.start...end)
+            }
+        }
+        return ranges
+    }
+
+    /// Removes words in a script the transcript is not written in: a lone
+    /// "それから" or "Спасибо" inside Latin-script text. Nothing is removed
+    /// unless one script holds over 90 % of the letters.
+    static func strippingStrayScripts(_ segments: [Segment]) -> [Segment] {
+        var latin = 0
+        var other = 0
+        for scalar in segments.lazy.flatMap(\.text.unicodeScalars) where scalar.properties.isAlphabetic {
+            if isLatin(scalar) { latin += 1 } else { other += 1 }
+        }
+        let total = latin + other
+        guard total > 0, max(latin, other) * 10 > total * 9, min(latin, other) > 0 else { return segments }
+        let keepLatin = latin > other
+        return segments.map { segment in
+            var cleaned = segment
+            cleaned.text = segment.text.split(separator: " ").filter { word in
+                !word.unicodeScalars.contains { $0.properties.isAlphabetic && isLatin($0) != keepLatin }
+            }.joined(separator: " ")
+            return cleaned
+        }
+    }
+
+    private static func isLatin(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value < 0x250 || (0x1E00...0x1EFF).contains(scalar.value)
+    }
+
+    /// The window language of each raw segment text: "<|es|>" among its tokens.
+    static func languageToken(in rawText: String) -> String? {
+        guard let match = rawText.range(of: #"<\|[a-z]{2,3}\|>"#, options: .regularExpression) else { return nil }
+        return String(rawText[match].dropFirst(2).dropLast(2))
     }
 
     // MARK: - Gap detection
@@ -243,7 +315,7 @@ nonisolated enum WhisperDecodingSupport {
             // Drop obvious hallucination loops: the same short phrase decoded
             // repeatedly inside one recovered window.
             guard !isRepetitionLoop(trimmed) else { continue }
-            result.append(Segment(start: candidate.start, end: candidate.end, text: trimmed))
+            result.append(Segment(start: candidate.start, end: candidate.end, text: trimmed, language: candidate.language))
         }
         return result.sorted { $0.start < $1.start }
     }
@@ -445,6 +517,41 @@ nonisolated enum WhisperDecodingSupport {
                 try? FileManager.default.removeItem(at: slice.url)
             }
         }
+        // Stray languages: only without a fixed language, where Whisper
+        // chooses one per window. Each stray stretch is decoded again in the
+        // languages the recording is really in and the likelier one is kept;
+        // a stretch that then comes back empty was noise.
+        var redecodedLanguageRanges = 0
+        if language == nil {
+            let spoken = Array(spokenLanguages(segments).prefix(2))
+            for range in strayLanguageRanges(segments, spoken: spoken).prefix(gapPolicy.maxRetries) {
+                var best: (segments: [Segment], score: Float)?
+                if let slice = try? await extractSlice(from: audioURL, range: range) {
+                    for candidate in spoken {
+                        guard let sliceResults = try? await whisper.transcribe(
+                            audioPath: slice.url.path, decodeOptions: makeOptions(language: candidate, profile: profile)
+                        ) else { continue }
+                        let raw = sliceResults.flatMap(\.segments)
+                        let found = coveringSpeech(self.segments(from: raw, offset: slice.offset))
+                            .map { Segment(start: $0.start, end: $0.end, text: $0.text, language: candidate) }
+                        guard !found.isEmpty else { continue }
+                        let score = raw.map(\.avgLogprob).reduce(0, +) / Float(max(raw.count, 1))
+                        if best == nil || score > best!.score { best = (found, score) }
+                    }
+                    try? FileManager.default.removeItem(at: slice.url)
+                }
+                segments.removeAll { segment in
+                    guard let segmentLanguage = segment.language, !spoken.contains(segmentLanguage) else { return false }
+                    return segment.start >= range.lowerBound - 0.01 && segment.start <= range.upperBound
+                }
+                segments = merge(primary: segments, recovered: best?.segments ?? [], gap: range)
+                redecodedLanguageRanges += 1
+            }
+            segments = strippingStrayScripts(segments)
+        }
+        if redecodedLanguageRanges > 0 {
+            logger.info("Stray-language stretches decoded again: \(redecodedLanguageRanges)")
+        }
         segments.sort { $0.start < $1.start }
 
         let metrics = computeMetrics(
@@ -469,10 +576,19 @@ nonisolated enum WhisperDecodingSupport {
     /// Callers pass `results.flatMap(\.segments)`: the app has its own
     /// `TranscriptionResult`, and `WhisperKit.` names the class, not the module.
     static func segments(from whisperSegments: [TranscriptionSegment], offset: Double) -> [Segment] {
-        whisperSegments.compactMap { segment in
+        // Every segment of a window shares its language; not every one
+        // carries the token in its text.
+        var languageBySeek: [Int: String] = [:]
+        for segment in whisperSegments where languageBySeek[segment.seek] == nil {
+            languageBySeek[segment.seek] = languageToken(in: segment.text)
+        }
+        return whisperSegments.compactMap { segment in
             let text = stripSpecialTokens(segment.text)
             guard !text.isEmpty else { return nil }
-            return Segment(start: Double(segment.start) + offset, end: Double(segment.end) + offset, text: text)
+            return Segment(
+                start: Double(segment.start) + offset, end: Double(segment.end) + offset, text: text,
+                language: languageBySeek[segment.seek]
+            )
         }
     }
 

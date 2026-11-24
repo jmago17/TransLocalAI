@@ -9,3 +9,4 @@
 Estado, pendientes y lo no verificado: `estado.md`.
 2026-11-22: indicadores de "IA pensando" con ThinkingOrbs 1.1.0 (SPM exacto). `TranscribingAnimation` y las barras con progreso real se quedan; falta el aviso MIT en la app.
 2026-11-23: "multilingual" forzaba inglés en Whisper (faltaba `detectLanguage`); arreglado junto con detección de idioma en 8 ventanas, colapso de bucles y huecos mal contados. Medido contra Quick Subs con `tools/ASRBench`; no cambiar el idioma/motor por defecto sin volver a pasar el banco.
+2026-11-24: tramos en idioma ajeno (menos del 5 % del tiempo) se retranscriben en los idiomas del audio; líneas-eco colapsadas. HiTZ bilingüe eu-es evaluado y descartado (pierde la mitad de las palabras fuera del Parlamento); no repetir sin modelo nuevo.

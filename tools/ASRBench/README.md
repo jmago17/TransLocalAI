@@ -26,6 +26,20 @@ No ffmpeg needed: audio is decoded with `afconvert`.
 - **Parakeet TDT 0.6B v3**: 25 European languages, independent second opinion. ~4 min per 28 min.
 - **Neither supports Basque.** For Basque meetings only app-vs-app and gold excerpts are meaningful.
 
+## HiTZ bilingual model (Basque + Spanish)
+
+`hitz.py` runs `HiTZ/BBS-S2TC_conformer_transducer_large` (Apache 2.0, 478 MB, NeMo) as a candidate engine,
+not as a reference. It needs its own Python 3.11 environment (NeMo does not install on 3.14):
+
+    uv venv --python 3.11 ~/Library/Caches/TransLocalAI-HiTZ-venv
+    uv pip install --python ~/Library/Caches/TransLocalAI-HiTZ-venv/bin/python "nemo_toolkit[asr]" soundfile
+    # model file: ~/Library/Caches/TransLocalAI-ASRBench-models/hitz/BBS-S2TC_conformer_transducer_large.nemo
+    ~/Library/Caches/TransLocalAI-HiTZ-venv/bin/python hitz.py meeting.m4a out-dir --window 10
+
+Measured 2026-11-24 (see `estado.md`): proper written Basque, but trained on parliament sessions only —
+on shop-floor meetings it drops about half the words, loses every technical term and writes lowercase
+without punctuation. Not a replacement for Whisper.
+
 ## Reading the report
 
 - *Confirmed WER* counts only words both references agree on.

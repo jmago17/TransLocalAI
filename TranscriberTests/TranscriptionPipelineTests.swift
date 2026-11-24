@@ -229,4 +229,46 @@ struct TranscriptionRobustnessTests {
         let kept = TranscriptSegments.dropRepeatedSegments(repeated + twice)
         #expect(kept.map(\.text) == ["It's on the bottom.", "Vale, vale, adelante.", "Vale, vale, adelante."])
     }
+
+    @Test func rewordedEchoOfOnePhraseIsKeptOnce() {
+        let lines = [
+            "¿Esta es la pregunta?", "Esta es la pregunta.", "Si yo le hago la pregunta, igual iré a la pregunta.",
+            "En principio, este es la pregunta.", "A ver, ahora nos vamos a dar la pregunta.", "Vale, seguimos.",
+            "Ahora vamos a ir a la esta.", "Ya está, ahora vamos a ir a la asistencia.", "Vamos a ir a la luz.",
+            "Ahora vamos a ir a la luz de la luz.", "Otra cosa.",
+            // Three in a row is still speech.
+            "Lo vemos en la reunión.", "Lo cerramos en la reunión.", "Y lo apuntamos en la reunión."
+        ]
+        let segments = lines.enumerated().map { TranscriptSegments.Segment(start: Double($0.offset) * 3, end: Double($0.offset) * 3 + 3, text: $0.element) }
+        #expect(TranscriptSegments.dropEchoedSegments(segments).map(\.text) == [
+            "¿Esta es la pregunta?", "Vale, seguimos.", "Ahora vamos a ir a la esta.", "Otra cosa.",
+            "Lo vemos en la reunión.", "Lo cerramos en la reunión.", "Y lo apuntamos en la reunión."
+        ])
+    }
+
+    @Test func strayLanguagesAreTheOnesWithNoRealShare() {
+        func spoken(_ start: Double, _ end: Double, _ language: String?) -> WhisperDecodingSupport.Segment {
+            WhisperDecodingSupport.Segment(start: start, end: end, text: "texto", language: language)
+        }
+        let segments = [
+            spoken(0, 600, "es"), spoken(600, 900, "eu"), spoken(900, 905, "en"), spoken(906, 912, "en"),
+            spoken(912, 1500, "es"), spoken(1500, 1502, "ru"), spoken(1502, 1510, nil)
+        ]
+        let languages = WhisperDecodingSupport.spokenLanguages(segments)
+        #expect(languages == ["es", "eu"])
+        #expect(WhisperDecodingSupport.strayLanguageRanges(segments, spoken: languages) == [900...912, 1500...1502])
+        #expect(WhisperDecodingSupport.strayLanguageRanges(segments, spoken: []).isEmpty)
+        #expect(WhisperDecodingSupport.languageToken(in: "<|startoftranscript|><|eu|><|transcribe|><|0.00|> Kaixo") == "eu")
+        #expect(WhisperDecodingSupport.languageToken(in: "<|0.00|> Kaixo<|2.00|>") == nil)
+    }
+
+    @Test func wordsInAnotherScriptAreRemoved() {
+        let latin = (0..<20).map { segment(Double($0), Double($0) + 1, "esto es una frase normal") }
+        let cleaned = WhisperDecodingSupport.strippingStrayScripts(latin + [segment(30, 31, "ariko, baina, それから"), segment(32, 33, "Спасибо.")])
+        #expect(cleaned[20].text == "ariko, baina,")
+        #expect(cleaned[21].text.isEmpty)
+        // A transcript in two scripts is left alone.
+        let mixed = [segment(0, 1, "hola qué tal"), segment(1, 2, "Спасибо большое")]
+        #expect(WhisperDecodingSupport.strippingStrayScripts(mixed).map(\.text) == mixed.map(\.text))
+    }
 }

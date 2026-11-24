@@ -34,13 +34,14 @@ nonisolated enum TranscriptSegments {
     /// Drops empty and punctuation-only segments, splits segments longer
     /// than `maxSegmentSeconds`, and merges very short ones into a neighbour.
     /// The only words it drops are hallucination loops (`collapseLoops`,
-    /// `dropRepeatedSegments`); every other word survives, in order.
+    /// `dropRepeatedSegments`, `dropEchoedSegments`); every other word
+    /// survives, in order.
     static func tidy(_ segments: [Segment]) -> [Segment] {
         let kept = segments
             .map { Segment(start: $0.start, end: max($0.end, $0.start), text: collapseLoops(collapseWhitespace($0.text))) }
             .filter { hasSpokenContent($0.text) }
             .sorted { $0.start < $1.start }
-        return mergeShort(dropRepeatedSegments(kept).flatMap(splitLong))
+        return mergeShort(dropEchoedSegments(dropRepeatedSegments(kept)).flatMap(splitLong))
     }
 
     // MARK: - Hallucination loops
@@ -105,6 +106,45 @@ nonisolated enum TranscriptSegments {
                 result.append(contentsOf: segments[index + 1..<end])
             }
             index = end
+        }
+        return result
+    }
+
+    static let echoRunLength = 4
+
+    /// Four or more lines in a row that end in the same two words, or all
+    /// hold the same three-word run, are one phrase the decoder keeps
+    /// rewording ("¿Esta es la pregunta?", "En principio, este es la
+    /// pregunta." …): keep the first.
+    static func dropEchoedSegments(_ segments: [Segment]) -> [Segment] {
+        let keys = segments.map { $0.text.split(separator: " ").map(loopKey).filter { !$0.isEmpty } }
+        func trigrams(_ words: [String]) -> Set<[String]> {
+            guard words.count >= 3 else { return [] }
+            return Set((0...words.count - 3).map { Array(words[$0..<$0 + 3]) })
+        }
+        var result: [Segment] = []
+        var index = 0
+        while index < segments.count {
+            let ending = Array(keys[index].suffix(2))
+            var sameEnding = index + 1
+            while ending.count == 2, sameEnding < segments.count, Array(keys[sameEnding].suffix(2)) == ending {
+                sameEnding += 1
+            }
+            var shared = trigrams(keys[index])
+            var sameRun = index + 1
+            while sameRun < segments.count {
+                let next = shared.intersection(trigrams(keys[sameRun]))
+                if next.isEmpty { break }
+                shared = next
+                sameRun += 1
+            }
+            let end = max(sameEnding, sameRun)
+            result.append(segments[index])
+            if end - index < echoRunLength {
+                index += 1
+            } else {
+                index = end
+            }
         }
         return result
     }
